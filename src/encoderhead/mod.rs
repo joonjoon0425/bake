@@ -2,10 +2,14 @@ use std::marker::PhantomData;
 use burn::{module::{AutodiffModule, ModuleDisplay}, prelude::*, tensor::backend::AutodiffBackend};
 
 // Encoder trait. Converts the observation to Tensor
-pub trait Encoder<B: Backend, const D: usize> : Module<B> + ModuleDisplay {
-    type Obs;
+pub trait Encoder<B: Backend, const BATCHED_RANK: usize> : Module<B> + ModuleDisplay {
+    type Obs: Batchable<B>;
 
-    fn forward(&self, obs: Self::Obs) -> Tensor<B, D>;
+    fn forward(&self, batched_obs: <Self::Obs as Batchable<B>>::Batched) -> Tensor<B, BATCHED_RANK>;
+    // this function will automatically produce a batched obs and produce input.
+    fn forward_single(&self, obs: Self::Obs, device: &B::Device) -> Tensor<B, BATCHED_RANK> {
+        self.forward(Self::Obs::batch(vec![obs], device))
+    }
 }
 
 // Head trait. Take the encoded observation and make desired output
@@ -16,14 +20,14 @@ pub trait Head<B: Backend, const D: usize> : Module<B> + ModuleDisplay {
 }
 
 // alias trait for Autodiff Encoder
-pub trait AutodiffEncoder<B: AutodiffBackend, const D: usize> : Encoder<B, D> + AutodiffModule<B, InnerModule: Encoder<B::InnerBackend, D, Obs = Self::Obs>>
+pub trait AutodiffEncoder<B: AutodiffBackend, const D: usize> : Encoder<B, D, Obs: Batchable<B> + Batchable<B::InnerBackend>> + AutodiffModule<B, InnerModule: Encoder<B::InnerBackend, D, Obs = Self::Obs>>
 {}
 
 // blanket implementation for Encoders created with Module derive macro
 impl<B, E, const D: usize> AutodiffEncoder<B, D> for E
 where
     B: AutodiffBackend,
-    E: Encoder<B, D> + AutodiffModule<B, InnerModule: Encoder<B::InnerBackend, D, Obs = Self::Obs>>,
+    E: Encoder<B, D, Obs: Batchable<B> + Batchable<B::InnerBackend>> + AutodiffModule<B, InnerModule: Encoder<B::InnerBackend, D, Obs = Self::Obs>>,
     E::InnerModule: ModuleDisplay,
 {}
 
@@ -53,10 +57,16 @@ where
     E: Encoder<B, D>,
     H: Head<B, D>,
 {
-    pub fn forward(&self, obs: E::Obs) -> H::Output {
-        self.head.forward(self.encoder.forward(obs))
+    pub fn forward_single(&self, obs: E::Obs, device: &B::Device) -> H::Output {
+        self.head.forward(self.encoder.forward_single(obs, device))
+    }
+
+    pub fn forward(&self, batched_obs: <E::Obs as Batchable<B>>::Batched) -> H::Output {
+        self.head.forward(self.encoder.forward(batched_obs))
     }
 }
 
 pub mod identityencoder;
 pub use identityencoder::*;
+
+use crate::traits::Batchable;

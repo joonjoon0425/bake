@@ -5,8 +5,9 @@ pub struct IdentityEncoder<B: Backend, const D: usize> {
     backend: PhantomData<B>
 }
 
-impl<B: Backend, const D: usize> Encoder<B, D> for IdentityEncoder<B, D> {
-    type Obs = Tensor<B, D>;
+impl<B: Backend> Encoder<B, 2> for IdentityEncoder<B, 2> {
+    type Obs = Tensor<B, 1>;
 
-    fn forward(&self, obs: Self::Obs) -> Tensor<B, D> { obs }
+    fn forward(&self, obs: <Self::Obs as Batchable<B>>::Batched) -> Tensor<B, 2> { obs }
 }
+

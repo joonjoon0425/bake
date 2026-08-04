@@ -298,6 +298,7 @@ version = "0.1.0"
 dependencies = [
  "burn",
  "burn-autodiff",
+ "rand 0.10.2",
 ]
 
 [[package]]
