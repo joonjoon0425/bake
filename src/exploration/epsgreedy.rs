@@ -15,11 +15,11 @@ impl EpsGreedy {
         if self.rng.random_range(0.0..1.0f32) < self.eps {
             return self.rng.random_range(0..qvalues.shape()[0]) as i64
         }
-        qvalues.argmax(1).try_into_scalar().unwrap().elem()
+        qvalues.argmax(0).try_into_scalar().unwrap().elem()
     }
 
     pub fn select_action_masked<B: Backend>(&self, qvalues: Tensor<B, 1>, mask: Tensor<B, 1, Bool>) -> i64 {
         let qvalues = qvalues.mask_fill(mask, -1e+9);
-        qvalues.argmax(1).try_into_scalar().unwrap().elem()
+        qvalues.argmax(0).try_into_scalar().unwrap().elem()
     }
 }

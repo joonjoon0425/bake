@@ -74,8 +74,11 @@ impl<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra:
 
     pub fn len(&self) -> usize { self.observations.len() }
 
-    pub fn sample(&mut self, batch_size: usize) -> BatchedTransition<B, <Obs as Batchable<B>>::Batched, <Action as Batchable<B>>::Batched, <Extra as Batchable<B>>::Batched> {
+    pub fn sample(&mut self, batch_size: usize) -> Option<BatchedTransition<B, <Obs as Batchable<B>>::Batched, <Action as Batchable<B>>::Batched, <Extra as Batchable<B>>::Batched>> {
         let len = self.len();
+
+        if len < batch_size { return None; }
+
         let indices: Vec<usize> = (0..batch_size).map(|_| self.rng.random_range(0..len)).collect();
 
         let (o, a, r, no, te, tr, ex): (Vec<Obs>, Vec<Action>, Vec<f32>, Vec<Obs>, Vec<f32>, Vec<f32>, Vec<Extra>)
@@ -89,7 +92,7 @@ impl<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra:
                     self.extras[index].clone())
             }).collect();
 
-        BatchedTransition {
+        Some(BatchedTransition {
             observations: Obs::batch(o, &self.device),
             actions: Action::batch(a, &self.device),
             rewards: Tensor::from_floats(r.as_slice(), &self.device),
@@ -99,6 +102,6 @@ impl<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra:
             extras: Extra::batch(ex, &self.device),
 
             _backend: PhantomData
-        }
+        })
     }
 }

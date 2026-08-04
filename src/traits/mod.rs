@@ -1,4 +1,4 @@
-use burn::{Tensor, tensor::{Int, backend::Backend}};
+use burn::{Tensor, tensor::{Int, TensorData, backend::Backend}};
 
 pub trait Batchable<B: Backend> : Sized {
     type Batched;
@@ -6,11 +6,29 @@ pub trait Batchable<B: Backend> : Sized {
     fn batch(bundle: Vec<Self>, device: &B::Device) -> Self::Batched;
 }
 
+impl<B: Backend> Batchable<B> for f32 {
+    type Batched = Tensor<B, 1>;
+
+    fn batch(bundle: Vec<Self>, device: &B::Device) -> Self::Batched {
+        Tensor::from_floats(bundle.as_slice(), device)
+    }
+}
+
+impl<B: Backend> Batchable<B> for i64 {
+    type Batched = Tensor<B, 1, Int>;
+
+    fn batch(bundle: Vec<Self>, device: &B::Device) -> Self::Batched {
+        Tensor::from_ints(bundle.as_slice(), device)
+    }
+}
+
 impl<B: Backend, const D: usize> Batchable<B> for [f32; D] {
     type Batched = Tensor<B, 2>;
 
     fn batch(bundle: Vec<Self>, device: &B::Device) -> Self::Batched {
-        Tensor::<B, 2>::from_floats::<[[f32; D]; 2]>(*bundle.as_array().unwrap(), device)
+        let n = bundle.len();
+        let flat: Vec<f32> = bundle.into_iter().flatten().collect();
+        Tensor::from_data(TensorData::new(flat, [n, D]), device)
     }
 }
 
@@ -18,8 +36,9 @@ impl<B: Backend, const D: usize> Batchable<B> for [f64; D] {
     type Batched = Tensor<B, 2>;
 
     fn batch(bundle: Vec<Self>, device: &B::Device) -> Self::Batched {
-        let flat: Vec<f32> = bundle.iter().flatten().map(|&v| v as f32).collect();
-        Tensor::<B, 2>::from_floats(flat.as_slice(), device).reshape([bundle.len(), D])
+        let n = bundle.len();
+        let flat: Vec<f32> = bundle.into_iter().flatten().map(|v| v as f32).collect();
+        Tensor::from_data(TensorData::new(flat, [n, D]), device)
     }
 }
 
@@ -27,7 +46,9 @@ impl<B: Backend, const D: usize> Batchable<B> for [i32; D] {
     type Batched = Tensor<B, 2, Int>;
 
     fn batch(bundle: Vec<Self>, device: &<B>::Device) -> Self::Batched {
-        Tensor::<B, 2, Int>::from_ints::<[[i32; D]; 2]>(*bundle.as_array().unwrap(), device)
+        let n = bundle.len();
+        let flat: Vec<i32> = bundle.into_iter().flatten().collect();
+        Tensor::from_data(TensorData::new(flat, [n, D]), device)
     }
 }
 
@@ -35,7 +56,9 @@ impl<B: Backend, const D: usize> Batchable<B> for [i64; D] {
     type Batched = Tensor<B, 2, Int>;
 
     fn batch(bundle: Vec<Self>, device: &<B>::Device) -> Self::Batched {
-        Tensor::<B, 2, Int>::from_ints::<[[i64; D]; 2]>(*bundle.as_array().unwrap(), device)
+        let n = bundle.len();
+        let flat: Vec<i64> = bundle.into_iter().flatten().collect();
+        Tensor::from_data(TensorData::new(flat, [n, D]), device)
     }
 }
 

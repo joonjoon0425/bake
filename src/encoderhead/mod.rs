@@ -48,9 +48,19 @@ where
 pub struct EncoderHead<B: Backend, E, H, const D: usize> {
     encoder: E,
     head: H,
-    backend: PhantomData<B>
+    _backend: PhantomData<B>
 }
 // If I make a trait bound for E and H, the Module macro shoots error. The solution is to not bound the trait in the structure, but to bound it on impl blocks.
+
+impl<B: Backend, E, H, const D: usize> EncoderHead<B, E, H, D> {
+    pub fn new(encoder: E, head: H) -> Self {
+        Self {
+            encoder,
+            head,
+            _backend: PhantomData,
+        }
+    }
+}
 
 impl<B: Backend, E, H, const D: usize> EncoderHead<B, E, H, D>
 where
@@ -65,8 +75,5 @@ where
         self.head.forward(self.encoder.forward(batched_obs))
     }
 }
-
-pub mod identityencoder;
-pub use identityencoder::*;
 
 use crate::traits::Batchable;

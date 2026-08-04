@@ -1,4 +1,4 @@
-use burn::{Tensor, module::AutodiffModule, nn::loss, optim::{GradientsParams, Optimizer}, tensor::{Bool, Int, backend::AutodiffBackend}};
+use burn::{Tensor, module::AutodiffModule, nn::loss, optim::{GradientsParams, Optimizer}, tensor::{Bool, ElementConversion, Int, backend::AutodiffBackend}};
 
 use crate::{encoderhead::{AutodiffEncoder, AutodiffHead, EncoderHead, Head}, exploration::EpsGreedy, traits::Batchable, transition::BatchedTransition};
 
@@ -37,7 +37,7 @@ where
         }
     }
 
-    pub fn update(mut self, transitions: BatchedTransition<B, <E::Obs as Batchable<B>>::Batched, Tensor<B, 1, Int>>) -> Self {
+    pub fn update(mut self, transitions: BatchedTransition<B, <E::Obs as Batchable<B>>::Batched, Tensor<B, 1, Int>>) -> (Self, f32, f32, f32) {
         let qvalues = self.online.forward(transitions.observations);
         let qvalues: Tensor<B, 1> = qvalues.gather(1, transitions.actions.unsqueeze_dim(1)).squeeze_dim(1);
 
@@ -45,6 +45,7 @@ where
         let target = transitions.rewards + self.gamma * target_q * (1f32 - transitions.terminated);
         
         let td_error = target.clone() - qvalues.clone();
+        let q_mean = qvalues.clone().mean().into_scalar().elem();
 
         let loss = loss::MseLoss::new().forward(qvalues, target, loss::Reduction::Mean);
 
@@ -52,7 +53,7 @@ where
         let grads = GradientsParams::from_grads(grads, &self.online);
         self.online = self.optimizer.step(self.lr, self.online, grads);
 
-        self
+        (self, loss.into_scalar().elem(), td_error.mean().into_scalar().elem(), q_mean)
     }
 
     pub fn select_action(&self, exploration: &mut EpsGreedy, obs: E::Obs) -> i64 {
@@ -66,4 +67,6 @@ where
         let qvalues = network.forward_single(obs, &self.device);
         exploration.select_action_masked(qvalues.squeeze_dim::<1>(0), mask)
     }
+
+    pub fn sync(&mut self) { self.target = self.online.clone() }
 }
