@@ -1,7 +1,4 @@
-use std::marker::PhantomData;
-
 use burn::{Tensor, module::AutodiffModule, optim::{GradientsParams, Optimizer}, tensor::{ElementConversion, Int, TensorData, activation::{log_softmax, softmax}, backend::{AutodiffBackend, Backend}}};
-use rand::{SeedableRng, rngs::StdRng};
 use crate::{encoderhead::{AutodiffEncoder, EncoderHead, LinearHead}, traits::Batchable, transition::BatchedTransition};
 
 // Vanilla Policy Gradient algorithm with discrete action.
@@ -65,16 +62,9 @@ where
         let grads = loss.backward();
         let grads = GradientsParams::from_grads(grads, &self.online);
 
-        let online = self.optimizer.step(self.lr, self.online, grads);
+        self.online = self.optimizer.step(self.lr, self.online, grads);
 
-        (Self {
-            gamma: self.gamma,
-            baseline: self.baseline,
-            online,
-            optimizer: self.optimizer,
-            lr: self.lr,
-            device: self.device,
-        }, loss.into_scalar().elem())
+        (self, loss.into_scalar().elem())
     }
 }
 

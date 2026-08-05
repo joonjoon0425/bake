@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use bake::{agent::vpg::{Baseline, VpgAgent}, buffer::{EpisodeBuffer, ReplayBuffer}, encoderhead::{EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, exploration::EpsGreedy, transition::Transition};
+use bake::{agent::vpg::{Baseline, VpgAgent}, buffer::EpisodeBuffer, encoderhead::{EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, transition::Transition};
 use burn::{backend::{NdArray, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::{AdamConfig}, prelude::*};
 use burn_autodiff::Autodiff;
 
