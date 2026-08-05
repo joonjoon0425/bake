@@ -1,4 +1,6 @@
-use burn::{Tensor, module::AutodiffModule, optim::{GradientsParams, Optimizer}, tensor::{ElementConversion, Int, TensorData, activation::{log_softmax, softmax}, backend::AutodiffBackend}};
+use std::marker::PhantomData;
+
+use burn::{Tensor, module::AutodiffModule, optim::{GradientsParams, Optimizer}, tensor::{ElementConversion, Int, TensorData, activation::{log_softmax, softmax}, backend::{AutodiffBackend, Backend}}};
 use rand::{SeedableRng, rngs::StdRng};
 use crate::{encoderhead::{AutodiffEncoder, EncoderHead, LinearHead}, traits::Batchable, transition::BatchedTransition};
 
@@ -10,6 +12,7 @@ where
 {
     gamma: f32,
     online: EncoderHead<B, E, LinearHead<B>, 2>,
+    baseline: Baseline,
     optimizer: O,
     lr: f64,
     device: B::Device,
@@ -21,9 +24,10 @@ where
     E: AutodiffEncoder<B, 2>,
     O: Optimizer<EncoderHead<B, E, LinearHead<B>, 2>, B>,
 {
-    pub fn new(gamma: f32, encoder_head: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
+    pub fn new(gamma: f32, baseline: Baseline, encoder_head: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
         Self {
             gamma,
+            baseline,
             online: encoder_head,
             optimizer,
             lr,
@@ -49,10 +53,8 @@ where
             returns[t] = rewards[t] + self.gamma * returns[t + 1]
         }
 
-        // this return normalization is critical to policy gradient convergence.
-        // without normalization, it still converges, but is unstable and slow.
         let returns = Tensor::from_data(TensorData::new(returns, [len]), &self.device);
-        let returns = (returns.clone() - returns.clone().mean()) / returns.var(0).sqrt() + 1e-8;
+        let returns = self.baseline.advantage(returns);
 
         let logits = self.online.forward(episode.observations);
         let log_probs = log_softmax(logits, 1);
@@ -67,10 +69,33 @@ where
 
         (Self {
             gamma: self.gamma,
+            baseline: self.baseline,
             online,
             optimizer: self.optimizer,
             lr: self.lr,
             device: self.device,
         }, loss.into_scalar().elem())
+    }
+}
+
+// baseline enum for examining the effects of it
+#[derive(Debug, Clone, Copy)]
+pub enum Baseline {
+    None,
+    Normalized,
+    Mean,
+}
+
+impl Baseline {
+    pub fn advantage<B: Backend>(&self, returns: Tensor<B, 1>) -> Tensor<B, 1> {
+        match self {
+            Baseline::None => returns,
+            Baseline::Normalized => {
+                (returns.clone() - returns.clone().mean()) / returns.var(0).sqrt() + 1e-8
+            }
+            Baseline::Mean => {
+                returns.clone() - returns.clone().mean()
+            }
+        }
     }
 }

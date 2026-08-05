@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use bake::{agent::vpg::VpgAgent, buffer::{EpisodeBuffer, ReplayBuffer}, encoderhead::{EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, exploration::EpsGreedy, transition::Transition};
+use bake::{agent::vpg::{Baseline, VpgAgent}, buffer::{EpisodeBuffer, ReplayBuffer}, encoderhead::{EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, exploration::EpsGreedy, transition::Transition};
 use burn::{backend::{NdArray, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::{AdamConfig}, prelude::*};
 use burn_autodiff::Autodiff;
 
@@ -12,7 +12,8 @@ fn main() {
     AutodiffEngine::seed(&device, 12);
     let mut env = CartPole::new(123);
     let mut agent = VpgAgent::new(
-        0.99f32, 
+        0.99f32,
+        Baseline::Mean,
         EncoderHead::new(MlpEncoder::new(vec![4, 128], nn::activation::Activation::Relu(Relu), &device), LinearHead::<AutodiffEngine>::new(128, 2, &device)),
         AdamConfig::new().init(),
         1e-3,
