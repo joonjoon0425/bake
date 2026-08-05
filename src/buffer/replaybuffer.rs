@@ -74,7 +74,7 @@ impl<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra:
 
     pub fn len(&self) -> usize { self.observations.len() }
 
-    pub fn sample(&mut self, batch_size: usize) -> Option<BatchedTransition<B, <Obs as Batchable<B>>::Batched, <Action as Batchable<B>>::Batched, <Extra as Batchable<B>>::Batched>> {
+    pub fn sample(&mut self, batch_size: usize) -> Option<BatchedTransition<B, Obs::Batched, Action::Batched, Extra::Batched>> {
         let len = self.len();
 
         if len < batch_size { return None; }
@@ -100,6 +100,8 @@ impl<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra:
             terminated: Tensor::from_floats(te.as_slice(), &self.device),
             truncated: Tensor::from_floats(tr.as_slice(), &self.device),
             extras: Extra::batch(ex, &self.device),
+
+            batch_size,
 
             _backend: PhantomData
         })

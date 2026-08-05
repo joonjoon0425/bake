@@ -2,10 +2,11 @@ use burn::{Tensor, module::AutodiffModule, nn::loss, optim::{GradientsParams, Op
 
 use crate::{encoderhead::{AutodiffEncoder, EncoderHead, LinearHead}, exploration::EpsGreedy, traits::Batchable, transition::BatchedTransition};
 
+// Deep Q-Learning algorithm
 pub struct DqnAgent<B, E, O>
 where
     B: AutodiffBackend,
-    E: AutodiffEncoder<B, 2, Obs: Batchable<B::InnerBackend>>,
+    E: AutodiffEncoder<B, 2>,
 {
     online: EncoderHead<B, E, LinearHead<B>, 2>,
     target: EncoderHead<B, E, LinearHead<B>, 2>,
@@ -21,11 +22,11 @@ where
     E: AutodiffEncoder<B, 2>,
     O: Optimizer<EncoderHead<B, E, LinearHead<B>, 2>, B>,
 {
-    pub fn new(gamma: f32, encoder_head_network: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
-        let target = encoder_head_network.clone();
+    pub fn new(gamma: f32, encoder_head: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
+        let target = encoder_head.clone();
         DqnAgent {
             gamma,
-            online: encoder_head_network,
+            online: encoder_head,
             target,
             optimizer,
             lr,
@@ -37,6 +38,8 @@ where
         let qvalues = self.online.forward(transitions.observations);
         let qvalues: Tensor<B, 1> = qvalues.gather(1, transitions.actions.unsqueeze_dim(1)).squeeze_dim(1);
 
+
+        // later, refactor the Batchable trait with Generic Associated Type (delete Batchable's generic B and let Batched<B: Backend>) and let non-autodiff E Batched equals the <Self::E as Batchable>::Batched<InnerBackend> 
         let target_q: Tensor<B, 1> = self.target.forward(transitions.next_observations).detach().max_dim(1).squeeze_dim(1);
         let target = transitions.rewards + self.gamma * target_q * (1f32 - transitions.terminated);
         

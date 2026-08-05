@@ -27,5 +27,7 @@ pub struct BatchedTransition<B: Backend, Obs, Action, Extra = ()> {
     pub truncated: Tensor<B, 1>,
     pub extras: Extra,
 
+    pub batch_size: usize,
+
     pub _backend: PhantomData<B>
 }
