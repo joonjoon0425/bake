@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 use burn::{module::{AutodiffModule, ModuleDisplay}, prelude::*, tensor::backend::AutodiffBackend};
+use crate::traits::Batchable;
 
 // Encoder trait. Converts the observation to Tensor
 pub trait Encoder<B: Backend, const BATCHED_RANK: usize> : Module<B> + ModuleDisplay {
@@ -13,10 +14,10 @@ pub trait Encoder<B: Backend, const BATCHED_RANK: usize> : Module<B> + ModuleDis
 }
 
 // Head trait. Take the encoded observation and make desired output
-pub trait Head<B: Backend, const D: usize> : Module<B> + ModuleDisplay {
+pub trait Head<B: Backend, const BATCHED_RANK: usize> : Module<B> + ModuleDisplay {
     type Output;
 
-    fn forward(&self, encoded: Tensor<B, D>) -> Self::Output;
+    fn forward(&self, encoded: Tensor<B, BATCHED_RANK>) -> Self::Output;
 }
 
 // alias trait for Autodiff Encoder
@@ -76,4 +77,5 @@ where
     }
 }
 
-use crate::traits::Batchable;
+pub mod mlpencoder; pub use mlpencoder::*;
+pub mod linearhead; pub use linearhead::*;

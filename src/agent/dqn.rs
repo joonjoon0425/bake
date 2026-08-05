@@ -1,31 +1,27 @@
 use burn::{Tensor, module::AutodiffModule, nn::loss, optim::{GradientsParams, Optimizer}, tensor::{Bool, ElementConversion, Int, backend::AutodiffBackend}};
 
-use crate::{encoderhead::{AutodiffEncoder, AutodiffHead, EncoderHead, Head}, exploration::EpsGreedy, traits::Batchable, transition::BatchedTransition};
+use crate::{encoderhead::{AutodiffEncoder, EncoderHead, LinearHead}, exploration::EpsGreedy, traits::Batchable, transition::BatchedTransition};
 
-pub struct DqnAgent<B, E, H, O> //, const D1: usize, const D2: usize>
+pub struct DqnAgent<B, E, O>
 where
     B: AutodiffBackend,
     E: AutodiffEncoder<B, 2, Obs: Batchable<B::InnerBackend>>,
-    H: AutodiffHead<B, 2, Output = Tensor<B, 2>>,
-    H::InnerModule: Head<B::InnerBackend, 2, Output = Tensor<B::InnerBackend, 2>>
 {
-    online: EncoderHead<B, E, H, 2>,
-    target: EncoderHead<B, E, H, 2>,
+    online: EncoderHead<B, E, LinearHead<B>, 2>,
+    target: EncoderHead<B, E, LinearHead<B>, 2>,
     gamma: f32,
     optimizer: O,
     lr: f64,
     device: B::Device,
 }
 
-impl<B, E, H, O> DqnAgent<B, E, H, O>//, const D1: usize, const D2: usize> DqnAgent<B, E, H, O, D1, D2>
+impl<B, E, O> DqnAgent<B, E, O>
 where
     B: AutodiffBackend,
     E: AutodiffEncoder<B, 2>,
-    H: AutodiffHead<B, 2, Output = Tensor<B, 2>>,
-    H::InnerModule: Head<B::InnerBackend, 2, Output = Tensor<B::InnerBackend, 2>>,
-    O: Optimizer<EncoderHead<B, E, H, 2>, B>,
+    O: Optimizer<EncoderHead<B, E, LinearHead<B>, 2>, B>,
 {
-    pub fn new(gamma: f32, encoder_head_network: EncoderHead<B, E, H, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
+    pub fn new(gamma: f32, encoder_head_network: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
         let target = encoder_head_network.clone();
         DqnAgent {
             gamma,

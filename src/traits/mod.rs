@@ -1,6 +1,6 @@
 use burn::{Tensor, tensor::{Int, TensorData, backend::Backend}};
 
-pub trait Batchable<B: Backend> : Sized {
+pub trait Batchable<B: Backend> : Sized + Clone + std::fmt::Debug + Send + Sync + 'static {
     type Batched;
 
     fn batch(bundle: Vec<Self>, device: &B::Device) -> Self::Batched;
