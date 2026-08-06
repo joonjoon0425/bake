@@ -1,27 +1,29 @@
 use burn::{Tensor, module::AutodiffModule, optim::{GradientsParams, Optimizer}, tensor::{ElementConversion, Int, TensorData, activation::{log_softmax, softmax}, backend::{AutodiffBackend, Backend}}};
-use crate::{encoderhead::{AutodiffEncoder, EncoderHead, LinearHead}, traits::Batchable, transition::BatchedTransition};
+use rand::{SeedableRng, distr::{Distribution, weighted::WeightedIndex}, rngs::StdRng};
+use crate::{encoderhead::{Encoder, EncoderHead, LinearHead}, traits::Batchable, transition::BatchedTransition};
 
 // Vanilla Policy Gradient algorithm with discrete action.
 pub struct VpgAgent<B, E, O>
 where
     B: AutodiffBackend,
-    E: AutodiffEncoder<B, 2>
+    E: Encoder<B, 2>
 {
     gamma: f32,
     online: EncoderHead<B, E, LinearHead<B>, 2>,
     baseline: Baseline,
     optimizer: O,
     lr: f64,
+    rng: StdRng,
     device: B::Device,
 }
 
 impl<B, E, O> VpgAgent<B, E, O>
 where
     B: AutodiffBackend,
-    E: AutodiffEncoder<B, 2>,
+    E: Encoder<B, 2>,
     O: Optimizer<EncoderHead<B, E, LinearHead<B>, 2>, B>,
 {
-    pub fn new(gamma: f32, baseline: Baseline, encoder_head: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
+    pub fn new(seed: u64, gamma: f32, baseline: Baseline, encoder_head: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
         Self {
             gamma,
             baseline,
@@ -29,18 +31,28 @@ where
             optimizer,
             lr,
             device,
+            rng: StdRng::seed_from_u64(seed)
         }
     }
 
     pub fn select_action(&self, obs: E::Obs) -> i64 {
-        let logits: Tensor<B::InnerBackend, 1> = self.online.valid().forward_single(obs, &self.device).squeeze_dim(0);
+        let logits: Tensor<B, 1> = self.online.forward_single(obs, &self.device).detach().squeeze_dim(0);
         let probs = softmax(logits, 0);
         let action = probs.categorical(1).into_scalar().elem();
 
         action
     }
 
-    pub fn update(mut self, episode: BatchedTransition<B, <E::Obs as Batchable<B>>::Batched, Tensor<B, 1, Int>>) -> (Self, f32) {
+    pub fn select_action_masked(&mut self, obs: E::Obs, mask: &[bool]) -> i64 {
+        let logits: Tensor<B, 1> = self.online.forward_single(obs, &self.device).detach().squeeze_dim(0);
+        let logits: Vec<f32> = logits.into_data().into_vec().unwrap();
+        let (possible_actions, possible_logits): (Vec<usize>, Vec<f32>) = logits.iter().enumerate().filter(|(i, _)| mask[*i]).map(|(i, q)| (i, *q)).collect();
+
+        let dist = WeightedIndex::new(possible_logits).unwrap();
+        possible_actions[dist.sample(&mut self.rng)] as i64
+    }
+
+    pub fn update(mut self, episode: BatchedTransition<B, <E::Obs as Batchable>::Batched<B>, Tensor<B, 1, Int>>) -> (Self, f32) {
         let len = episode.batch_size;
         let rewards = episode.rewards.into_data().to_vec().unwrap();
 

@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use bake::{agent::vpg::{Baseline, VpgAgent}, buffer::EpisodeBuffer, encoderhead::{EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, transition::Transition};
-use burn::{backend::{NdArray, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::{AdamConfig}, prelude::*};
+use burn::{backend::{Cuda, NdArray, cuda::CudaDevice, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::AdamConfig, prelude::*};
 use burn_autodiff::Autodiff;
 
 type Engine = NdArray;
@@ -9,26 +9,28 @@ type AutodiffEngine = Autodiff<Engine>;
 
 fn main() {
     let device = Cpu;
+    // let device = CudaDevice::new(0);
     AutodiffEngine::seed(&device, 12);
     let mut env = CartPole::new(123);
     let mut agent = VpgAgent::new(
+        12,
         0.99f32,
         Baseline::Mean,
         EncoderHead::new(MlpEncoder::new(vec![4, 128], nn::activation::Activation::Relu(Relu), &device), LinearHead::<AutodiffEngine>::new(128, 2, &device)),
         AdamConfig::new().init(),
         1e-3,
-        device
+        device.clone()
     );
     let mut buffer = EpisodeBuffer::new(device.clone());
 
     for episode in 0..=4000 {
-        let mut obs = env.reset();
+        let (mut obs, _) = env.reset();
         let mut steps = 0;
         let mut loss = 0f32;
 
         loop {
             let action = agent.select_action(obs);
-            let (next_obs, reward, terminated, truncated) = env.step(action);
+            let ((next_obs, _), reward, terminated, truncated) = env.step(action);
 
             buffer.push(Transition {
                 observation: obs,

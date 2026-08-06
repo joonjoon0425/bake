@@ -1,12 +1,12 @@
 use burn::{Tensor, module::AutodiffModule, nn::loss, optim::{GradientsParams, Optimizer}, tensor::{Bool, ElementConversion, Int, backend::AutodiffBackend}};
 
-use crate::{encoderhead::{AutodiffEncoder, EncoderHead, LinearHead}, exploration::EpsGreedy, traits::Batchable, transition::BatchedTransition};
+use crate::{encoderhead::{Encoder, EncoderHead, LinearHead}, exploration::EpsGreedy, traits::Batchable, transition::BatchedTransition};
 
 // Deep Q-Learning algorithm
 pub struct DqnAgent<B, E, O>
 where
     B: AutodiffBackend,
-    E: AutodiffEncoder<B, 2>,
+    E: Encoder<B, 2>,
 {
     online: EncoderHead<B, E, LinearHead<B>, 2>,
     target: EncoderHead<B, E, LinearHead<B>, 2>,
@@ -19,7 +19,7 @@ where
 impl<B, E, O> DqnAgent<B, E, O>
 where
     B: AutodiffBackend,
-    E: AutodiffEncoder<B, 2>,
+    E: Encoder<B, 2>,
     O: Optimizer<EncoderHead<B, E, LinearHead<B>, 2>, B>,
 {
     pub fn new(gamma: f32, encoder_head: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
@@ -34,7 +34,7 @@ where
         }
     }
 
-    pub fn update(mut self, transitions: BatchedTransition<B, <E::Obs as Batchable<B>>::Batched, Tensor<B, 1, Int>>) -> (Self, f32, f32, f32) {
+    pub fn update(mut self, transitions: BatchedTransition<B, <E::Obs as Batchable>::Batched<B>, Tensor<B, 1, Int>>) -> (Self, f32, f32, f32) {
         let qvalues = self.online.forward(transitions.observations);
         let qvalues: Tensor<B, 1> = qvalues.gather(1, transitions.actions.unsqueeze_dim(1)).squeeze_dim(1);
 
@@ -56,14 +56,12 @@ where
     }
 
     pub fn select_action(&self, exploration: &mut EpsGreedy, obs: E::Obs) -> i64 {
-        let network = self.online.valid();
-        let qvalues = network.forward_single(obs, &self.device);
+        let qvalues = self.online.forward_single(obs, &self.device).detach();
         exploration.select_action(qvalues.squeeze_dim::<1>(0))
     }
 
-    pub fn select_action_masked(&self, exploration: &mut EpsGreedy, obs: E::Obs, mask: Tensor<B::InnerBackend, 1, Bool>) -> i64 {
-        let network = self.online.valid();
-        let qvalues = network.forward_single(obs, &self.device);
+    pub fn select_action_masked(&self, exploration: &mut EpsGreedy, obs: E::Obs, mask: &[bool]) -> i64 {
+        let qvalues = self.online.forward_single(obs, &self.device).detach();
         exploration.select_action_masked(qvalues.squeeze_dim::<1>(0), mask)
     }
 

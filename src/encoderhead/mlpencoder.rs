@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use burn::{Tensor, module::Module, nn::{Linear, LinearConfig, activation::Activation}, tensor::backend::Backend};
+use burn::{Tensor, module::Module, nn::{Linear, LinearConfig, activation::Activation}, tensor::backend::{AutodiffBackend, Backend}};
 use crate::{encoderhead::Encoder, traits::Batchable};
 
 
@@ -11,7 +11,7 @@ pub struct MlpEncoder<B: Backend, Obs> {
     _obs: PhantomData<Obs>
 }
 
-impl<B: Backend, Obs: Batchable<B, Batched = Tensor<B, D>>, const D: usize> MlpEncoder<B, Obs> {
+impl<B: AutodiffBackend, Obs: Batchable<Batched<B> = Tensor<B, D>>, const D: usize> MlpEncoder<B, Obs> {
     pub fn new(dims: Vec<usize>, activation: Activation<B>, device: &B::Device) -> Self {
         if dims.len() < 2 { panic!("MlpEncoder requires at least two dims: input dimension and output dimension."); }
 
@@ -29,10 +29,10 @@ impl<B: Backend, Obs: Batchable<B, Batched = Tensor<B, D>>, const D: usize> MlpE
     }
 }
 
-impl<B: Backend, Obs: Batchable<B, Batched = Tensor<B, D>>, const D: usize> Encoder<B, D> for MlpEncoder<B, Obs> {
+impl<B: AutodiffBackend, Obs: Batchable<Batched<B> = Tensor<B, D>>, const D: usize> Encoder<B, D> for MlpEncoder<B, Obs> {
     type Obs = Obs;
 
-    fn forward(&self, batched_obs: <Self::Obs as Batchable<B>>::Batched) -> Tensor<B, D> {
+    fn forward(&self, batched_obs: <Self::Obs as Batchable>::Batched<B>) -> Tensor<B, D> {
         let mut x = batched_obs;
         for layer in &self.layers {
             x = self.activation.forward(layer.forward(x));

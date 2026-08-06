@@ -18,9 +18,20 @@ impl EpsGreedy {
         qvalues.argmax(0).try_into_scalar().unwrap().elem()
     }
 
-    pub fn select_action_masked<B: Backend>(&self, qvalues: Tensor<B, 1>, mask: Tensor<B, 1, Bool>) -> i64 {
-        let qvalues = qvalues.mask_fill(mask, -1e+9);
-        // TODO: FIX HERE SO THAT THE MASKED VALUES ARE NOT SELECTED.
-        qvalues.argmax(0).try_into_scalar().unwrap().elem()
+    pub fn select_action_masked<B: Backend>(&mut self, qvalues: Tensor<B, 1>, mask: &[bool]) -> i64 {
+        debug_assert!(qvalues.shape()[0] == mask.len(), "the length of qvalues and length of mask does not equals");
+        if self.rng.random_range(0.0..1.0f32) < self.eps {
+            let range = mask.iter().filter(|&&ok| ok).count();
+            let r = self.rng.random_range(0..range);
+            let action = mask.iter().enumerate().filter(|(_, ok)| **ok).nth(r).unwrap().0 as i64;
+            return action;
+        }
+
+        let qvalues: Vec<f32> = qvalues.into_data().into_vec().unwrap();
+        let action = qvalues.iter()
+            .enumerate().filter(|(i, _)| mask[*i])
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .unwrap().0 as i64;
+        action
     }
 }

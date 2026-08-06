@@ -4,7 +4,7 @@ use burn::{Tensor, tensor::backend::Backend};
 
 use crate::traits::Batchable;
 
-pub struct Transition<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra: Batchable<B> + Clone = ()> {
+pub struct Transition<B: Backend, Obs: Batchable + Clone, Action: Batchable + Clone, Extra: Batchable + Clone = ()> {
     pub observation: Obs,
     pub action: Action,
     pub reward: f32,
@@ -28,6 +28,4 @@ pub struct BatchedTransition<B: Backend, Obs, Action, Extra = ()> {
     pub extras: Extra,
 
     pub batch_size: usize,
-
-    pub _backend: PhantomData<B>
 }

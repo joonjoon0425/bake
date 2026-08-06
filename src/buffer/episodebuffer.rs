@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use burn::tensor::backend::Backend;
 use crate::{traits::Batchable, transition::{BatchedTransition, Transition}};
 
-pub struct EpisodeBuffer<B: Backend, Obs: Batchable<B>, Action: Batchable<B>, Extra: Batchable<B> = ()> {
+pub struct EpisodeBuffer<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable = ()> {
     observations: Vec<Obs>,
     actions: Vec<Action>,
     rewards: Vec<f32>,
@@ -12,11 +12,9 @@ pub struct EpisodeBuffer<B: Backend, Obs: Batchable<B>, Action: Batchable<B>, Ex
     extras: Vec<Extra>,
 
     device: B::Device,
-
-    _backend: PhantomData<B>
 }
 
-impl<B: Backend, Obs: Batchable<B>, Action: Batchable<B>, Extra: Batchable<B>> EpisodeBuffer<B, Obs, Action, Extra> {
+impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> EpisodeBuffer<B, Obs, Action, Extra> {
     pub fn new(device: B::Device) -> Self {
         Self {
             observations: vec![],
@@ -28,8 +26,6 @@ impl<B: Backend, Obs: Batchable<B>, Action: Batchable<B>, Extra: Batchable<B>> E
             extras: vec![],
 
             device,
-
-            _backend: PhantomData
         }
     }
 
@@ -51,7 +47,7 @@ impl<B: Backend, Obs: Batchable<B>, Action: Batchable<B>, Extra: Batchable<B>> E
 
     // 1. copy & clear 
 
-    pub fn pop(&mut self) -> BatchedTransition<B, Obs::Batched, Action::Batched, Extra::Batched> {
+    pub fn pop(&mut self) -> BatchedTransition<B, Obs::Batched<B>, Action::Batched<B>, Extra::Batched<B>> {
         let batched_episode = BatchedTransition {
             observations: Obs::batch(self.observations.clone(), &self.device),
             actions: Action::batch(self.actions.clone(), &self.device),
@@ -61,9 +57,7 @@ impl<B: Backend, Obs: Batchable<B>, Action: Batchable<B>, Extra: Batchable<B>> E
             truncated: f32::batch(self.truncated.clone(), &self.device),
             extras: Extra::batch(self.extras.clone(), &self.device),
 
-            batch_size: self.len(),
-
-            _backend: PhantomData
+            batch_size: self.len()
         };
 
         self.observations.clear();
