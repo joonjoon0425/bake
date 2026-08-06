@@ -1,4 +1,4 @@
-use burn::{Tensor, tensor::{Bool, ElementConversion, backend::Backend}};
+use burn::{Tensor, tensor::{ElementConversion, backend::Backend}};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 pub struct EpsGreedy {

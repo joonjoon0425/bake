@@ -79,3 +79,4 @@ where
 
 pub mod mlpencoder; pub use mlpencoder::*;
 pub mod linearhead; pub use linearhead::*;
+pub mod duelinghead; pub use duelinghead::*;

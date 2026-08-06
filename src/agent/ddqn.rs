@@ -2,8 +2,8 @@ use burn::{Tensor, nn::loss, optim::{GradientsParams, Optimizer}, tensor::{Eleme
 
 use crate::{encoderhead::{Encoder, EncoderHead, Head, LinearHead}, exploration::EpsGreedy, traits::Batchable, transition::BatchedTransition};
 
-// Deep Q-Learning algorithm
-pub struct DqnAgent<B, E, H, O>
+// Double Deep Q-Learning algorithm
+pub struct DoubleDqnAgent<B, E, H, O>
 where
     B: AutodiffBackend,
     E: Encoder<B, 2>,
@@ -17,7 +17,7 @@ where
     device: B::Device,
 }
 
-impl<B, E, H, O> DqnAgent<B, E, H, O>
+impl<B, E, H, O> DoubleDqnAgent<B, E, H, O>
 where
     B: AutodiffBackend,
     E: Encoder<B, 2>,
@@ -26,7 +26,7 @@ where
 {
     pub fn new(gamma: f32, encoder_head: EncoderHead<B, E, H, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
         let target = encoder_head.clone();
-        DqnAgent {
+        DoubleDqnAgent {
             gamma,
             online: encoder_head,
             target,
@@ -37,13 +37,12 @@ where
     }
 
     pub fn update(mut self, transitions: BatchedTransition<B, <E::Obs as Batchable>::Batched<B>, Tensor<B, 1, Int>>) -> (Self, f32, f32, f32) {
-        let qvalues = self.online.forward(transitions.observations);
-        let qvalues: Tensor<B, 1> = qvalues.gather(1, transitions.actions.unsqueeze_dim(1)).squeeze_dim(1);
+        let batched_qvalues = self.online.forward(transitions.observations);
+        let qvalues: Tensor<B, 1> = batched_qvalues.gather(1, transitions.actions.unsqueeze_dim(1)).squeeze_dim(1);
 
-
-        // later, refactor the Batchable trait with Generic Associated Type (delete Batchable's generic B and let Batched<B: Backend>) and let non-autodiff E Batched equals the <Self::E as Batchable>::Batched<InnerBackend> 
-        let target_q: Tensor<B, 1> = self.target.forward(transitions.next_observations).detach().max_dim(1).squeeze_dim(1);
-        let target = transitions.rewards + self.gamma * target_q * (1f32 - transitions.terminated);
+        let next_actions = self.online.forward(transitions.next_observations.clone()).detach().argmax(1);
+        let next_q: Tensor<B, 1> = self.target.forward(transitions.next_observations).detach().gather(1, next_actions).squeeze_dim(1);
+        let target = transitions.rewards + self.gamma * next_q * (1f32 - transitions.terminated);
         
         let td_error = target.clone() - qvalues.clone();
         let q_mean = qvalues.clone().mean().into_scalar().elem();

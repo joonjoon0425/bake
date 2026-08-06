@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use bake::{agent::dqn::DqnAgent, buffer::ReplayBuffer, encoderhead::{DeulingHead, EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, exploration::EpsGreedy, transition::Transition};
+use bake::{agent::DoubleDqnAgent, buffer::ReplayBuffer, encoderhead::{DeulingHead, EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, exploration::EpsGreedy, transition::Transition};
 use burn::{backend::{NdArray, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::{AdamConfig}, prelude::*};
 use burn_autodiff::Autodiff;
 
@@ -11,7 +11,7 @@ fn main() {
     let device = Cpu;
     AutodiffEngine::seed(&device, 12);
     let mut env = CartPole::new(123);
-    let mut agent = DqnAgent::new(
+    let mut agent = DoubleDqnAgent::new(
         0.99f32, 
         EncoderHead::new(MlpEncoder::new(vec![4, 128], nn::activation::Activation::Relu(Relu), &device), DeulingHead::<AutodiffEngine>::new(128, 2, &device)),
         AdamConfig::new().init(),

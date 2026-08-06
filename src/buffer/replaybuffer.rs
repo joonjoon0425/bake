@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use burn::{Tensor, tensor::backend::Backend};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use crate::{traits::Batchable, transition::{BatchedTransition, Transition}};

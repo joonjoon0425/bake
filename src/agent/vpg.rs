@@ -1,4 +1,4 @@
-use burn::{Tensor, module::AutodiffModule, optim::{GradientsParams, Optimizer}, tensor::{ElementConversion, Int, TensorData, activation::{log_softmax, softmax}, backend::{AutodiffBackend, Backend}}};
+use burn::{Tensor, optim::{GradientsParams, Optimizer}, tensor::{ElementConversion, Int, TensorData, activation::{log_softmax, softmax}, backend::{AutodiffBackend, Backend}}};
 use rand::{SeedableRng, distr::{Distribution, weighted::WeightedIndex}, rngs::StdRng};
 use crate::{encoderhead::{Encoder, EncoderHead, LinearHead}, traits::Batchable, transition::BatchedTransition};
 

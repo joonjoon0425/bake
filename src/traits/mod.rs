@@ -1,7 +1,7 @@
 use burn::{Tensor, tensor::{Int, TensorData, backend::Backend}};
 
 pub trait Batchable : Sized + Clone + std::fmt::Debug + Send + Sync + 'static {
-    type Batched<B: Backend>;
+    type Batched<B: Backend> : Sized + Clone + std::fmt::Debug + Send + Sync + 'static;
 
     fn batch<B: Backend>(bundle: Vec<Self>, device: &B::Device) -> Self::Batched<B>;
 }

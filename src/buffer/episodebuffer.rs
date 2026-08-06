@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use burn::tensor::backend::Backend;
 use crate::{traits::Batchable, transition::{BatchedTransition, Transition}};
 
