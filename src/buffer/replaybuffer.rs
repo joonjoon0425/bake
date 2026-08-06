@@ -3,9 +3,7 @@ use burn::{Tensor, tensor::backend::Backend};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use crate::{traits::Batchable, transition::{BatchedTransition, Transition}};
 
-pub struct ReplayBuffer<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra: Batchable<B> + Clone = ()> {
-    _backend: PhantomData<B>,
-
+pub struct ReplayBuffer<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable = ()> {
     capacity: usize,
     head: usize,
 
@@ -23,7 +21,7 @@ pub struct ReplayBuffer<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable
     device: B::Device,
 }
 
-impl<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra: Batchable<B> + Clone> ReplayBuffer<B, Obs, Action, Extra> {
+impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuffer<B, Obs, Action, Extra> {
     pub fn new(seed: u64, capacity: usize, device: B::Device) -> Self {
         let observations = Vec::with_capacity(capacity);
         let actions = Vec::with_capacity(capacity);
@@ -46,7 +44,6 @@ impl<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra:
             head: 0,
             rng: StdRng::seed_from_u64(seed),
             device,
-            _backend: PhantomData
         }
     }
 
@@ -74,7 +71,7 @@ impl<B: Backend, Obs: Batchable<B> + Clone, Action: Batchable<B> + Clone, Extra:
 
     pub fn len(&self) -> usize { self.observations.len() }
 
-    pub fn sample(&mut self, batch_size: usize) -> Option<BatchedTransition<B, Obs::Batched, Action::Batched, Extra::Batched>> {
+    pub fn sample(&mut self, batch_size: usize) -> Option<BatchedTransition<B, Obs::Batched<B>, Action::Batched<B>, Extra::Batched<B>>> {
         let len = self.len();
 
         if len < batch_size { return None; }
