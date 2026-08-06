@@ -24,13 +24,13 @@ fn main() {
     let mut buffer = EpisodeBuffer::new(device.clone());
 
     for episode in 0..=4000 {
-        let mut obs = env.reset();
+        let (mut obs, _) = env.reset();
         let mut steps = 0;
         let mut loss = 0f32;
 
         loop {
             let action = agent.select_action(obs);
-            let (next_obs, reward, terminated, truncated) = env.step(action);
+            let ((next_obs, _), reward, terminated, truncated) = env.step(action);
 
             buffer.push(Transition {
                 observation: obs,

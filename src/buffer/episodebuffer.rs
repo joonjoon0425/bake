@@ -57,9 +57,7 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> EpisodeBuf
             truncated: f32::batch(self.truncated.clone(), &self.device),
             extras: Extra::batch(self.extras.clone(), &self.device),
 
-            batch_size: self.len(),
-
-            _backend: PhantomData
+            batch_size: self.len()
         };
 
         self.observations.clear();

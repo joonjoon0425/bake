@@ -99,8 +99,6 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
             extras: Extra::batch(ex, &self.device),
 
             batch_size,
-
-            _backend: PhantomData
         })
     }
 }

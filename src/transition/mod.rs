@@ -28,6 +28,4 @@ pub struct BatchedTransition<B: Backend, Obs, Action, Extra = ()> {
     pub extras: Extra,
 
     pub batch_size: usize,
-
-    pub _backend: PhantomData<B>
 }

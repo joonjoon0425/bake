@@ -20,9 +20,8 @@ impl EpsGreedy {
 
     pub fn select_action_masked<B: Backend>(&mut self, qvalues: Tensor<B, 1>, mask: &[bool]) -> i64 {
         debug_assert!(qvalues.shape()[0] == mask.len(), "the length of qvalues and length of mask does not equals");
-        
-        let range = mask.iter().filter(|&&ok| ok).count();
         if self.rng.random_range(0.0..1.0f32) < self.eps {
+            let range = mask.iter().filter(|&&ok| ok).count();
             let r = self.rng.random_range(0..range);
             let action = mask.iter().enumerate().filter(|(_, ok)| **ok).nth(r).unwrap().0 as i64;
             return action;

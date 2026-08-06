@@ -39,17 +39,18 @@ impl CartPole {
 impl Environment for CartPole {
     type Obs = [f32; 4];
     type Action = i64;
+    type Mask = ();
 
-    fn reset(&mut self) -> [f32; 4] {
+    fn reset(&mut self) -> ([f32; 4], Option<()>) {
         for v in self.state.iter_mut() {
             *v = (self.rng.random::<f32>() - 0.5) * 0.1; // U(-0.05, 0.05)
         }
         self.steps = 0;
-        self.state
+        (self.state, None)
     }
 
     /// action: 0 = 왼쪽, 1 = 오른쪽
-    fn step(&mut self, action: i64) -> (Self::Obs, f32, bool, bool) {
+    fn step(&mut self, action: i64) -> ((Self::Obs, Option<Self::Mask>), f32, bool, bool) {
         let [x, x_dot, theta, theta_dot] = self.state;
 
         let force = if action == 1 { Self::FORCE_MAG } else { -Self::FORCE_MAG };
@@ -74,7 +75,7 @@ impl Environment for CartPole {
         let truncated = !terminated && self.steps >= Self::MAX_STEPS;
 
         
-        (self.state, 1.0, terminated, truncated)
+        ((self.state, None), 1.0, terminated, truncated)
         
     }
 }

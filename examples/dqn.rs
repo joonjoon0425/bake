@@ -22,7 +22,7 @@ fn main() {
     let mut buffer = ReplayBuffer::new(123, 10000, device.clone());
 
     for episode in 0..=4000 {
-        let mut obs = env.reset();
+        let (mut obs, _) = env.reset();
         let mut steps = 0;
         let mut count = 0;
         let mut loss = 0f32;
@@ -31,7 +31,7 @@ fn main() {
 
         loop {
             let action = agent.select_action(&mut policy, obs);
-            let (next_obs, reward, terminated, truncated) = env.step(action);
+            let ((next_obs, _), reward, terminated, truncated) = env.step(action);
 
             buffer.push(Transition {
                 observation: obs,
