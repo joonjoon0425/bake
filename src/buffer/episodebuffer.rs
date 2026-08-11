@@ -73,6 +73,8 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Mask: Batchable, Extra: Batc
         self.next_observations.clear();
         self.terminated.clear();
         self.truncated.clear();
+        self.mask.clear();
+        self.next_mask.clear();
         self.extras.clear();
 
         batched_episode

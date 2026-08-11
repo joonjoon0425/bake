@@ -37,17 +37,17 @@ where
         }
     }
 
-    pub fn select_action(&self, obs: E::Obs) -> i64 {
+    pub fn select_action(&mut self, obs: E::Obs) -> i64 {
         let logits: Tensor<B, 1> = self.online.forward_single(obs, &self.device).detach().squeeze_dim(0);
-        let probs = softmax(logits, 0);
-        let action = probs.categorical(1).into_scalar().elem();
+        let probs: Vec<f32> = softmax(logits, 0).into_data().into_vec().unwrap();
+        let dist = WeightedIndex::new(probs).unwrap();
 
-        action
+        dist.sample(&mut self.rng) as i64
     }
 
     pub fn select_action_masked(&mut self, obs: E::Obs, mask: &[bool]) -> i64 {
         let logits: Tensor<B, 1> = self.online.forward_single(obs, &self.device).detach().squeeze_dim(0);
-        let logits: Vec<f32> = logits.into_data().into_vec().unwrap();
+        let logits: Vec<f32> = softmax(logits, 0).into_data().into_vec().unwrap();
         let (possible_actions, possible_logits): (Vec<usize>, Vec<f32>) = logits.iter().enumerate().filter(|(i, _)| mask[*i]).map(|(i, q)| (i, *q)).collect();
 
         let dist = WeightedIndex::new(possible_logits).unwrap();
@@ -98,7 +98,7 @@ impl Baseline {
         match self {
             Baseline::None => returns,
             Baseline::Normalized => {
-                (returns.clone() - returns.clone().mean()) / returns.var(0).sqrt() + 1e-8
+                (returns.clone() - returns.clone().mean()) / (returns.var(0).sqrt() + 1e-8)
             }
             Baseline::Mean => {
                 returns.clone() - returns.clone().mean()

@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use bake::{agent::vpg::{Baseline, VpgAgent}, buffer::EpisodeBuffer, encoderhead::{EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, transition::Transition};
-use burn::{backend::{Cuda, NdArray, cuda::CudaDevice, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::AdamConfig, prelude::*};
+use burn::{backend::{NdArray, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::AdamConfig, prelude::*};
 use burn_autodiff::Autodiff;
 
 type Engine = NdArray;
@@ -15,9 +15,9 @@ fn main() {
     let mut agent = VpgAgent::new(
         12,
         0.99f32,
-        0.0,
+        0.01,
         device.clone(),
-        Baseline::Mean,
+        Baseline::Normalized,
         EncoderHead::new(MlpEncoder::new(vec![4, 128], nn::activation::Activation::Relu(Relu), &device), LinearHead::<AutodiffEngine>::new(128, 2, &device)),
         AdamConfig::new().init(),
         1e-3,

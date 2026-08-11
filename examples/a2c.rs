@@ -13,6 +13,7 @@ fn main() {
     AutodiffEngine::seed(&device, 12);
     let mut env = CartPole::new(123);
     let mut agent = A2CAgent::new(
+        12,
         0.99f32,
         0.01,
         1e-3,
@@ -25,7 +26,7 @@ fn main() {
     );
     let mut buffer = RolloutBuffer::new(64, device.clone());
 
-    for episode in 0..=4000 {
+    for episode in 0..=6000 {
         let (mut obs, _) = env.reset();
         let mut steps = 0;
         let mut loss = 0f32;
@@ -52,8 +53,8 @@ fn main() {
             steps += 1;
 
             if buffer.is_full() {
-                let steps = buffer.pop();
-                (agent, entropy, loss) = agent.update(next_obs, steps);
+                let batch = buffer.pop();
+                (agent, entropy, loss) = agent.update(batch);
             }
 
 
