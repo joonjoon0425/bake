@@ -9,8 +9,8 @@ type AutodiffEngine = Autodiff<Engine>;
 
 fn main() {
     let device = Cpu;
-    AutodiffEngine::seed(&device, 12);
-    let mut env = CartPole::new(123);
+    AutodiffEngine::seed(&device, 4);
+    let mut env = CartPole::new(11);
     let mut agent = DoubleDqnAgent::new(
         0.99f32, 
         EncoderHead::new(MlpEncoder::new(vec![4, 128], nn::activation::Activation::Relu(Relu), &device), DeulingHead::<AutodiffEngine>::new(128, 2, &device)),
@@ -48,7 +48,7 @@ fn main() {
                 (agent, loss, td_error, q_mean) = agent.update(batch);
             }
 
-            if count % 1000 == 0 {
+            if count % 800 == 0 {
                 agent.sync();
             }
 
