@@ -1,19 +1,21 @@
 use burn::tensor::backend::Backend;
 use crate::{traits::Batchable, transition::{BatchedTransition, Transition}};
 
-pub struct EpisodeBuffer<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable = ()> {
+pub struct EpisodeBuffer<B: Backend, Obs: Batchable, Action: Batchable, Mask: Batchable = (), Extra: Batchable = ()> {
     observations: Vec<Obs>,
     actions: Vec<Action>,
     rewards: Vec<f32>,
     next_observations: Vec<Obs>,
     terminated: Vec<f32>,
     truncated: Vec<f32>,
+    mask: Vec<Mask>,
+    next_mask: Vec<Mask>,
     extras: Vec<Extra>,
 
     device: B::Device,
 }
 
-impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> EpisodeBuffer<B, Obs, Action, Extra> {
+impl<B: Backend, Obs: Batchable, Action: Batchable, Mask: Batchable, Extra: Batchable> EpisodeBuffer<B, Obs, Action, Mask, Extra> {
     pub fn new(device: B::Device) -> Self {
         Self {
             observations: vec![],
@@ -22,6 +24,8 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> EpisodeBuf
             next_observations: vec![],
             terminated: vec![],
             truncated: vec![],
+            mask: vec![],
+            next_mask: vec![],
             extras: vec![],
 
             device,
@@ -30,13 +34,15 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> EpisodeBuf
 
     pub fn len(&self) -> usize { self.observations.len() }
 
-    pub fn push(&mut self, t: Transition<B, Obs, Action, Extra>) {
+    pub fn push(&mut self, t: Transition<B, Obs, Action, Mask, Extra>) {
         self.observations.push(t.observation);
         self.actions.push(t.action);
         self.rewards.push(t.reward);
         self.next_observations.push(t.next_observation);
         self.terminated.push(if t.terminated { 1f32 } else { 0f32 });
         self.truncated.push(if t.truncated { 1f32 } else { 0f32 });
+        self.mask.push(t.mask);
+        self.next_mask.push(t.next_mask);
         self.extras.push(t.extra);
     }
 
@@ -46,7 +52,7 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> EpisodeBuf
 
     // 1. copy & clear 
 
-    pub fn pop(&mut self) -> BatchedTransition<B, Obs::Batched<B>, Action::Batched<B>, Extra::Batched<B>> {
+    pub fn pop(&mut self) -> BatchedTransition<B, Obs::Batched<B>, Action::Batched<B>, Mask::Batched<B>, Extra::Batched<B>> {
         let batched_episode = BatchedTransition {
             observations: Obs::batch(self.observations.clone(), &self.device),
             actions: Action::batch(self.actions.clone(), &self.device),
@@ -54,6 +60,8 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> EpisodeBuf
             next_observations: Obs::batch(self.next_observations.clone(), &self.device),
             terminated: f32::batch(self.terminated.clone(), &self.device),
             truncated: f32::batch(self.truncated.clone(), &self.device),
+            mask: Mask::batch(self.mask.clone(), &self.device),
+            next_mask: Mask::batch(self.next_mask.clone(), &self.device),
             extras: Extra::batch(self.extras.clone(), &self.device),
 
             batch_size: self.len()

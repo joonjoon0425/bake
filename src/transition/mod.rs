@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 
 use burn::{Tensor, tensor::backend::Backend};
 
-use crate::traits::Batchable;
+use crate::traits::{Batchable};
 
-pub struct Transition<B: Backend, Obs: Batchable + Clone, Action: Batchable + Clone, Extra: Batchable + Clone = ()> {
+pub struct Transition<B: Backend, Obs: Batchable + Clone, Action: Batchable + Clone, Mask: Batchable = (), Extra: Batchable + Clone = (), const D: usize = 0> {
     pub observation: Obs,
     pub action: Action,
     pub reward: f32,
@@ -12,12 +12,16 @@ pub struct Transition<B: Backend, Obs: Batchable + Clone, Action: Batchable + Cl
 
     pub terminated: bool,
     pub truncated: bool,
+
+    pub mask: Mask,
+    pub next_mask: Mask,
+
     pub extra: Extra,
 
     pub _backend: PhantomData<B>
 }
 
-pub struct BatchedTransition<B: Backend, Obs, Action, Extra = ()> {
+pub struct BatchedTransition<B: Backend, Obs, Action, Mask = (), Extra = ()> {
     pub observations: Obs,
     pub actions: Action,
     pub rewards: Tensor<B, 1>,
@@ -25,6 +29,10 @@ pub struct BatchedTransition<B: Backend, Obs, Action, Extra = ()> {
 
     pub terminated: Tensor<B, 1>,
     pub truncated: Tensor<B, 1>,
+
+    pub mask: Mask,
+    pub next_mask: Mask,
+
     pub extras: Extra,
 
     pub batch_size: usize,

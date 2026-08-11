@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
-use bake::{agent::{A2CAgent, vpg::{Baseline, VpgAgent}}, buffer::{EpisodeBuffer, RolloutBuffer}, encoderhead::{EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, transition::Transition};
-use burn::{backend::{Cuda, NdArray, cuda::CudaDevice, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::AdamConfig, prelude::*};
+use bake::{agent::A2CAgent, buffer::RolloutBuffer, encoderhead::{EncoderHead, LinearHead, MlpEncoder}, environment::{CartPole, Environment}, transition::Transition};
+use burn::{backend::{NdArray, ndarray::NdArrayDevice::Cpu}, nn::Relu, optim::AdamConfig, prelude::*};
 use burn_autodiff::Autodiff;
 
 type Engine = NdArray;
@@ -10,15 +10,15 @@ type AutodiffEngine = Autodiff<Engine>;
 fn main() {
     let device = Cpu;
     // let device = CudaDevice::new(0);
-    AutodiffEngine::seed(&device, 145);
-    let mut env = CartPole::new(12);
+    AutodiffEngine::seed(&device, 12);
+    let mut env = CartPole::new(123);
     let mut agent = A2CAgent::new(
         0.99f32,
         0.01,
         1e-3,
         1e-3,
         device.clone(),
-        EncoderHead::new(MlpEncoder::new(vec![4, 128], nn::activation::Activation::Relu(Relu), &device), LinearHead::<AutodiffEngine>::new(128, 2, &device)),
+        EncoderHead::new(MlpEncoder::new(vec![4, 128], nn::activation::Activation::Relu(Relu), &device), LinearHead::new(128, 2, &device)),
         EncoderHead::new(MlpEncoder::new(vec![4, 128], nn::activation::Activation::Relu(Relu), &device), LinearHead::<AutodiffEngine>::new(128, 1, &device)),
         AdamConfig::new().init(),
         AdamConfig::new().init(),
@@ -42,6 +42,8 @@ fn main() {
                 next_observation: next_obs,
                 terminated,
                 truncated,
+                mask: (),
+                next_mask: (),
                 extra: (),
                 _backend: PhantomData
             });

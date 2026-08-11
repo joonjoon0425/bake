@@ -41,6 +41,8 @@ fn main() {
                 next_observation: next_obs,
                 terminated,
                 truncated,
+                mask: (),
+                next_mask: (),
                 extra: (),
                 _backend: PhantomData
             });

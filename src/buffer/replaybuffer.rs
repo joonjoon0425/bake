@@ -1,8 +1,8 @@
 use burn::{Tensor, tensor::backend::Backend};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
-use crate::{traits::Batchable, transition::{BatchedTransition, Transition}};
+use crate::{traits::{Batchable}, transition::{BatchedTransition, Transition}};
 
-pub struct ReplayBuffer<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable = ()> {
+pub struct ReplayBuffer<B: Backend, Obs: Batchable, Action: Batchable, Mask: Batchable = (), Extra: Batchable = ()> {
     capacity: usize,
     head: usize,
 
@@ -14,13 +14,16 @@ pub struct ReplayBuffer<B: Backend, Obs: Batchable, Action: Batchable, Extra: Ba
     terminated: Vec<f32>,
     truncated: Vec<f32>,
 
+    mask: Vec<Mask>,
+    next_mask: Vec<Mask>,
+
     extras: Vec<Extra>,
 
     rng: StdRng,
     device: B::Device,
 }
 
-impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuffer<B, Obs, Action, Extra> {
+impl<B: Backend, Obs: Batchable, Action: Batchable, Mask: Batchable, Extra: Batchable> ReplayBuffer<B, Obs, Action, Mask, Extra> {
     pub fn new(seed: u64, capacity: usize, device: B::Device) -> Self {
         let observations = Vec::with_capacity(capacity);
         let actions = Vec::with_capacity(capacity);
@@ -28,6 +31,8 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
         let next_observations = Vec::with_capacity(capacity);
         let terminated = Vec::with_capacity(capacity);
         let truncated = Vec::with_capacity(capacity);
+        let mask = Vec::with_capacity(capacity);
+        let next_mask = Vec::with_capacity(capacity);
         let extras = Vec::with_capacity(capacity);
         
         Self {
@@ -37,8 +42,10 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
             next_observations,
             terminated,
             truncated,
-            extras,
+            mask,
+            next_mask,
 
+            extras,
             capacity,
             head: 0,
             rng: StdRng::seed_from_u64(seed),
@@ -46,7 +53,7 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
         }
     }
 
-    pub fn push(&mut self, t: Transition<B, Obs, Action, Extra>) {
+    pub fn push(&mut self, t: Transition<B, Obs, Action, Mask, Extra>) {
         if self.len() < self.capacity {
             self.observations.push(t.observation);
             self.actions.push(t.action);
@@ -54,6 +61,8 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
             self.next_observations.push(t.next_observation);
             self.terminated.push(if t.terminated { 1f32 } else { 0f32 });
             self.truncated.push(if t.truncated { 1f32 } else { 0f32 });
+            self.mask.push(t.mask);
+            self.next_mask.push(t.next_mask);
             self.extras.push(t.extra);
         } else {
             self.observations[self.head] = t.observation;
@@ -62,6 +71,8 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
             self.next_observations[self.head] = t.next_observation;
             self.terminated[self.head] = if t.terminated { 1f32 } else { 0f32 };
             self.truncated[self.head] = if t.truncated { 1f32 } else { 0f32 };
+            self.mask[self.head] = t.mask;
+            self.next_mask[self.head] = t.next_mask;
             self.extras[self.head] = t.extra;
         }
 
@@ -70,14 +81,14 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
 
     pub fn len(&self) -> usize { self.observations.len() }
 
-    pub fn sample(&mut self, batch_size: usize) -> Option<BatchedTransition<B, Obs::Batched<B>, Action::Batched<B>, Extra::Batched<B>>> {
+    pub fn sample(&mut self, batch_size: usize) -> Option<BatchedTransition<B, Obs::Batched<B>, Action::Batched<B>, Mask::Batched<B>, Extra::Batched<B>>> {
         let len = self.len();
 
         if len < batch_size { return None; }
 
         let indices: Vec<usize> = (0..batch_size).map(|_| self.rng.random_range(0..len)).collect();
 
-        let (o, a, r, no, te, tr, ex): (Vec<Obs>, Vec<Action>, Vec<f32>, Vec<Obs>, Vec<f32>, Vec<f32>, Vec<Extra>)
+        let (o, a, r, no, te, tr, m, nm, ex): (Vec<Obs>, Vec<Action>, Vec<f32>, Vec<Obs>, Vec<f32>, Vec<f32>, Vec<Mask>, Vec<Mask>, Vec<Extra>)
             = indices.iter().map(|&index| {(
                     self.observations[index].clone(),
                     self.actions[index].clone(),
@@ -85,6 +96,8 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
                     self.next_observations[index].clone(),
                     self.terminated[index],
                     self.truncated[index],
+                    self.mask[index].clone(),
+                    self.next_mask[index].clone(),
                     self.extras[index].clone())
             }).collect();
 
@@ -95,6 +108,8 @@ impl<B: Backend, Obs: Batchable, Action: Batchable, Extra: Batchable> ReplayBuff
             next_observations: Obs::batch(no, &self.device),
             terminated: Tensor::from_floats(te.as_slice(), &self.device),
             truncated: Tensor::from_floats(tr.as_slice(), &self.device),
+            mask: Mask::batch(m, &self.device),
+            next_mask: Mask::batch(nm, &self.device),
             extras: Extra::batch(ex, &self.device),
 
             batch_size,

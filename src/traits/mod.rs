@@ -1,4 +1,4 @@
-use burn::{Tensor, tensor::{Int, TensorData, backend::Backend}};
+use burn::{Tensor, tensor::{Bool, Int, TensorData, backend::Backend}};
 
 pub trait Batchable : Sized + Clone + std::fmt::Debug + Send + Sync + 'static {
     type Batched<B: Backend> : Sized + Clone + std::fmt::Debug + Send + Sync + 'static;
@@ -58,6 +58,16 @@ impl<const D: usize> Batchable for [i64; D] {
     fn batch<B: Backend>(bundle: Vec<Self>, device: &<B>::Device) -> Self::Batched<B> {
         let n = bundle.len();
         let flat: Vec<i64> = bundle.into_iter().flatten().collect();
+        Tensor::from_data(TensorData::new(flat, [n, D]), device)
+    }
+}
+
+impl<const D: usize> Batchable for [bool; D] {
+    type Batched<B: Backend> = Tensor<B, 2, Bool>;
+
+    fn batch<B: Backend>(bundle: Vec<Self>, device: &B::Device) -> Self::Batched<B> {
+        let n = bundle.len();
+        let flat: Vec<bool> = bundle.into_iter().flatten().collect();
         Tensor::from_data(TensorData::new(flat, [n, D]), device)
     }
 }

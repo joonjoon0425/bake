@@ -1,5 +1,6 @@
 pub mod agent;
 pub mod buffer;
+pub mod distribution;
 pub mod encoderhead;
 pub mod environment;
 pub mod exploration;
