@@ -13,6 +13,7 @@ where
     baseline: Baseline,
     optimizer: O,
     lr: f64,
+    entropy_coeff: f64,
     rng: StdRng,
     device: B::Device,
 }
@@ -23,12 +24,13 @@ where
     E: Encoder<B, 2>,
     O: Optimizer<EncoderHead<B, E, LinearHead<B>, 2>, B>,
 {
-    pub fn new(seed: u64, gamma: f32, baseline: Baseline, encoder_head: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64, device: B::Device) -> Self {
+    pub fn new(seed: u64, gamma: f32, entropy_coeff: f64, device: B::Device, baseline: Baseline, encoder_head: EncoderHead<B, E, LinearHead<B>, 2>, optimizer: O, lr: f64) -> Self {
         Self {
             gamma,
             baseline,
             online: encoder_head,
             optimizer,
+            entropy_coeff,
             lr,
             device,
             rng: StdRng::seed_from_u64(seed)
@@ -67,16 +69,19 @@ where
 
         let logits = self.online.forward(episode.observations);
         let log_probs = log_softmax(logits, 1);
-        let selected_probs: Tensor<B, 1> = log_probs.gather(1, episode.actions.unsqueeze_dim(1)).squeeze_dim(1);
+        let selected_probs: Tensor<B, 1> = log_probs.clone().gather(1, episode.actions.unsqueeze_dim(1)).squeeze_dim(1);
+
+        let probs = log_probs.clone().exp();
+        let entropy = -(probs * log_probs).sum_dim(1).mean();
         
-        let loss = -(returns * selected_probs).mean();
+        let loss = -(returns * selected_probs).mean() - entropy.clone() * self.entropy_coeff;
 
         let grads = loss.backward();
         let grads = GradientsParams::from_grads(grads, &self.online);
 
         self.online = self.optimizer.step(self.lr, self.online, grads);
 
-        (self, loss.into_scalar().elem())
+        (self, entropy.into_scalar().elem())
     }
 }
 

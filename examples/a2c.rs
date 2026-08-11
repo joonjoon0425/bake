@@ -10,11 +10,11 @@ type AutodiffEngine = Autodiff<Engine>;
 fn main() {
     let device = Cpu;
     // let device = CudaDevice::new(0);
-    AutodiffEngine::seed(&device, 12);
-    let mut env = CartPole::new(123);
+    AutodiffEngine::seed(&device, 145);
+    let mut env = CartPole::new(12);
     let mut agent = A2CAgent::new(
         0.99f32,
-        0.05,
+        0.01,
         1e-3,
         1e-3,
         device.clone(),
@@ -59,6 +59,6 @@ fn main() {
                 break;
             }
         }
-        if episode % 100 == 0 { println!("episode: {episode}, steps: {steps}, entrophy: {entropy}, value loss: {loss}"); }
+        if episode % 100 == 0 { println!("episode: {episode}, steps: {steps}, entropy: {entropy}, value loss: {loss}"); }
     }
 }
