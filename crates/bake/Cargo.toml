@@ -1,0 +1,13 @@
+[package]
+name = "bake"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bake-tabular = { workspace = true, optional = true }
+bake-deep = { workspace = true, optional = true }
+
+[features]
+default = ["tabular", "deep"]
+tabular = ["dep:bake-tabular"]
+deep = ["dep:bake-deep"]
