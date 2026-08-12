@@ -1,4 +1,4 @@
-use burn::{Tensor, nn::loss, optim::{GradientsParams, Optimizer}, tensor::{ElementConversion, Int, backend::AutodiffBackend}};
+use burn::{Tensor, nn::loss, optim::{GradientsParams, Optimizer}, tensor::{Bool, ElementConversion, Int, backend::AutodiffBackend}};
 
 use crate::{encoderhead::{Encoder, EncoderHead, Head, LinearHead}, exploration::EpsGreedy, traits::Batchable, transition::BatchedTransition};
 
@@ -40,8 +40,6 @@ where
         let qvalues = self.online.forward(transitions.observations);
         let qvalues: Tensor<B, 1> = qvalues.gather(1, transitions.actions.unsqueeze_dim(1)).squeeze_dim(1);
 
-
-        // later, refactor the Batchable trait with Generic Associated Type (delete Batchable's generic B and let Batched<B: Backend>) and let non-autodiff E Batched equals the <Self::E as Batchable>::Batched<InnerBackend> 
         let target_q: Tensor<B, 1> = self.target.forward(transitions.next_observations).detach().max_dim(1).squeeze_dim(1);
         let target = transitions.rewards + self.gamma * target_q * (1f32 - transitions.terminated);
         
