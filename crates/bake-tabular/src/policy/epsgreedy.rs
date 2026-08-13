@@ -1,13 +1,16 @@
+//! Epsilon-Greedy policy implementation
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 use crate::{policy::argmaxes, types::*};
 
+/// Implementation of epsilon-greedy policy
 pub struct EpsGreedy {
     eps: f32,
     rng: StdRng,
 }
 
 impl EpsGreedy {
+    /// create a new EpsGreedy with a given seed and initial epsilon value
     pub fn new(seed: u64, eps: f32) -> Self {
         Self {
             eps,
@@ -15,9 +18,11 @@ impl EpsGreedy {
         }
     }
 
+    /// returns an eps
     pub fn eps(&self) -> f32 { self.eps }
+    /// returns an mutable reference of eps
     pub fn eps_mut(&mut self) -> &mut f32 { &mut self.eps }
-    
+    /// samples an action according to given q values
     pub fn sample<M: Mask>(&mut self, qvalues: &[f32], mask: M) -> usize {
         let r = self.rng.random_range(0.0..1.0);
 
@@ -45,6 +50,7 @@ impl EpsGreedy {
         action
     }
     
+    /// computes the probability of given action to happen in given q value
     pub fn prob<M: Mask>(&self, qvalues: &[f32], action: usize, mask: M) -> f32 {
         let n_possible_actions = mask.n_possible_actions();
         let max_actions = argmaxes(qvalues, mask);

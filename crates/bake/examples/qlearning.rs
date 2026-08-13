@@ -26,7 +26,7 @@ fn main() {
             n_steps += 1;
             if step.done || step.truncated { break; }
         }
-        *policy.eps_mut() *= 0.9999;
+        *policy.eps_mut() *= 0.999;
         if i % 1000 == 0 { println!("Episode {i}, Steps: {n_steps}, Reward: {reward}, Eps: {}", policy.eps()) }
         
     }

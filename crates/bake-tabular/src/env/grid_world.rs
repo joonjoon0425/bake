@@ -1,14 +1,22 @@
+//! ## GridWorld
+//! This is an implementation of gridworld of Sutton & Barto.
 use crate::env::*;
 
+/// ### An implementation of gridworld
+/// - Size 15 * 7, starts at (0, 0) and the goal is (14, 0)
+/// - Cliffs exists along (1, 0), (2, 0), ... , (13, 0)
 pub struct GridWorld {
     s: (i32, i32)
 }
 
 impl GridWorld {
+    /// Create a new GridWorld
     pub fn new() -> Self { Self { s: (0, 0) } }
+    /// number of states in GridWorld
     pub fn n_states(&self) -> usize {
         105
     }
+    /// number of actions in GridWorld
     pub fn n_actions(&self) -> usize {
         4
     }

@@ -1,3 +1,4 @@
+//! # Various common types and traits
 pub mod step;
 pub use step::*;
 

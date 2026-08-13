@@ -1,8 +1,12 @@
+//! # Policies for tabular algorithms
+//! Exploration and exploitation strategies are implemented here
+
 pub mod epsgreedy;
 pub use epsgreedy::*;
 
 use crate::types::Mask;
 
+/// returns a vector of actions with maximum q values
 pub fn argmaxes<M: Mask>(qvalues: &[f32], mask: M) -> Vec<bool> {
     let mut qmax = f32::MIN;
     let mut candidates = vec![false; mask.n_actions()];
@@ -18,6 +22,7 @@ pub fn argmaxes<M: Mask>(qvalues: &[f32], mask: M) -> Vec<bool> {
     candidates
 }
 
+/// returns a maximum q value
 pub fn max<M: Mask>(qvalues: &[f32], mask: M) -> f32 {
     let mut qmax = f32::MIN;
     for i in mask.possible_actions() {

@@ -1,12 +1,22 @@
+//! Action mask trait and implementations for masking
+
+/// Basic Mask trait which all masks must implement
 pub trait Mask {
+    /// returns true if given action is possible, else returns false
     fn is_possible(&self, action: usize) -> bool;
+    /// returns the iterator of possible actions
     fn possible_actions(&self) -> impl Iterator<Item = usize> + '_;
+    /// returns the number of possible actions
     fn n_possible_actions(&self) -> usize;
+    /// returns the number of all actions
     fn n_actions(&self) -> usize;
 }
+
+/// Basic discrete action mask implementation
 #[derive(Debug, Clone, Copy)]
 pub struct DiscreteMask<const D: usize>([bool; D]);
 
+/// struct used to represent a non-mask environment
 #[derive(Debug, Clone, Copy)]
 pub struct NoMask<const D: usize>;
 
