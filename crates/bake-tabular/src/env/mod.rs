@@ -1,9 +1,11 @@
-use crate::types::{ActionMask, Step};
+use crate::types::*;
 
 pub trait Env {
+    type Mask : Mask;
+    
     fn reset(&mut self) -> usize;
     fn step(&mut self, action: usize) -> Step;
-    fn action_mask(&self) -> Option<ActionMask>;
+    fn action_mask(&self) -> Self::Mask;
 }
 
 pub mod grid_world;

@@ -1,40 +1,47 @@
+pub trait Mask {
+    fn is_possible(&self, action: usize) -> bool;
+    fn possible_actions(&self) -> impl Iterator<Item = usize> + '_;
+    fn n_possible_actions(&self) -> usize;
+    fn n_actions(&self) -> usize;
+}
 #[derive(Debug, Clone, Copy)]
-pub struct ActionMask {
-    mask: u128,
-}
+pub struct DiscreteMask<const D: usize>([bool; D]);
 
-pub struct ActionMaskIterator {
-    mask: u128,
-}
+#[derive(Debug, Clone, Copy)]
+pub struct NoMask<const D: usize>;
 
-impl ActionMask {
-    pub fn new(mask: u128) -> Self { Self{ mask } }
-    pub fn from_n_actions(n_actions: usize) -> Self {
-        let mask = (1 << n_actions) - 1;
-        Self { mask }
+impl<const D: usize> Mask for DiscreteMask<D> {
+    fn is_possible(&self, action: usize) -> bool {
+        self.0[action]
     }
 
-    pub fn n_possible(&self) -> usize {
-        self.mask.count_ones() as usize
+    fn possible_actions(&self) -> impl Iterator<Item = usize> + '_ {
+        self.0.iter().enumerate()
+            .filter(|(_, possible)| **possible )
+            .map(|(action, _)| action )
     }
-}
 
-impl Iterator for ActionMaskIterator {
-    type Item = usize;
+    fn n_possible_actions(&self) -> usize {
+        self.0.iter().filter(|possible| **possible ).count()
+    }
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.mask == 0 {
-            return None
-        } else {
-            let ret = self.mask.trailing_zeros() as usize;
-            self.mask &= self.mask - 1;
-            return Some(ret);
-        }
+    fn n_actions(&self) -> usize {
+        D
     }
 }
 
-impl ExactSizeIterator for ActionMaskIterator {
-    fn len(&self) -> usize {
-        self.mask.count_ones() as usize
+impl<const D: usize> Mask for NoMask<D> {
+    fn is_possible(&self, _: usize) -> bool { true }
+
+    fn possible_actions(&self) -> impl Iterator<Item = usize> {
+        0..D
+    }
+
+    fn n_possible_actions(&self) -> usize {
+        D
+    }
+
+    fn n_actions(&self) -> usize {
+        D
     }
 }
