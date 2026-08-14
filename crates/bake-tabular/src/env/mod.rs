@@ -8,12 +8,10 @@ pub trait Env {
     type Mask : Mask;
     
     /// reset the environment
-    fn reset(&mut self) -> usize;
+    fn reset(&mut self) -> (usize, Self::Mask);
     /// go ahead one step with given action
     /// returns a step result, which is: next_obs, reward, terminated, truncated, mask
-    fn step(&mut self, action: usize) -> Step;
-    /// deprecated, should be deleted
-    fn action_mask(&self) -> Self::Mask;
+    fn step(&mut self, action: usize) -> (usize, f32, bool, bool, Self::Mask);
 }
 
 pub mod grid_world;

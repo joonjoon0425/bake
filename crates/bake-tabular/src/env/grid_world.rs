@@ -25,12 +25,12 @@ impl GridWorld {
 impl Env for GridWorld {
     type Mask = NoMask<4>;
 
-    fn reset(&mut self) -> usize {
+    fn reset(&mut self) -> (usize, Self::Mask) {
         self.s = (0, 0);
-        0
+        (0, NoMask)
     }
 
-    fn step(&mut self, action: usize) -> Step {
+    fn step(&mut self, action: usize) -> (usize, f32, bool, bool, Self::Mask) {
         let mut pos = self.s;
         match action {
             0 => pos.1 -= 1,
@@ -46,6 +46,9 @@ impl Env for GridWorld {
         } else if pos.1 < 0 || pos.1 > 6 {
             pos = (0, 0);
             (-100f32, false)
+        } else if pos.1 == 0 && (0 < pos.0 && pos.0 < 14) {
+            pos = (0, 0);
+            (-100f32, false)
         } else if pos == (14, 0) {
             (100f32, true)
         } else {
@@ -54,17 +57,7 @@ impl Env for GridWorld {
 
         self.s = pos;
 
-        return Step {
-            obs: (pos.0 + pos.1 * 15) as usize,
-            reward,
-            done,
-            truncated: false
-        };
+        ((pos.0 + pos.1 * 15) as usize, reward, done, false, NoMask)
     }
-
-    fn action_mask(&self) -> Self::Mask {
-        NoMask
-    }
-
 }
 

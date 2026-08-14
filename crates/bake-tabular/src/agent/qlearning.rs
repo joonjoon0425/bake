@@ -1,14 +1,12 @@
 //! Q-Learning algorithm Implementation
-use crate::{policy::{EpsGreedy, max}, types::{Mask, Step}};
+use crate::{policy::{EpsGreedy}, qtable::QTable, types::{Mask, Transition}};
 
 /// An implementation of Q-Learning algorithm
 pub struct QLearningAgent {
     gamma: f32,
     alpha: f32,
 
-    q_table: Vec<f32>,
-
-    n_actions: usize,
+    qtable: QTable,
 }
 
 impl QLearningAgent {
@@ -17,23 +15,19 @@ impl QLearningAgent {
         Self {
             gamma,
             alpha,
-            q_table: vec![0f32; n_states * n_actions],
-            n_actions,
+            qtable: QTable::new(n_states, n_actions),
         }
     }
 
     /// Choose an action, using the given policy
     pub fn action<M: Mask>(&self, policy: &mut EpsGreedy, obs: usize, mask: M) -> usize {
-        let start = obs * self.n_actions;
-        policy.sample(&self.q_table[start..start + self.n_actions], mask)
+        policy.sample(self.qtable.row(obs), mask)
     }
 
     /// Update the QTable according to given transition
-    pub fn update<M: Mask>(&mut self, obs: usize, action: usize, next_mask: M, step: Step) {
-        let start = step.obs * self.n_actions;
-        let next_qvalue = max(&self.q_table[start..start + self.n_actions], next_mask);
-        let qvalues = &mut self.q_table[obs * self.n_actions + action];
-        let target = step.reward + if step.done { 0f32 } else { self.gamma * next_qvalue };
+    pub fn update<M: Mask>(&mut self, t: Transition<M>) {
+        let target = t.reward + if t.terminated { 0f32 } else { self.gamma * self.qtable.max(t.next_obs, t.next_mask) };
+        let qvalues = &mut self.qtable[(t.obs, t.action)];
         *qvalues += self.alpha * (target - *qvalues);
     }
 }
