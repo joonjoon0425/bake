@@ -59,6 +59,11 @@ impl QTable {
         }
         candidates
     }
+
+    /// returns the number of states
+    pub fn n_states(&self) -> usize { self.n_states }
+    /// return the number of actions
+    pub fn n_actions(&self) -> usize { self.n_actions }
 }
 
 impl Index<(usize, usize)> for QTable {

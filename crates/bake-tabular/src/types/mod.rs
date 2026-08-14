@@ -5,3 +5,6 @@ pub use action_mask::*;
 
 pub mod transition;
 pub use transition::*;
+
+pub mod tape;
+pub use tape::*;

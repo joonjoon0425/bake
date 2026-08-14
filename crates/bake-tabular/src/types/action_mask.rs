@@ -1,7 +1,7 @@
 //! Action mask trait and implementations for masking
 
 /// Basic Mask trait which all masks must implement
-pub trait Mask {
+pub trait Mask: Clone + Copy {
     /// returns true if given action is possible, else returns false
     fn is_possible(&self, action: usize) -> bool;
     /// returns the iterator of possible actions
