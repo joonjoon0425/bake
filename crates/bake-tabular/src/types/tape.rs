@@ -1,6 +1,6 @@
 //! A helper struct for taking a step in RL env and generating a transition
 
-use crate::{agent::SarsaAgent, env::Env, policy::EpsGreedy, types::{Mask, Transition}};
+use crate::{env::Env, types::{Mask, Transition}};
 
 /// A helper struct for taking a step in RL env and generating a transition
 pub struct Tape<M: Mask> {

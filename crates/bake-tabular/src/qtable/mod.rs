@@ -2,7 +2,7 @@
 
 use std::ops::{Index, IndexMut};
 
-use crate::types::Mask;
+use crate::{policy::{EpsGreedy, Policy}, types::Mask};
 
 /// A Q-table struct
 pub struct QTable {
@@ -59,6 +59,16 @@ impl QTable {
             }
         }
         candidates
+    }
+
+    /// returns an expectation of q values, according to a given policy
+    pub fn expectation<M: Mask, P: Policy>(&self, policy: &P, obs: usize, mask: M) -> f32 {
+        let mut expected = 0f32;
+        let qvalues = self.row(obs);
+        for action in mask.possible_actions() {
+            expected += policy.prob(qvalues, action, mask) * qvalues[action];
+        }
+        expected
     }
 
     /// returns the number of states

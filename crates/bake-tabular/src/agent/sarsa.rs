@@ -1,5 +1,5 @@
 //! Sarsa algorithm implementation
-use crate::{policy::EpsGreedy, qtable::QTable, types::{Mask, Transition}};
+use crate::{policy::{EpsGreedy, Policy}, qtable::QTable, types::{Mask, Transition}};
 
 /// An implementation of Sarsa algorithm
 pub struct SarsaAgent {
@@ -20,7 +20,7 @@ impl SarsaAgent {
     }
 
     /// Choose an action, using the given policy
-    pub fn action<M: Mask>(&self, policy: &mut EpsGreedy, obs: usize, mask: M) -> usize {
+    pub fn action<M: Mask, P: Policy>(&self, policy: &mut P, obs: usize, mask: M) -> usize {
         policy.sample(self.qtable.row(obs), mask)
     }
 

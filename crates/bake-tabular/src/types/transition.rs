@@ -6,7 +6,7 @@ use crate::types::Mask;
 /// A transition used for all agents
 /// - contains s, a, r, s' and terminated, truncated, masks, extra
 #[derive(Debug, Clone)]
-pub struct Transition<M: Mask, Extra = ()> {
+pub struct Transition<M: Mask, Extra: Clone = ()> {
     /// current state (s)
     pub obs: usize,
     /// the action which agent chose (a)
@@ -31,7 +31,7 @@ pub struct Transition<M: Mask, Extra = ()> {
 
 impl<M: Mask> Transition<M, ()> {
     /// adds and extra field to the basic Transition<M> type
-    pub fn add_extra<Extra>(self, extra: Extra) -> Transition<M, Extra> {
+    pub fn add_extra<Extra: Clone>(self, extra: Extra) -> Transition<M, Extra> {
         Transition::<M, Extra> {
             obs: self.obs,
             action: self.action,

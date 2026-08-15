@@ -1,5 +1,5 @@
 //! Q-Learning algorithm Implementation
-use crate::{env::Env, policy::EpsGreedy, qtable::QTable, types::{Mask, Tape, Transition}};
+use crate::{policy::{EpsGreedy, Policy}, qtable::QTable, types::{Mask, Transition}};
 
 /// An implementation of Q-Learning algorithm
 pub struct QLearningAgent {
@@ -20,7 +20,7 @@ impl QLearningAgent {
     }
 
     /// Choose an action, using the given policy
-    pub fn action<M: Mask>(&self, policy: &mut EpsGreedy, obs: usize, mask: M) -> usize {
+    pub fn action<M: Mask, P: Policy>(&self, policy: &mut P, obs: usize, mask: M) -> usize {
         policy.sample(self.qtable.row(obs), mask)
     }
 

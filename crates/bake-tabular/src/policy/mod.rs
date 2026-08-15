@@ -4,6 +4,9 @@
 pub mod epsgreedy;
 pub use epsgreedy::*;
 
+pub mod greedy;
+pub use greedy::*;
+
 use crate::types::Mask;
 
 /// returns a vector of actions with maximum q values
@@ -31,4 +34,12 @@ pub fn max<M: Mask>(qvalues: &[f32], mask: M) -> f32 {
         }
     }
     qmax
+}
+
+/// A basic trait for all policies.
+pub trait Policy {
+    /// Computes a probability of given action to happen in given action values
+    fn prob<M: Mask>(&self, qvalues: &[f32], action: usize, mask: M) -> f32;
+    /// Picks an action from given action values, with mask if available
+    fn sample<M: Mask>(&mut self, qvalues: &[f32], mask: M) -> usize;
 }
