@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 burn = "0.22.0-pre.2"
+rand = "0.10.2"
