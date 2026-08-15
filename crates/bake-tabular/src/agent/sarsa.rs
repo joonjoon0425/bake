@@ -1,21 +1,21 @@
-//! Q-Learning algorithm Implementation
-use crate::{env::Env, policy::EpsGreedy, qtable::QTable, types::{Mask, Tape, Transition}};
+//! Sarsa algorithm implementation
+use crate::{policy::EpsGreedy, qtable::QTable, types::{Mask, Transition}};
 
-/// An implementation of Q-Learning algorithm
-pub struct QLearningAgent {
+/// An implementation of Sarsa algorithm
+pub struct SarsaAgent {
     gamma: f32,
     alpha: f32,
 
     qtable: QTable,
 }
 
-impl QLearningAgent {
-    /// Create a new QLearningAgent
+impl SarsaAgent {
+    /// Create a new SarsaAgent
     pub fn new(n_states: usize, n_actions: usize, alpha: f32, gamma: f32) -> Self {
         Self {
             gamma,
             alpha,
-            qtable: QTable::new(n_states, n_actions),
+            qtable: QTable::new(n_states, n_actions)
         }
     }
 
@@ -25,8 +25,8 @@ impl QLearningAgent {
     }
 
     /// Update the QTable according to given transition
-    pub fn update<M: Mask>(&mut self, t: Transition<M>) {
-        let target = t.reward + if t.terminated { 0f32 } else { self.gamma * self.qtable.max(t.next_obs, t.next_mask) };
+    pub fn update<M: Mask>(&mut self, t: Transition<M, usize>) {
+        let target = t.reward + if t.terminated { 0f32 } else { self.gamma * self.qtable[(t.next_obs, t.extra)] };
         let qvalues = &mut self.qtable[(t.obs, t.action)];
         *qvalues += self.alpha * (target - *qvalues);
     }
