@@ -2,6 +2,7 @@ use burn::tensor::Device;
 
 use crate::types::{ActionMask, Batch, Batchable, Transition};
 
+/// Rollout Buffer Implementation. Also works as Episode Buffer if n = None is given
 pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Mask: ActionMask = (), Extra: Batchable = ()>{
     obss: Vec<Obs>,
     actions: Vec<Action>,

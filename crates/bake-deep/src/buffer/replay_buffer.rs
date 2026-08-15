@@ -2,6 +2,7 @@ use burn::{Tensor, tensor::Device};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use crate::types::{ActionMask, Batch, Batchable, Transition};
 
+/// Replay Buffer Implementation
 pub struct ReplayBuffer<Obs: Batchable, Action: Batchable, Mask: ActionMask = (), Extra: Batchable = ()> {
     capacity: usize,
     head: usize,
