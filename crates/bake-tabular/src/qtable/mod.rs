@@ -35,6 +35,7 @@ impl QTable {
     pub fn max<M: Mask>(&self, obs: usize, mask: M) -> f32 {
         let mut qmax = f32::MIN;
         let qvalues = self.row(obs);
+        
         for i in mask.possible_actions() {
             if qvalues[i] > qmax {
                 qmax = qvalues[i];

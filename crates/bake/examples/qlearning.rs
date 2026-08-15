@@ -4,7 +4,7 @@ use bake_tabular::policy::EpsGreedy;
 use bake_tabular::types::Tape;
 
 fn main() {
-    let mut env = GridWorld::new();
+    let mut env = MaskedGridWorld::new();
     let mut agent = QLearningAgent::new(env.n_states(), env.n_actions(), 0.3, 0.99);
     let mut policy = EpsGreedy::new(2,1f32);
     let mut tape = Tape::new(&mut env);
@@ -22,9 +22,7 @@ fn main() {
             n_steps += 1;
             if t.terminated || t.truncated { break; }
         }
-        *policy.eps_mut() *= 0.999;
-        if i % 10000 == 0 { println!("Episode {i}, Steps: {n_steps}, Reward: {episode_reward}, Eps: {}", policy.eps()) }
-        
+        *policy.eps_mut() *= 0.9996;
+        if i % 10000 == 0 { println!("Episode {i}, Steps: {n_steps}, Reward: {}, Eps: {}", episode_reward, policy.eps()) }
     }
-    
 }

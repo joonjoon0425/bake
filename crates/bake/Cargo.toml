@@ -7,6 +7,8 @@ edition = "2024"
 bake-tabular = { workspace = true, optional = true }
 bake-deep = { workspace = true, optional = true }
 
+rand = "0.10.2"
+
 [features]
 default = ["tabular", "deep"]
 tabular = ["dep:bake-tabular"]

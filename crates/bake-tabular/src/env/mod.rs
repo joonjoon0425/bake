@@ -16,3 +16,9 @@ pub trait Env {
 
 pub mod grid_world;
 pub use grid_world::*;
+
+pub mod blackjack;
+pub use blackjack::*;
+
+pub mod masked_grid_world;
+pub use masked_grid_world::*;

@@ -20,6 +20,23 @@ pub struct DiscreteMask<const D: usize>([bool; D]);
 #[derive(Debug, Clone, Copy)]
 pub struct NoMask<const D: usize>;
 
+impl<const D: usize> DiscreteMask<D> {
+    /// create a new DiscreteMask as [enabled; D]
+    pub fn new(enabled: bool) -> Self {
+        Self ([enabled; D])
+    }
+
+    /// enable an action of given index
+    pub fn enable(&mut self, idx: usize) {
+        self.0[idx] = true;
+    }
+
+    /// disable an action of given index
+    pub fn disable(&mut self, idx: usize) {
+        self.0[idx] = false;
+    }
+}
+
 impl<const D: usize> Mask for DiscreteMask<D> {
     fn is_possible(&self, action: usize) -> bool {
         self.0[action]
