@@ -2,7 +2,7 @@
 
 use std::ops::{Index, IndexMut};
 
-use crate::{policy::{EpsGreedy, Policy}, types::Mask};
+use crate::{policy::Policy, types::Mask};
 
 /// A Q-table struct
 pub struct QTable {

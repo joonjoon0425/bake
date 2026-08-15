@@ -1,7 +1,5 @@
 //! Greedy policy implementation
-use rand::{RngExt, SeedableRng, rngs::StdRng};
-
-use crate::{policy::{Policy, argmaxes}, types::*};
+use crate::{policy::Policy, types::*};
 
 /// Implementation of greedy policy. No tie-breaking here
 pub struct Greedy;

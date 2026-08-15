@@ -1,6 +1,6 @@
 //! N-Step Sarsa algorithm implementation
 
-use crate::{policy::{EpsGreedy, Policy}, qtable::QTable, types::{Mask, Transition}};
+use crate::{policy::Policy, qtable::QTable, types::{Mask, Transition}};
 
 /// An implementation of n step sarsa algorithm
 pub struct NStepSarsaAgent {

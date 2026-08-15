@@ -1,5 +1,5 @@
 //! Q-Learning algorithm Implementation
-use crate::{policy::{EpsGreedy, Policy}, qtable::QTable, types::{Mask, Transition}};
+use crate::{policy::Policy, qtable::QTable, types::{Mask, Transition}};
 
 /// An implementation of Q-Learning algorithm
 pub struct QLearningAgent {

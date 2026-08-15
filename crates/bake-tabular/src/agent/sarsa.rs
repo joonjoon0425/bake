@@ -1,5 +1,5 @@
 //! Sarsa algorithm implementation
-use crate::{policy::{EpsGreedy, Policy}, qtable::QTable, types::{Mask, Transition}};
+use crate::{policy::Policy, qtable::QTable, types::{Mask, Transition}};
 
 /// An implementation of Sarsa algorithm
 pub struct SarsaAgent {

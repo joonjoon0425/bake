@@ -1,5 +1,5 @@
 //! Q-Learning algorithm Implementation
-use crate::{policy::{EpsGreedy, Greedy, Policy}, qtable::QTable, types::{Mask, Transition}};
+use crate::{policy::{Greedy, Policy}, qtable::QTable, types::{Mask, Transition}};
 
 /// An implementation of n-step Q-Learning algorithm, with tree backup method
 pub struct NStepQLearningAgent {
