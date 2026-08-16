@@ -3,14 +3,11 @@
 pub mod transition;
 pub use transition::*;
 
-pub mod batch;
-pub use batch::*;
-
 pub mod batchable;
 pub use batchable::*;
 
 pub mod action_mask;
 pub use action_mask::*;
 
-pub mod qnetwork;
-pub use qnetwork::*;
+pub mod tape;
+pub use tape::*;

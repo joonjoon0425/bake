@@ -1,7 +1,7 @@
 //! A Deep Q-Network algorithm implementation
-use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::{Bool, Int}};
+use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
 
-use crate::{policy::EpsGreedy, types::{ActionMask, Batch, QNetwork}};
+use crate::{policy::EpsGreedy, types::{ActionMask, Batch}, qnetwork::QNetwork};
 /// A Deep Q-Network algorithm Implmentation
 pub struct DQNAgent<QNet>
 where

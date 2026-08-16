@@ -1,5 +1,5 @@
 //! # Environments for Deep RL
-use crate::types::Batchable;
+use crate::types::{ActionMask, Batchable};
 
 /// The basic trait for environments
 /// #### Warning
@@ -9,7 +9,7 @@ use crate::types::Batchable;
 pub trait Env {
     type Obs: Batchable;
     type Action: Batchable;
-    type Mask: Batchable;
+    type Mask: ActionMask;
 
     fn step(&mut self, action: Self::Action) -> ((Self::Obs, Self::Mask), f32, bool, bool);
     fn reset(&mut self) -> (Self::Obs, Self::Mask);

@@ -1,4 +1,4 @@
-use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::{CartPole, Env}, head::{DuelingLinearQHead, LinearQHead}, policy::EpsGreedy, types::{SequentialQNetwork, Transition}};
+use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::CartPole, head::{DuelingLinearQHead, LinearQHead}, policy::EpsGreedy, qnetwork::SequentialQNetwork, types::{Tape, Transition}};
 use burn::{Tensor, nn::{Relu}, optim::AdamConfig, tensor::Device};
 use burn::nn::activation::Activation;
 pub fn main() {
@@ -15,30 +15,19 @@ pub fn main() {
         );
     let mut policy = EpsGreedy::new(123, 1.0f32);
     let mut buffer = ReplayBuffer::new(12, 10000, device.clone());
+    let mut tape = Tape::new(&mut env);
     let mut count = 0;
     for episode in 0..=4000 {
-        let (mut obs, mut mask) = env.reset();
         let mut steps = 0;
-        
         let mut loss: Tensor<1> = Tensor::zeros([1], &device);
         let mut td_error: Tensor<1> = Tensor::zeros([1], &device);
         let mut q_mean: Tensor<1> = Tensor::zeros([1], &device);
-
+        tape.reset(&mut env);
         loop {
-            let action = agent.action(&mut policy, obs.clone(), mask.clone());
-            let ((next_obs, next_mask), reward, terminated, truncated) = env.step(action.clone());
-
-            buffer.push(Transition {
-                obs,
-                action,
-                reward,
-                next_obs: next_obs.clone(),
-                terminated,
-                truncated,
-                mask,
-                next_mask: next_mask.clone(),
-                extra: (),
-            });
+            let action = agent.action(&mut policy, tape.obs.clone(), tape.mask.clone());
+            let t = tape.step(&mut env, action);
+            let done = t.terminated || t.truncated;
+            buffer.push(t);
 
             if let Some(batch) = buffer.sample(64) {
                 (agent, q_mean, loss, td_error) = agent.update(batch);
@@ -47,14 +36,11 @@ pub fn main() {
             if count % 1000 == 0 {
                 agent.sync();
             }
-
-            obs = next_obs;
-            mask = next_mask;
             count += 1;
             steps += 1;
-            if terminated || truncated { break; }
+            if done { break; }
         }
         *policy.eps_mut() *= 0.99;
-        if episode % 100 == 0 { println!("episode: {episode}, steps: {steps}, loss: {}, q_mean: {}, eps: {}", loss.into_scalar::<f32>(), q_mean.into_scalar::<f32>(), policy.eps()); }
+        if episode % 100 == 0 { println!("episode: {episode}, steps: {steps}, loss: {}, q_mean: {}, td_error: {}, eps: {}", loss.into_scalar::<f32>(), q_mean.into_scalar::<f32>(), td_error.mean().into_scalar::<f32>(), policy.eps()); }
     }
 }

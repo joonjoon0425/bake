@@ -6,11 +6,11 @@
 //! (e.g. dueling) can be exercised on an unmasked task.
  
 use burn::{
-    Tensor, tensor::{Bool, Device, Int},
+    Tensor, tensor::{Device, Int},
 };
 use rand::{RngExt, SeedableRng, rngs::StdRng};
  
-use crate::{env::Env, types::{DiscreteMask, NoMask}};
+use crate::{env::Env, types::{NoMask}};
  
 const GRAVITY: f32 = 9.8;
 const MASS_CART: f32 = 1.0;
