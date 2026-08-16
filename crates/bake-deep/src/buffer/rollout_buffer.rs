@@ -1,9 +1,9 @@
 use burn::tensor::Device;
 
-use crate::types::{ActionMask, Batch, Batchable, Transition};
+use crate::types::{ActionMask, Batch, Batchable, NoMask, Transition};
 
 /// Rollout Buffer Implementation. Also works as Episode Buffer if n = None is given
-pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Mask: ActionMask = (), Extra: Batchable = ()>{
+pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Mask: ActionMask + Batchable = NoMask, Extra: Batchable = ()>{
     obss: Vec<Obs>,
     actions: Vec<Action>,
     rewards: Vec<f32>,
@@ -20,7 +20,7 @@ pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Mask: ActionMask = (
     n: Option<usize>,
 }
 
-impl<Obs: Batchable, Action: Batchable, Mask: ActionMask, Extra: Batchable> RolloutBuffer<Obs, Action, Mask, Extra> {
+impl<Obs: Batchable, Action: Batchable, Mask: ActionMask + Batchable, Extra: Batchable> RolloutBuffer<Obs, Action, Mask, Extra> {
     pub fn new(n: Option<usize>, device: Device) -> Self {
         Self {
             obss: vec![],

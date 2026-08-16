@@ -243,6 +243,7 @@ version = "0.1.0"
 dependencies = [
  "bake-deep",
  "bake-tabular",
+ "burn",
  "rand 0.10.2",
 ]
 

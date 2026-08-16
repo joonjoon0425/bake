@@ -1,65 +1,60 @@
 //! Action mask trait and implementations for masking
-use burn::Tensor;
-use crate::types::Batchable;
+use burn::{Tensor, tensor::{Bool}};
 /// Basic Mask trait which all masks must implement
-pub trait ActionMask: Batchable {
+pub trait ActionMask: Clone {
     type Value;
-
-    fn apply(batched_mask: <Self as Batchable>::Batched, values: Self::Value, fill_value: f32) -> Self::Value;
+    fn apply(self, values: Self::Value, fill_value: f32) -> Self::Value;
+    fn mean_dim(self, dim: i64, values: Self::Value) -> Self::Value;
 }
-/// Discrete Action Mask struct
-#[derive(Debug, Clone, Copy)]
-pub struct DiscreteMask<const D: usize>(pub [bool; D]);
+/// Basic Discrete action mask for tensors
+#[derive(Debug, Clone)]
+pub struct DiscreteMask<const ACTION_NUM: usize>(pub Tensor<1, Bool>);
+impl<const ACTION_NUM: usize> ActionMask for DiscreteMask<ACTION_NUM> {
+    type Value = Tensor<1>;
 
-impl<const D: usize> DiscreteMask<D> {
-    /// create a new DiscreteMask as [enabled; D]
-    pub fn new(enabled: bool) -> Self {
-        Self ([enabled; D])
+    fn apply(self, values: Self::Value, fill_value: f32) -> Self::Value {
+        values.mask_fill(self.0.bool_not(), fill_value)
     }
 
-    /// enable an action of given index
-    pub fn enable(&mut self, idx: usize) {
-        self.0[idx] = true;
-    }
-
-    /// disable an action of given index
-    pub fn disable(&mut self, idx: usize) {
-        self.0[idx] = false;
-    }
-    
-    /// checks whether given action is possible
-    pub fn is_possible(&self, action: usize) -> bool {
-        self.0[action]
-    }
-
-    /// returns all possible actions as Iterator
-    pub fn possible_actions(&self) -> impl Iterator<Item = usize> + '_ {
-        self.0.iter().enumerate()
-            .filter(|(_, possible)| **possible )
-            .map(|(action, _)| action )
-    }
-
-    /// returns the number of possible actions
-    pub fn n_possible_actions(&self) -> usize {
-        self.0.iter().filter(|possible| **possible ).count()
-    }
-
-    /// returns the number of total actions
-    pub fn n_actions(&self) -> usize {
-        D
+    fn mean_dim(self, dim: i64, values: Self::Value) -> Self::Value {
+        let invalid = self.clone().0.bool_not();
+        let n_possible_actions = self.0.float().sum_dim(dim);
+        let mean = values.mask_fill(invalid.clone(), 0f32) / n_possible_actions;
+        mean
     }
 }
 
-impl<const D: usize> ActionMask for DiscreteMask<D> {
+/// Batched Discrete Action mask
+#[derive(Debug, Clone)]
+pub struct BatchedDiscreteMask<const ACTION_NUM: usize>(pub Tensor<2, Bool>);
+impl<const ACTION_NUM: usize> ActionMask for BatchedDiscreteMask<ACTION_NUM> {
     type Value = Tensor<2>;
 
-    fn apply(batched_mask: <Self as Batchable>::Batched, value: Self::Value, fill_value: f32) -> Self::Value {
-        value.mask_fill(batched_mask, fill_value)
+    fn apply(self, values: Self::Value, fill_value: f32) -> Self::Value {
+        values.mask_fill(self.0.bool_not(), fill_value)
+    }
+
+    fn mean_dim(self, dim: i64, values: Self::Value) -> Self::Value {
+        let invalid = self.clone().0.bool_not();
+        let n_possible_actions = self.0.float().sum_dim(dim);
+        let mean = values.mask_fill(invalid.clone(), 0f32) / n_possible_actions;
+        mean
     }
 }
 
-impl ActionMask for () {
-    type Value = Tensor<2>;
+/// No mask
+#[derive(Debug, Clone)]
+pub struct NoMask;
+impl ActionMask for NoMask {
+    type Value = Tensor<1>;
+    fn apply(self, values: Self::Value, _: f32) -> Self::Value { values }
+    fn mean_dim(self, dim: i64, values: Self::Value) -> Self::Value { values.mean_dim(dim) }
+}
 
-    fn apply(_: <Self as Batchable>::Batched, values: Self::Value, _: f32) -> Self::Value { values }
+#[derive(Debug, Clone)]
+pub struct BatchedNoMask;
+impl ActionMask for BatchedNoMask {
+    type Value = Tensor<1>;
+    fn apply(self, values: Self::Value, _: f32) -> Self::Value { values }
+    fn mean_dim(self, dim: i64, values: Self::Value) -> Self::Value { values.mean_dim(dim) }
 }

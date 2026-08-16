@@ -8,6 +8,7 @@ bake-tabular = { workspace = true, optional = true }
 bake-deep = { workspace = true, optional = true }
 
 rand = "0.10.2"
+burn = "0.22.0-pre.2"
 
 [features]
 default = ["tabular", "deep"]

@@ -1,9 +1,9 @@
 //! A Batched Transition Implementation
-use crate::types::Batchable;
+use crate::types::{Batchable, BatchedNoMask};
 
 /// A Batched `Transition` struct
 #[derive(Debug, Clone)]
-pub struct Batch<Obs, Action, Mask = (), Extra = ()> {
+pub struct Batch<Obs, Action, Mask = BatchedNoMask, Extra = ()> {
     pub obss: Obs,
     pub actions: Action,
     pub rewards: <f32 as Batchable>::Batched,

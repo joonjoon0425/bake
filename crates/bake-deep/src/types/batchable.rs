@@ -1,7 +1,7 @@
 //! A Batchable trait
 use burn::{Tensor, tensor::{Bool, Device, Int, TensorData}};
 
-use crate::types::DiscreteMask;
+use crate::types::{BatchedDiscreteMask, BatchedNoMask, DiscreteMask, NoMask};
 
 /// Can translate themselves into batch type
 pub trait Batchable : Sized + Clone {
@@ -54,40 +54,57 @@ impl<const D: usize> Batchable for [i64; D] {
     }
 }
 
-impl<const D: usize> Batchable for DiscreteMask<D> {
-    type Batched = Tensor<2, Bool>;
+impl<const ACTION_NUM: usize> Batchable for DiscreteMask<ACTION_NUM> {
+    type Batched = BatchedDiscreteMask<ACTION_NUM>;
 
     fn batch(data: Vec<Self>, device: &Device) -> Self::Batched {
-        let n = data.len();
-        let flat: Vec<bool> = data.into_iter().map(|m| m.0 ).flatten().collect();
-        Tensor::from_data(TensorData::new(flat, [n, D]), device)
+        let data: Vec<Tensor<1, Bool>> = data.into_iter().map(|t| {t.0}).collect();
+        BatchedDiscreteMask(Tensor::stack(data, 0).to_device(device))
     }
 }
 
-// The Tensor batchables assume that the tensor already has batch dimension
-impl<const D: usize> Batchable for Tensor<D> {
-    type Batched = Self;
+impl Batchable for NoMask {
+    type Batched = BatchedNoMask;
 
-    fn batch(data: Vec<Self>, device: &Device) -> Self::Batched {
-        Tensor::cat(data, 0).to_device(device)
-    }
+    fn batch(_: Vec<Self>, _: &Device) -> Self::Batched { BatchedNoMask }
 }
 
-impl<const D: usize> Batchable for Tensor<D, Int> {
-    type Batched = Self;
+macro_rules! impl_batchable_tensor {
+    ($d:literal => $db:literal) => {
+        impl Batchable for Tensor<$d> {
+            type Batched = Tensor<$db>;
 
-    fn batch(data: Vec<Self>, device: &Device) -> Self::Batched {
-        Tensor::cat(data, 0).to_device(device)
-    }
+            fn batch(bundle: Vec<Self>, device: &Device) -> Self::Batched {
+                Tensor::stack(bundle, 0).to_device(device)
+            }
+        }
+
+        impl Batchable for Tensor<$d, Int> {
+            type Batched = Tensor<$db, Int>;
+
+            fn batch(bundle: Vec<Self>, device: &Device) -> Self::Batched {
+                Tensor::stack(bundle, 0).to_device(device)
+            }
+        }
+
+        impl Batchable for Tensor<$d, Bool> {
+            type Batched = Tensor<$db, Bool>;
+
+            fn batch(bundle: Vec<Self>, device: &Device) -> Self::Batched {
+                Tensor::stack(bundle, 0).to_device(device)
+            }
+        }
+    };
 }
 
-impl<const D: usize> Batchable for Tensor<D, Bool> {
-    type Batched = Self;
-
-    fn batch(data: Vec<Self>, device: &Device) -> Self::Batched {
-        Tensor::cat(data, 0).to_device(device)
-    }
-}
+impl_batchable_tensor!(1 => 2);
+impl_batchable_tensor!(2 => 3);
+impl_batchable_tensor!(3 => 4);
+impl_batchable_tensor!(4 => 5);
+impl_batchable_tensor!(5 => 6);
+impl_batchable_tensor!(6 => 7);
+impl_batchable_tensor!(7 => 8);
+impl_batchable_tensor!(8 => 9);
 
 impl Batchable for () {
     type Batched = ();

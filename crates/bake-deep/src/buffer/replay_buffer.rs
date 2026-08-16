@@ -1,9 +1,9 @@
 use burn::{Tensor, tensor::Device};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
-use crate::types::{ActionMask, Batch, Batchable, Transition};
+use crate::types::{ActionMask, Batch, Batchable, NoMask, Transition};
 
 /// Replay Buffer Implementation
-pub struct ReplayBuffer<Obs: Batchable, Action: Batchable, Mask: ActionMask = (), Extra: Batchable = ()> {
+pub struct ReplayBuffer<Obs: Batchable, Action: Batchable, Mask: ActionMask + Batchable = NoMask, Extra: Batchable = ()> {
     capacity: usize,
     head: usize,
 
@@ -24,7 +24,7 @@ pub struct ReplayBuffer<Obs: Batchable, Action: Batchable, Mask: ActionMask = ()
     device: Device,
 }
 
-impl<Obs: Batchable, Action: Batchable, Mask: ActionMask, Extra: Batchable> ReplayBuffer<Obs, Action, Mask, Extra> {
+impl<Obs: Batchable, Action: Batchable, Mask: ActionMask + Batchable, Extra: Batchable> ReplayBuffer<Obs, Action, Mask, Extra> {
     pub fn new(seed: u64, capacity: usize, device: Device) -> Self {
         let obss = Vec::with_capacity(capacity);
         let actions = Vec::with_capacity(capacity);
