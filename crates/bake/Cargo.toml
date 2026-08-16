@@ -14,3 +14,38 @@ burn = "0.22.0-pre.2"
 default = ["tabular", "deep"]
 tabular = ["dep:bake-tabular"]
 deep = ["dep:bake-deep"]
+
+[[example]]
+name = "sarsa"
+path = "examples/tabular/sarsa.rs"
+required-features = ["tabular"]
+
+[[example]]
+name = "qlearning"
+path = "examples/tabular/qlearning.rs"
+required-features = ["tabular"]
+
+[[example]]
+name = "expected_sarsa"
+path = "examples/tabular/expected_sarsa.rs"
+required-features = ["tabular"]
+
+[[example]]
+name = "nstepsarsa"
+path = "examples/tabular/nstepsarsa.rs"
+required-features = ["tabular"]
+
+[[example]]
+name = "nstepqlearning"
+path = "examples/tabular/nstepqlearning.rs"
+required-features = ["tabular"]
+
+[[example]]
+name = "dqn"
+path = "examples/deep/dqn.rs"
+required-features = ["deep"]
+
+[[example]]
+name = "dueling_dqn"
+path = "examples/deep/dueling_dqn.rs"
+required-features = ["deep"]

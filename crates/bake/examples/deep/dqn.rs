@@ -1,4 +1,4 @@
-use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::CartPole, head::{DuelingLinearQHead, LinearQHead}, policy::EpsGreedy, qnetwork::SequentialQNetwork, types::{Tape, Transition}};
+use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::CartPole, head::LinearQHead, policy::EpsGreedy, qnetwork::SequentialQNetwork, types::Tape};
 use burn::{Tensor, nn::{Relu}, optim::AdamConfig, tensor::Device};
 use burn::nn::activation::Activation;
 pub fn main() {
@@ -8,7 +8,7 @@ pub fn main() {
     let mut agent = DQNAgent::new(0.99,    
         SequentialQNetwork::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(Relu), &device),
-            DuelingLinearQHead::new(128, 2, &device)
+            LinearQHead::new(128, 2, &device)
         ),
         1e-3,
             AdamConfig::new().init()
