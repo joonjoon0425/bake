@@ -82,7 +82,7 @@ impl<Obs: Batchable, Action: Batchable, Mask: ActionMask + Batchable, Extra: Bat
 
     pub fn len(&self) -> usize { self.obss.len() }
 
-    pub fn sample(&mut self, batch_size: usize) -> Option<Batch<Obs::Batched, Action::Batched, Mask::Batched, Extra::Batched>> {
+    pub fn sample(&mut self, batch_size: usize) -> Option<Batch<Obs, Action, Mask, Extra>> {
         let len = self.len();
 
         if len < batch_size { return None; }

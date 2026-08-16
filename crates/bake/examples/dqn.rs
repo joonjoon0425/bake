@@ -1,12 +1,15 @@
-use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, env::{CartPole, Env}, policy::EpsGreedy, types::{DuelingQNetwork, MLPQNetwork, Transition}};
-use burn::{Tensor, nn::Relu, optim::AdamConfig, tensor::{Device}};
-
+use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::{CartPole, Env}, head::{DuelingLinearQHead, LinearQHead}, policy::EpsGreedy, types::{SequentialQNetwork, Transition}};
+use burn::{Tensor, nn::{Relu}, optim::AdamConfig, tensor::Device};
+use burn::nn::activation::Activation;
 pub fn main() {
     let device = Device::default().autodiff();
     device.seed(12);
     let mut env = CartPole::new(12, &device);
     let mut agent = DQNAgent::new(0.99,    
-        MLPQNetwork::new(vec![4, 128, 2], burn::nn::activation::Activation::Relu(Relu), &device),
+        SequentialQNetwork::new(
+            MLPEncoder::new(vec![4, 128], Activation::Relu(Relu), &device),
+            DuelingLinearQHead::new(128, 2, &device)
+        ),
         1e-3,
             AdamConfig::new().init()
         );
@@ -23,7 +26,7 @@ pub fn main() {
 
         loop {
             let action = agent.action(&mut policy, obs.clone(), mask.clone());
-            let ((next_obs, next_mask), reward, terminated, truncated) = env.step(action);
+            let ((next_obs, next_mask), reward, terminated, truncated) = env.step(action.clone());
 
             buffer.push(Transition {
                 obs,

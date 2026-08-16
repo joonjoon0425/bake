@@ -1,4 +1,4 @@
-use burn::tensor::Device;
+use burn::{Tensor, tensor::Device};
 
 use crate::types::{ActionMask, Batch, Batchable, NoMask, Transition};
 
@@ -63,14 +63,14 @@ impl<Obs: Batchable, Action: Batchable, Mask: ActionMask + Batchable, Extra: Bat
         self.extras.push(t.extra);
     }
 
-    pub fn pop(&mut self) -> Batch<Obs::Batched, Action::Batched, Mask::Batched, Extra::Batched> {
+    pub fn pop(&mut self) -> Batch<Obs, Action, Mask, Extra> {
         let batched_steps = Batch {
             obss: Obs::batch(self.obss.clone(), &self.device),
             actions: Action::batch(self.actions.clone(), &self.device),
-            rewards: f32::batch(self.rewards.clone(), &self.device),
+            rewards: Tensor::from_floats(self.rewards.as_slice(), &self.device),
             next_obss: Obs::batch(self.next_obss.clone(), &self.device),
-            terminated: f32::batch(self.terminated.clone(), &self.device),
-            truncated: f32::batch(self.truncated.clone(), &self.device),
+            terminated: Tensor::from_floats(self.terminated.as_slice(), &self.device),
+            truncated: Tensor::from_floats(self.truncated.as_slice(), &self.device),
             masks: Mask::batch(self.masks.clone(), &self.device),
             next_masks: Mask::batch(self.next_masks.clone(), &self.device),
             extras: Extra::batch(self.extras.clone(), &self.device),

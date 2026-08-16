@@ -6,12 +6,11 @@
 //! (e.g. dueling) can be exercised on an unmasked task.
  
 use burn::{
-    Tensor,
-    tensor::{Bool, Device},
+    Tensor, tensor::{Bool, Device, Int},
 };
 use rand::{RngExt, SeedableRng, rngs::StdRng};
  
-use crate::{env::Env, types::DiscreteMask};
+use crate::{env::Env, types::{DiscreteMask, NoMask}};
  
 const GRAVITY: f32 = 9.8;
 const MASS_CART: f32 = 1.0;
@@ -69,14 +68,14 @@ impl CartPole {
             steps: 0,
             rng: StdRng::seed_from_u64(seed),
             device: device.clone(),
-            mask: DiscreteMask(Tensor::<1, Bool>::from_data([true; N_ACTIONS], device)),
+            mask: NoMask,
         }
     }
  
     /// Build the observation tensor from the current state.
-    fn obs(&self) -> Tensor<1> {
-        Tensor::<1>::from_data(
-            [self.x, self.x_dot, self.theta, self.theta_dot],
+    fn obs(&self) -> Tensor<2> {
+        Tensor::<2>::from_data(
+            [[self.x, self.x_dot, self.theta, self.theta_dot]],
             &self.device,
         )
     }
@@ -88,9 +87,9 @@ impl CartPole {
 }
  
 impl Env for CartPole {
-    type Obs = Tensor<1>;
-    type Action = i64;
-    type Mask = DiscreteMask<2>;
+    type Obs = Tensor<2>;
+    type Action = Tensor<1, Int>;
+    type Mask = NoMask;
  
     fn reset(&mut self) -> (Self::Obs, Self::Mask) {
         let mut sample = || self.rng.random_range(-INIT_RANGE..INIT_RANGE);
@@ -105,6 +104,7 @@ impl Env for CartPole {
     }
  
     fn step(&mut self, action: Self::Action) -> ((Self::Obs, Self::Mask), f32, bool, bool) {
+        let action = action.into_scalar();
         debug_assert!(
             (0..N_ACTIONS as i64).contains(&action),
             "action out of range: {action}"

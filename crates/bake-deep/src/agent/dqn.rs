@@ -1,7 +1,7 @@
 //! A Deep Q-Network algorithm implementation
-use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::Bool};
+use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::{Bool, Int}};
 
-use crate::{policy::EpsGreedy, types::{ActionMask, Batch, Batchable, QNetwork}};
+use crate::{policy::EpsGreedy, types::{ActionMask, Batch, QNetwork}};
 /// A Deep Q-Network algorithm Implmentation
 pub struct DQNAgent<QNet>
 where
@@ -31,14 +31,14 @@ where
     }
 
     /// Sample an action using given policy
-    pub fn action<M: ActionMask<Value = Tensor<1>>>(&self, policy: &mut EpsGreedy, obs: QNet::Obs, mask: M) -> i64 {
-        let qvalues = self.online.forward_single(obs, mask.clone(), -1e9).detach();
+    pub fn action<M: ActionMask<Value = Tensor<2>>>(&self, policy: &mut EpsGreedy, obs: QNet::Obs, mask: M) -> Tensor<1, Int> {
+        let qvalues = self.online.forward(obs, mask.clone(), -1e9).detach();
         policy.sample(qvalues, mask)
     }
 
     /// update the online network<br>
     /// returns Self, Mean Q Values, loss, and TD-error of given batches
-    pub fn update<M: ActionMask<Value = Tensor<2>>>(mut self, t: Batch<<QNet::Obs as Batchable>::Batched, <i64 as Batchable>::Batched, M>)
+    pub fn update<M: ActionMask<Value = Tensor<2>>>(mut self, t: Batch<QNet::Obs, Tensor<1, Int>, M>)
     -> (Self, Tensor<1>, Tensor<1>, Tensor<1>) {
         let qvalues = self.online.forward(t.obss, t.masks, -1e9);
         let qvalues = qvalues.gather(1, t.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
