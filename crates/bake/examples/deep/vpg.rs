@@ -7,7 +7,7 @@ pub fn main() {
     let mut env = CartPole::new(12, &device);
     let mut agent = VPGAgent::new(
         0.99,
-        Baseline::Normalized,
+        Baseline::Mean,
         SequentialLogitNetwork::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             CategoricalHead::new(128, 2, &device)
