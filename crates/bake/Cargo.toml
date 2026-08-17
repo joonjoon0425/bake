@@ -49,3 +49,8 @@ required-features = ["deep"]
 name = "dueling_dqn"
 path = "examples/deep/dueling_dqn.rs"
 required-features = ["deep"]
+
+[[example]]
+name = "vpg"
+path = "examples/deep/vpg.rs"
+required-features = ["deep"]

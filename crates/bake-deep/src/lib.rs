@@ -3,9 +3,10 @@
 
 pub mod agent;
 pub mod buffer;
+pub mod distribution;
 pub mod env;
 pub mod encoder;
 pub mod head;
-pub mod qnetwork;
+pub mod network;
 pub mod policy;
 pub mod types;
