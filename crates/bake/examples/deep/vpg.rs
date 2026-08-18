@@ -4,7 +4,7 @@ use burn::{Tensor, nn::activation::Activation, optim::AdamConfig, tensor::Device
 
 pub fn main() {
     let device = Device::default().autodiff();
-    device.seed(12);
+    device.seed(1);
     let mut env = CartPole::new(12, &device);
     let mut agent = VPGAgent::new(
         0.99,
