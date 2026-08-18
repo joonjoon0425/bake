@@ -54,3 +54,8 @@ required-features = ["deep"]
 name = "vpg"
 path = "examples/deep/vpg.rs"
 required-features = ["deep"]
+
+[[example]]
+name = "a2c"
+path = "examples/deep/a2c.rs"
+required-features = ["deep"]

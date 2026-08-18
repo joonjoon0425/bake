@@ -13,3 +13,6 @@ pub use qhead::*;
 
 pub mod categoricalhead;
 pub use categoricalhead::*;
+
+pub mod valuehead;
+pub use valuehead::*;
