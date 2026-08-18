@@ -6,7 +6,7 @@ use crate::{encoder::Encoder, head::Head, types::{ActionMask, Batchable}};
 pub trait QNetwork : AutodiffModule + Clone + ModuleDisplay {
     type Obs: Batchable;
 
-    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, obs: Self::Obs, mask: M, value: f32) -> Tensor<2>;
+    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, obs: Self::Obs, mask: M) -> Tensor<2>;
 }
 
 /// A helper for creating encoder-head q network
@@ -28,8 +28,8 @@ impl<E: Encoder, H: Head<Output = Tensor<2>>> SequentialQNetwork<E, H> {
 impl<E: Encoder<Obs = Tensor<2>>, H: Head<Output = Tensor<2>>> QNetwork for SequentialQNetwork<E, H> {
     type Obs = Tensor<2>;
 
-    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, obs: Self::Obs, mask: M, value: f32) -> Tensor<2> {
-        let qvalues = self.head.forward(self.encoder.forward(obs), mask, value);
+    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, obs: Self::Obs, mask: M) -> Tensor<2> {
+        let qvalues = self.head.forward(self.encoder.forward(obs), mask, -1e9);
         qvalues
     }
 }
