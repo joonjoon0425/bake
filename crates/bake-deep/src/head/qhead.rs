@@ -27,12 +27,12 @@ impl QHead for LinearQHead {
 }
 
 #[derive(Module, Debug)]
-pub struct DuelingQHead {
+pub struct LinearDuelingQHead {
     value: Linear,
     advantage: Linear,
 }
 
-impl DuelingQHead {
+impl LinearDuelingQHead {
     pub fn new(d_input: usize, d_output: usize, device: &Device) -> Self {
         Self {
             value: LinearConfig::new(d_input, 1).init(device),
@@ -41,7 +41,7 @@ impl DuelingQHead {
     }
 }
 
-impl QHead for DuelingQHead {
+impl QHead for LinearDuelingQHead {
     fn forward(&self, encoded: Tensor<2>, constraint: impl DiscreteConstraint) -> Tensor<2> {
         let v = self.value.forward(encoded.clone());
         let a = self.advantage.forward(encoded);
