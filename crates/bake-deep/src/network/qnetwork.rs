@@ -6,7 +6,7 @@ use crate::{encoder::Encoder, head::QHead, types::{Batchable, DiscreteConstraint
 pub trait QNetwork : AutodiffModule + Clone + ModuleDisplay {
     type Obs: Batchable;
 
-    fn forward(&self, obs: Self::Obs, barrier: impl DiscreteConstraint) -> Tensor<2>;
+    fn forward(&self, obs: Self::Obs, constraint: impl DiscreteConstraint) -> Tensor<2>;
 }
 
 /// A helper for creating encoder-head q network
@@ -28,8 +28,8 @@ impl<E: Encoder, H: QHead> SequentialQNetwork<E, H> {
 impl<E: Encoder<Obs = Tensor<2>>, H: QHead> QNetwork for SequentialQNetwork<E, H> {
     type Obs = Tensor<2>;
 
-    fn forward(&self, obs: Self::Obs, barrier: impl DiscreteConstraint) -> Tensor<2> {
-        let qvalues = self.head.forward(self.encoder.forward(obs), barrier);
+    fn forward(&self, obs: Self::Obs, constraint: impl DiscreteConstraint) -> Tensor<2> {
+        let qvalues = self.head.forward(self.encoder.forward(obs), constraint);
         qvalues
     }
 }

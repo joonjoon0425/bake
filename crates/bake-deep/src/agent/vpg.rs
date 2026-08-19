@@ -26,19 +26,19 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
         }
     }
     /// sample an action
-    pub fn action(&self, obs: LogitNet::Obs, barrier: LogitNet::Barrier) -> <LogitNet::Dist as Distribution>::Action {
-        let dist = self.online.forward(obs, barrier);
+    pub fn action(&self, obs: LogitNet::Obs, constraint: LogitNet::Constraint) -> <LogitNet::Dist as Distribution>::Action {
+        let dist = self.online.forward(obs, constraint);
         dist.sample()
     }
 
     /// get the most-likely action
-    pub fn mode(&self, obs: LogitNet::Obs, barrier: LogitNet::Barrier) -> <LogitNet::Dist as Distribution>::Action {
-        let dist = self.online.forward(obs, barrier);
+    pub fn mode(&self, obs: LogitNet::Obs, constraint: LogitNet::Constraint) -> <LogitNet::Dist as Distribution>::Action {
+        let dist = self.online.forward(obs, constraint);
         dist.mode()
     }
 
     /// update the logit network
-    pub fn update(mut self, t: Batch<LogitNet::Obs, <LogitNet::Dist as Distribution>::Action, LogitNet::Barrier>) -> (Self, Tensor<1>) {
+    pub fn update(mut self, t: Batch<LogitNet::Obs, <LogitNet::Dist as Distribution>::Action, LogitNet::Constraint>) -> (Self, Tensor<1>) {
         let len = t.batch_size;
         let device = t.rewards.device();
         let dist = self.online.forward(t.obss, t.constraints.into());

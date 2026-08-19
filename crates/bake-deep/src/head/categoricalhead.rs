@@ -24,9 +24,9 @@ impl<Constraint: DiscreteConstraint> CategoricalHead<Constraint> {
 
 impl<Constraint: DiscreteConstraint> Head for CategoricalHead<Constraint> {
     type Output = Categorical;
-    type Barrier = Constraint;
+    type Constraint = Constraint;
     /// currently, fill_value is not used here
-    fn forward(&self, encoded: Tensor<2>, constraint: Self::Barrier) -> Self::Output {
+    fn forward(&self, encoded: Tensor<2>, constraint: Self::Constraint) -> Self::Output {
         let logits = self.layer.forward(encoded);
         Categorical::new(logits, constraint)
     }

@@ -30,9 +30,9 @@ where
     }
 
     /// Sample an action using given policy
-    pub fn action(&self, policy: &mut EpsGreedy, obs: QNet::Obs, barrier: impl DiscreteConstraint) -> Tensor<1, Int> {
-        let qvalues = self.online.forward(obs, barrier.clone()).detach();
-        policy.sample(qvalues, barrier)
+    pub fn action(&self, policy: &mut EpsGreedy, obs: QNet::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
+        let qvalues = self.online.forward(obs, constraint.clone()).detach();
+        policy.sample(qvalues, constraint)
     }
 
     /// update the online network<br>

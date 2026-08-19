@@ -8,9 +8,9 @@ use crate::{distribution::Distribution, encoder::Encoder, head::{Head, VHead}, t
 pub trait ActorCriticNetwork : AutodiffModule + Clone + ModuleDisplay {
     type Obs: Batchable;
     type Dist: Distribution;
-    type Barrier: Batchable;
+    type Constraint: Batchable;
 
-    fn forward(&self, obs: Self::Obs, barrier: Self::Barrier) -> (Self::Dist, Tensor<1>);
+    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> (Self::Dist, Tensor<1>);
 }
 
 /// A helper for creating an ActorCriticNetwork
@@ -36,9 +36,9 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> SequentialActorCriti
 impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCriticNetwork for SequentialActorCriticNetwork<E, H1, H2> {
     type Obs = E::Obs;
     type Dist = H1::Output;
-    type Barrier = H1::Barrier;
+    type Constraint = H1::Constraint;
 
-    fn forward(&self, obs: Self::Obs, constraint: H1::Barrier) -> (Self::Dist, Tensor<1>) {
+    fn forward(&self, obs: Self::Obs, constraint: H1::Constraint) -> (Self::Dist, Tensor<1>) {
         let dist = self.policy.forward(self.policy_encoder.forward(obs.clone()), constraint);
         let value = self.value.forward(self.value_encoder.forward(obs));
         (dist, value)
@@ -66,9 +66,9 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> SharedActorCriticNet
 impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCriticNetwork for SharedActorCriticNetwork<E, H1, H2> {
     type Obs = E::Obs;
     type Dist = H1::Output;
-    type Barrier = H1::Barrier;
+    type Constraint = H1::Constraint;
 
-    fn forward(&self, obs: Self::Obs, constraint: Self::Barrier) -> (Self::Dist, Tensor<1>) {
+    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> (Self::Dist, Tensor<1>) {
         let encoded = self.encoder.forward(obs);
         let dist = self.policy.forward(encoded.clone(), constraint);
         let value = self.value.forward(encoded);

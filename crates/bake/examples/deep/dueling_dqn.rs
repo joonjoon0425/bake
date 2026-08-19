@@ -24,7 +24,7 @@ pub fn main() {
         let mut q_mean: Tensor<1> = Tensor::zeros([1], &device);
         tape.reset(&mut env);
         loop {
-            let action = agent.action(&mut policy, tape.obs.clone(), tape.barrier.clone());
+            let action = agent.action(&mut policy, tape.obs.clone(), tape.constraint.clone());
             let t = tape.step(&mut env, action);
             let done = t.terminated || t.truncated;
             buffer.push(t);

@@ -20,7 +20,7 @@ pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Constraint: Batchabl
     n: Option<usize>,
 }
 
-impl<Obs: Batchable, Action: Batchable, Barrier: Batchable, Extra: Batchable> RolloutBuffer<Obs, Action, Barrier, Extra> {
+impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> RolloutBuffer<Obs, Action, Constraint, Extra> {
     pub fn new(n: Option<usize>, device: Device) -> Self {
         Self {
             obss: vec![],
@@ -51,7 +51,7 @@ impl<Obs: Batchable, Action: Batchable, Barrier: Batchable, Extra: Batchable> Ro
         }
     }
 
-    pub fn push(&mut self, t: Transition<Obs, Action, Barrier, Extra>) {
+    pub fn push(&mut self, t: Transition<Obs, Action, Constraint, Extra>) {
         self.obss.push(t.obs);
         self.actions.push(t.action);
         self.rewards.push(t.reward);
@@ -63,7 +63,7 @@ impl<Obs: Batchable, Action: Batchable, Barrier: Batchable, Extra: Batchable> Ro
         self.extras.push(t.extra);
     }
 
-    pub fn pop(&mut self) -> Batch<Obs, Action, Barrier, Extra> {
+    pub fn pop(&mut self) -> Batch<Obs, Action, Constraint, Extra> {
         let batched_steps = Batch {
             obss: Obs::batch(self.obss.clone(), &self.device),
             actions: Action::batch(self.actions.clone(), &self.device),
@@ -71,8 +71,8 @@ impl<Obs: Batchable, Action: Batchable, Barrier: Batchable, Extra: Batchable> Ro
             next_obss: Obs::batch(self.next_obss.clone(), &self.device),
             terminated: Tensor::from_floats(self.terminated.as_slice(), &self.device),
             truncated: Tensor::from_floats(self.truncated.as_slice(), &self.device),
-            constraints: Barrier::batch(self.constraints.clone(), &self.device),
-            next_constraints: Barrier::batch(self.next_constraints.clone(), &self.device),
+            constraints: Constraint::batch(self.constraints.clone(), &self.device),
+            next_constraints: Constraint::batch(self.next_constraints.clone(), &self.device),
             extras: Extra::batch(self.extras.clone(), &self.device),
 
             batch_size: self.len()

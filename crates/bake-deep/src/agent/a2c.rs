@@ -23,19 +23,19 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
         }
     }
     /// sample an action
-    pub fn action(&self, obs: Net::Obs, barrier: Net::Barrier) -> <Net::Dist as Distribution>::Action {
-        let (dist, _) = self.net.forward(obs, barrier);
+    pub fn action(&self, obs: Net::Obs, constraint: Net::Constraint) -> <Net::Dist as Distribution>::Action {
+        let (dist, _) = self.net.forward(obs, constraint);
         dist.sample()
     }
 
     /// get the most-likely action
-    pub fn mode(&self, obs: Net::Obs, barrier: Net::Barrier) -> <Net::Dist as Distribution>::Action {
-        let (dist, _) = self.net.forward(obs, barrier);
+    pub fn mode(&self, obs: Net::Obs, constraint: Net::Constraint) -> <Net::Dist as Distribution>::Action {
+        let (dist, _) = self.net.forward(obs, constraint);
         dist.mode()
     }
 
     /// update the value network and policy
-    pub fn update(mut self, t: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Barrier>) -> (Self, Tensor<1>, Tensor<1>) {
+    pub fn update(mut self, t: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint>) -> (Self, Tensor<1>, Tensor<1>) {
         let n = t.batch_size;
         let device = t.rewards.device();
         let rewards: Vec<f32> = t.rewards.into_data().into_vec().unwrap();

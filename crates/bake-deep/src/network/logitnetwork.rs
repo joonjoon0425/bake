@@ -5,9 +5,9 @@ use crate::{distribution::Distribution, encoder::Encoder, head::Head, types::Bat
 pub trait LogitNetwork : AutodiffModule + Clone + ModuleDisplay {
     type Obs: Batchable;
     type Dist: Distribution;
-    type Barrier: Batchable;
+    type Constraint: Batchable;
 
-    fn forward(&self, obs: Self::Obs, barrier: Self::Barrier) -> Self::Dist;
+    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist;
 }
 
 /// A helper for creating a LogitNetwork
@@ -29,9 +29,9 @@ impl<E: Encoder, H: Head<Output: Distribution>> SequentialLogitNetwork<E, H> {
 impl<E: Encoder, H: Head<Output: Distribution>> LogitNetwork for SequentialLogitNetwork<E, H> {
     type Obs = E::Obs;
     type Dist = H::Output;
-    type Barrier = H::Barrier;
+    type Constraint = H::Constraint;
 
-    fn forward(&self, obs: Self::Obs, constraint: Self::Barrier) -> Self::Dist {
+    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
         self.head.forward(self.encoder.forward(obs), constraint)
     }
 }

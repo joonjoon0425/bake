@@ -3,8 +3,8 @@ use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
 
 pub trait Head : AutodiffModule + Clone + ModuleDisplay {
     type Output;
-    type Barrier: Batchable;
-    fn forward(&self, encoded: Tensor<2>, barrier: Self::Barrier) -> Self::Output;
+    type Constraint: Batchable;
+    fn forward(&self, encoded: Tensor<2>, constraint: Self::Constraint) -> Self::Output;
 }
 
 pub trait QHead: AutodiffModule + Clone + ModuleDisplay {
