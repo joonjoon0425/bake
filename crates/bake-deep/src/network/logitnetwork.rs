@@ -1,5 +1,5 @@
 //! A logits network for policy-based agents
-use burn::{Tensor, module::{AutodiffModule, Module, ModuleDisplay}};
+use burn::module::{AutodiffModule, Module, ModuleDisplay};
 
 use crate::{distribution::Distribution, encoder::Encoder, head::Head, types::Batchable};
 pub trait LogitNetwork : AutodiffModule + Clone + ModuleDisplay {
@@ -7,7 +7,7 @@ pub trait LogitNetwork : AutodiffModule + Clone + ModuleDisplay {
     type Dist: Distribution;
     type Barrier: Batchable;
 
-    fn forward(&self, obs: Self::Obs, barrier: Option<Self::Barrier>) -> Self::Dist;
+    fn forward(&self, obs: Self::Obs, barrier: Self::Barrier) -> Self::Dist;
 }
 
 /// A helper for creating a LogitNetwork
@@ -31,7 +31,7 @@ impl<E: Encoder, H: Head<Output: Distribution>> LogitNetwork for SequentialLogit
     type Dist = H::Output;
     type Barrier = H::Barrier;
 
-    fn forward(&self, obs: Self::Obs, barrier: Option<Self::Barrier>) -> Self::Dist {
-        self.head.forward(self.encoder.forward(obs), barrier)
+    fn forward(&self, obs: Self::Obs, constraint: Self::Barrier) -> Self::Dist {
+        self.head.forward(self.encoder.forward(obs), constraint)
     }
 }

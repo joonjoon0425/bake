@@ -23,13 +23,13 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
         }
     }
     /// sample an action
-    pub fn action(&self, obs: Net::Obs, barrier: Option<Net::Barrier>) -> <Net::Dist as Distribution>::Action {
+    pub fn action(&self, obs: Net::Obs, barrier: Net::Barrier) -> <Net::Dist as Distribution>::Action {
         let (dist, _) = self.net.forward(obs, barrier);
         dist.sample()
     }
 
     /// get the most-likely action
-    pub fn mode(&self, obs: Net::Obs, barrier: Option<Net::Barrier>) -> <Net::Dist as Distribution>::Action {
+    pub fn mode(&self, obs: Net::Obs, barrier: Net::Barrier) -> <Net::Dist as Distribution>::Action {
         let (dist, _) = self.net.forward(obs, barrier);
         dist.mode()
     }
@@ -41,7 +41,7 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
         let rewards: Vec<f32> = t.rewards.into_data().into_vec().unwrap();
         let terminated: Vec<f32> = t.terminated.into_data().into_vec().unwrap();
         let truncated: Vec<f32> = t.truncated.into_data().into_vec().unwrap();
-        let (_, next_values) = self.net.forward(t.next_obss, t.next_barriers.into());
+        let (_, next_values) = self.net.forward(t.next_obss, t.next_constraints.into());
         let next_values = next_values.detach().into_data().into_vec().unwrap();
         let mut targets = vec![0f32; n + 1];
         targets[n] = if terminated[n - 1] == 1f32 { 0f32 } else { next_values[n - 1] };
@@ -57,7 +57,7 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
         targets.truncate(n);
         // 1. advantage
         let targets: Tensor<1> = Tensor::from_data(TensorData::new(targets, [n]), &device);
-        let (dist, values) = self.net.forward(t.obss, t.barriers.into());
+        let (dist, values) = self.net.forward(t.obss, t.constraints.into());
         let advantages = (targets.clone() - values.clone()).detach();
         let advantages = (advantages.clone() - advantages.clone().mean()) / (advantages.var(0) + 1e-9).sqrt();
         // 2. policy surrogate

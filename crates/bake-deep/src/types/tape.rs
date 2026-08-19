@@ -2,7 +2,7 @@
 use crate::{env::Env, types::Transition};
 pub struct Tape<E: Env> {
     pub obs: E::Obs,
-    pub barrier: Option<E::Barrier>,
+    pub barrier: E::Constraint,
 }
 
 impl<E: Env> Tape<E> {
@@ -20,7 +20,7 @@ impl<E: Env> Tape<E> {
         self.barrier = mask;
     }
 
-    pub fn step(&mut self, env: &mut E, action: E::Action) -> Transition<E::Obs, E::Action, E::Barrier> {
+    pub fn step(&mut self, env: &mut E, action: E::Action) -> Transition<E::Obs, E::Action, E::Constraint> {
         let ((next_obs, next_mask), reward, terminated, truncated) = env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let barrier = std::mem::replace(&mut self.barrier, next_mask);
@@ -31,8 +31,8 @@ impl<E: Env> Tape<E> {
             next_obs: self.obs.clone(),
             terminated,
             truncated,
-            barrier,
-            next_barrier: self.barrier.clone(),
+            constraint: barrier,
+            next_constraints: self.barrier.clone(),
             extra: ()
         };
         t

@@ -1,5 +1,5 @@
 use burn::{Tensor, module::Module, nn::{Linear, LinearConfig}, tensor::Device};
-use crate::{head::QHead, types::DiscreteMask};
+use crate::{head::QHead, types::DiscreteConstraint};
 
 #[derive(Module, Debug)]
 pub struct LinearQHead {
@@ -15,12 +15,9 @@ impl LinearQHead {
 }
 
 impl QHead for LinearQHead {
-    fn forward(&self, encoded: Tensor<2>, barrier: Option<DiscreteMask>) -> Tensor<2> {
+    fn forward(&self, encoded: Tensor<2>, constraint: impl DiscreteConstraint) -> Tensor<2> {
         let x = self.layer.forward(encoded);
-        match barrier {
-            Some(mask) => mask.apply(x, -1e9),
-            None => x
-        }
+        constraint.apply(x, -1e9)
     }
 }
 
@@ -40,18 +37,10 @@ impl DuelingQHead {
 }
 
 impl QHead for DuelingQHead {
-    fn forward(&self, encoded: Tensor<2>, barrier: Option<DiscreteMask>) -> Tensor<2> {
+    fn forward(&self, encoded: Tensor<2>, constraint: impl DiscreteConstraint) -> Tensor<2> {
         let v = self.value.forward(encoded.clone());
         let a = self.advantage.forward(encoded);
-        match barrier {
-            Some(mask) => {
-                let mean = mask.clone().mean_dim(1, a.clone());
-                mask.apply(v + a - mean, -1e9)
-            },
-            None => {
-                let mean = a.clone().mean_dim(1);
-                v + a - mean
-            }
-        }
+        let mean = constraint.clone().mean_dim(1, a.clone());
+        constraint.apply(v + a - mean, -1e9)
     }
 }

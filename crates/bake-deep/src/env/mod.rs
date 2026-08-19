@@ -9,10 +9,10 @@ use crate::types::Batchable;
 pub trait Env {
     type Obs: Batchable;
     type Action: Batchable;
-    type Barrier: Batchable;
+    type Constraint: Batchable;
 
-    fn step(&mut self, action: Self::Action) -> ((Self::Obs, Option<Self::Barrier>), f32, bool, bool);
-    fn reset(&mut self) -> (Self::Obs, Option<Self::Barrier>);
+    fn step(&mut self, action: Self::Action) -> ((Self::Obs, Self::Constraint), f32, bool, bool);
+    fn reset(&mut self) -> (Self::Obs, Self::Constraint);
 }
 
 pub mod cartpole;

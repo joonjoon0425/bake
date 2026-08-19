@@ -4,11 +4,11 @@ use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
 pub trait Head : AutodiffModule + Clone + ModuleDisplay {
     type Output;
     type Barrier: Batchable;
-    fn forward(&self, encoded: Tensor<2>, barrier: Option<Self::Barrier>) -> Self::Output;
+    fn forward(&self, encoded: Tensor<2>, barrier: Self::Barrier) -> Self::Output;
 }
 
 pub trait QHead: AutodiffModule + Clone + ModuleDisplay {
-    fn forward(&self, encoded: Tensor<2>, barrier: Option<DiscreteMask>) -> Tensor<2>;
+    fn forward(&self, encoded: Tensor<2>, constraint: impl DiscreteConstraint) -> Tensor<2>;
 }
 
 pub trait VHead: AutodiffModule + Clone + ModuleDisplay {
@@ -24,4 +24,4 @@ pub use categoricalhead::*;
 pub mod valuehead;
 pub use valuehead::*;
 
-use crate::types::{Batchable, DiscreteMask};
+use crate::types::{Batchable, DiscreteConstraint};

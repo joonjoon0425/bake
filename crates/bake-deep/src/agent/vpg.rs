@@ -26,13 +26,13 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
         }
     }
     /// sample an action
-    pub fn action(&self, obs: LogitNet::Obs, barrier: Option<LogitNet::Barrier>) -> <LogitNet::Dist as Distribution>::Action {
+    pub fn action(&self, obs: LogitNet::Obs, barrier: LogitNet::Barrier) -> <LogitNet::Dist as Distribution>::Action {
         let dist = self.online.forward(obs, barrier);
         dist.sample()
     }
 
     /// get the most-likely action
-    pub fn mode(&self, obs: LogitNet::Obs, barrier: Option<LogitNet::Barrier>) -> <LogitNet::Dist as Distribution>::Action {
+    pub fn mode(&self, obs: LogitNet::Obs, barrier: LogitNet::Barrier) -> <LogitNet::Dist as Distribution>::Action {
         let dist = self.online.forward(obs, barrier);
         dist.mode()
     }
@@ -41,7 +41,7 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
     pub fn update(mut self, t: Batch<LogitNet::Obs, <LogitNet::Dist as Distribution>::Action, LogitNet::Barrier>) -> (Self, Tensor<1>) {
         let len = t.batch_size;
         let device = t.rewards.device();
-        let dist = self.online.forward(t.obss, t.barriers.into());
+        let dist = self.online.forward(t.obss, t.constraints.into());
         let rewards: Vec<f32> = t.rewards.into_data().into_vec().unwrap();
         let mut returns = vec![0f32; len];
         returns[len - 1] = rewards[len - 1];

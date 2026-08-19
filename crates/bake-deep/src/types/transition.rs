@@ -7,7 +7,7 @@ use crate::types::{Batchable};
 
 /// Transition struct
 #[derive(Debug, Clone)]
-pub struct Transition<Obs: Batchable, Action: Batchable, Barrier: Batchable, Extra = ()> {
+pub struct Transition<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra = ()> {
     pub obs: Obs,
     pub action: Action,
     pub reward: f32,
@@ -15,22 +15,22 @@ pub struct Transition<Obs: Batchable, Action: Batchable, Barrier: Batchable, Ext
     pub terminated: bool,
     pub truncated: bool,
 
-    pub barrier: Option<Barrier>,
-    pub next_barrier: Option<Barrier>,
+    pub constraint: Constraint,
+    pub next_constraints: Constraint,
 
     pub extra: Extra,
 }
 /// A Batched `Transition` struct
 #[derive(Debug, Clone)]
-pub struct Batch<Obs, Action, Barrier, Extra = ()> {
+pub struct Batch<Obs, Action, Constraint, Extra = ()> {
     pub obss: Obs,
     pub actions: Action,
     pub rewards: Tensor<1>,
     pub next_obss: Obs,
     pub terminated: Tensor<1>,
     pub truncated: Tensor<1>,
-    pub barriers: Option<Barrier>,
-    pub next_barriers: Option<Barrier>,
+    pub constraints: Constraint,
+    pub next_constraints: Constraint,
     pub extras: Extra,
 
     pub batch_size: usize,
