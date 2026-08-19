@@ -1,7 +1,7 @@
 //! A Batchable trait
 use burn::{Tensor, tensor::{Bool, Device, Int}};
 
-use crate::types::{DiscreteMask, Unconstrained};
+use crate::constraint::{DiscreteMask, Unconstrained};
 
 /// Can translate themselves into batch type
 pub trait Batchable : Sized + Clone + Send + Sync + 'static {

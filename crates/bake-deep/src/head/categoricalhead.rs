@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use burn::{Tensor, module::Module, nn::{Linear, LinearConfig}, tensor::Device};
 
-use crate::{distribution::Categorical, head::Head, types::DiscreteConstraint};
+use crate::{constraint::DiscreteConstraint, distribution::Categorical, head::Head};
 
 #[derive(Module, Debug)]
 pub struct CategoricalHead<Constraint> {

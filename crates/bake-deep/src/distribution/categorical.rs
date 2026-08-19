@@ -1,6 +1,6 @@
 //! Categorial distribution implementation
 use burn::{Tensor, tensor::{Int, activation::log_softmax}};
-use crate::{distribution::Distribution, types::DiscreteConstraint};
+use crate::{constraint::DiscreteConstraint, distribution::Distribution};
 
 pub struct Categorical {
     log_probs: Tensor<2>,

@@ -1,4 +1,4 @@
-use bake_deep::{agent::{A2CAgent, A2CConfig}, buffer::RolloutBuffer, encoder::MLPEncoder, env::CartPole, head::{CategoricalHead, LinearValueHead}, network::SequentialActorCriticNetwork, types::Tape};
+use bake_deep::{agent::{A2CAgent, A2CConfig}, buffer::RolloutBuffer, encoder::MLPEncoder, env::CartPole, head::{CategoricalHead, LinearVHead}, network::SequentialActorCriticNetwork, types::Tape};
 use burn::{Tensor, nn::activation::Activation, optim::{AdamConfig, RmsPropConfig}, tensor::Device};
 
 
@@ -19,7 +19,7 @@ pub fn main() {
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             CategoricalHead::new(128, 2, &device),
-            LinearValueHead::new(128, 1, &device)
+            LinearVHead::new(128, 1, &device)
         )
     );
     let mut buffer = RolloutBuffer::new(160.into(), device.clone());

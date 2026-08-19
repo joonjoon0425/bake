@@ -1,6 +1,6 @@
 //! A QNetwork trait for value-based methods, and basic helper for creating a new QNetwork
 use burn::{Tensor, module::{AutodiffModule, Module, ModuleDisplay}};
-use crate::{encoder::Encoder, head::QHead, types::{Batchable, DiscreteConstraint}};
+use crate::{constraint::DiscreteConstraint, encoder::Encoder, head::QHead, types::Batchable};
 
 /// A QNetwork trait for value-based methods
 pub trait QNetwork : AutodiffModule + Clone + ModuleDisplay {

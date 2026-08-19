@@ -1,5 +1,10 @@
-use burn::{Tensor, module::Module, nn::{Linear, LinearConfig}, tensor::Device};
-use crate::{head::QHead, types::DiscreteConstraint};
+use burn::{Tensor, module::{AutodiffModule, Module, ModuleDisplay}, nn::{Linear, LinearConfig}, tensor::Device};
+
+use crate::constraint::DiscreteConstraint;
+
+pub trait QHead: AutodiffModule + Clone + ModuleDisplay {
+    fn forward(&self, encoded: Tensor<2>, constraint: impl DiscreteConstraint) -> Tensor<2>;
+}
 
 #[derive(Module, Debug)]
 pub struct LinearQHead {

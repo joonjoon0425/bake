@@ -4,7 +4,7 @@
 use burn::{Tensor, tensor::{Distribution, Int}};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
-use crate::types::{DiscreteConstraint};
+use crate::constraint::DiscreteConstraint;
 pub struct EpsGreedy {
     eps: f32,
     rng: StdRng,

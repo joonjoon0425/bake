@@ -3,6 +3,7 @@
 
 pub mod agent;
 pub mod buffer;
+pub mod constraint;
 pub mod distribution;
 pub mod env;
 pub mod encoder;

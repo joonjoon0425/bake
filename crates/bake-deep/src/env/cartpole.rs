@@ -9,8 +9,7 @@ use burn::{
     Tensor, tensor::{Device, Int},
 };
 use rand::{RngExt, SeedableRng, rngs::StdRng};
- 
-use crate::{env::Env, types::Unconstrained};
+use crate::{constraint::Unconstrained, env::Env};
  
 const GRAVITY: f32 = 9.8;
 const MASS_CART: f32 = 1.0;
