@@ -2,7 +2,7 @@
 use burn::{Tensor, nn::loss::{HuberLoss, HuberLossConfig, MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
 use crate::{constraint::DiscreteConstraint, network::QNetwork, policy::EpsGreedy, types::Batch};
 /// A Deep Q-Network algorithm Implmentation
-pub struct DQNAgent<QNet>
+pub struct DDQNAgent<QNet>
 where
     QNet: QNetwork,
 {
@@ -13,7 +13,7 @@ where
     target: QNet,
 }
 
-impl<QNet> DQNAgent<QNet>
+impl<QNet> DDQNAgent<QNet>
 where 
     QNet: QNetwork,
 {
@@ -42,8 +42,11 @@ where
         let qvalues = self.online.forward(t.obss, t.constraints);
         let qvalues = qvalues.gather(1, t.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
 
-        let next_qvalues = self.target.forward(t.next_obss, t.next_constraints).detach();
-        let target = (t.rewards + self.gamma * next_qvalues.max_dim(1).squeeze_dim(1) * (1f32 - t.terminated)).detach();
+        let next_qvalues_online = self.online.forward(t.next_obss.clone(), t.next_constraints.clone()).detach();
+        let argmax = next_qvalues_online.argmax(1);
+        let next_qvalues_target = self.target.forward(t.next_obss, t.next_constraints).detach();
+        let next_qvalues = next_qvalues_target.gather(1, argmax).squeeze_dim::<1>(1);
+        let target = (t.rewards + self.gamma * next_qvalues * (1f32 - t.terminated)).detach();
 
         let td_error = target.clone() - qvalues.clone();
         let q_mean = qvalues.clone().mean();

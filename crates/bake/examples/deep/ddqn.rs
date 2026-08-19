@@ -1,4 +1,4 @@
-use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::CartPole, head::{LinearQHead}, network::SequentialQNetwork, policy::EpsGreedy, types::Tape};
+use bake_deep::{agent::DDQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::CartPole, head::{LinearQHead}, network::SequentialQNetwork, policy::EpsGreedy, types::Tape};
 use burn::{Tensor, grad_clipping::GradientClippingConfig, nn::Relu, optim::AdamConfig, tensor::Device};
 use burn::nn::activation::Activation;
 pub fn main() {
@@ -8,7 +8,7 @@ pub fn main() {
     println!("# optimizer=adam lr=1e-3 buffer_capacity=10000 sync_freq=1000 update_freq=10 T=64 seed={seed}");
     println!("episode,total_steps,step,loss,q_mean,td_error,eps");
     let mut env = CartPole::new(seed, &device);
-    let mut agent = DQNAgent::new(0.99,    
+    let mut agent = DDQNAgent::new(0.99,    
         SequentialQNetwork::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(Relu), &device),
             LinearQHead::new(128, 2, &device)

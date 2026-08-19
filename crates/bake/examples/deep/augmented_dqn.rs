@@ -5,7 +5,7 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default().autodiff();
     device.seed(seed);
-    println!("# optimizer=adam lr=1e-3 buffer_capacity=10000 sync_freq=1000 update_freq=10 T=64 seed={seed}");
+    println!("# optimizer=adam lr=1e-3 buffer_capacity=20000 sync_freq=1000 update_freq=10 T=64 seed={seed}");
     println!("episode,total_steps,step,loss,q_mean,td_error,eps");
     let mut env = CartPole::new(seed, &device);
     let mut agent = DQNAgent::new(0.99,    
@@ -17,7 +17,7 @@ pub fn main() {
             AdamConfig::new().with_grad_clipping(Some(GradientClippingConfig::Norm(10.0))).init()
         );
     let mut policy = EpsGreedy::new(seed, 1.0f32);
-    let mut buffer = ReplayBuffer::new(12, 10000, device.clone());
+    let mut buffer = ReplayBuffer::new(12, 20000, device.clone());
     let mut tape = Tape::new(&mut env);
     let mut count = 0;
     for episode in 0..=4000 {
@@ -29,9 +29,14 @@ pub fn main() {
         loop {
             let action = agent.action(&mut policy, tape.obs.clone(), tape.constraint.clone());
             let t = tape.step(&mut env, action);
+            let mut t2 = t.clone();
+            t2.obs = t2.obs.neg();
+            t2.next_obs = t2.next_obs.neg();
+            t2.action = t2.action.neg().add_scalar(1);
 
             let done = t.terminated || t.truncated;
             buffer.push(t);
+            buffer.push(t2);
 
             if count % 10 == 0 && let Some(batch) = buffer.sample(64) {
                 (agent, q_mean, loss, td_error) = agent.update(batch);

@@ -3,6 +3,9 @@
 pub mod dqn;
 pub use dqn::*;
 
+pub mod ddqn;
+pub use ddqn::*;
+
 pub mod vpg;
 pub use vpg::*;
 
