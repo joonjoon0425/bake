@@ -1,11 +1,18 @@
 //! Head trait and basic implementations
 use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
-use crate::types::ActionMask;
 
 pub trait Head : AutodiffModule + Clone + ModuleDisplay {
     type Output;
+    type Barrier: Batchable;
+    fn forward(&self, encoded: Tensor<2>, barrier: Option<Self::Barrier>) -> Self::Output;
+}
 
-    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, encoded: Tensor<2>, mask: M, fill_value: f32) -> Self::Output;
+pub trait QHead: AutodiffModule + Clone + ModuleDisplay {
+    fn forward(&self, encoded: Tensor<2>, barrier: Option<DiscreteMask>) -> Tensor<2>;
+}
+
+pub trait VHead: AutodiffModule + Clone + ModuleDisplay {
+    fn forward(&self, encoded: Tensor<2>) -> Tensor<1>;
 }
 
 pub mod qhead;
@@ -16,3 +23,5 @@ pub use categoricalhead::*;
 
 pub mod valuehead;
 pub use valuehead::*;
+
+use crate::types::{Batchable, DiscreteMask};

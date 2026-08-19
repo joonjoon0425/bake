@@ -10,7 +10,7 @@ use burn::{
 };
 use rand::{RngExt, SeedableRng, rngs::StdRng};
  
-use crate::{env::Env, types::{NoMask}};
+use crate::{env::Env, types::DiscreteMask};
  
 const GRAVITY: f32 = 9.8;
 const MASS_CART: f32 = 1.0;
@@ -52,7 +52,7 @@ pub struct CartPole {
     device: Device,
     /// Pre-built all-true mask. Cloning a tensor clones a handle, not the buffer,
     /// so this avoids rebuilding it on every step.
-    mask: <Self as Env>::Mask,
+    mask: Option<<Self as Env>::Barrier>,
 }
  
 impl CartPole {
@@ -68,7 +68,7 @@ impl CartPole {
             steps: 0,
             rng: StdRng::seed_from_u64(seed),
             device: device.clone(),
-            mask: NoMask,
+            mask: None,
         }
     }
  
@@ -89,9 +89,9 @@ impl CartPole {
 impl Env for CartPole {
     type Obs = Tensor<2>;
     type Action = Tensor<1, Int>;
-    type Mask = NoMask;
+    type Barrier = DiscreteMask;
  
-    fn reset(&mut self) -> (Self::Obs, Self::Mask) {
+    fn reset(&mut self) -> (Self::Obs, Option<Self::Barrier>) {
         let mut sample = || self.rng.random_range(-INIT_RANGE..INIT_RANGE);
  
         self.x = sample();
@@ -103,7 +103,7 @@ impl Env for CartPole {
         (self.obs(), self.mask.clone())
     }
  
-    fn step(&mut self, action: Self::Action) -> ((Self::Obs, Self::Mask), f32, bool, bool) {
+    fn step(&mut self, action: Self::Action) -> ((Self::Obs, Option<Self::Barrier>), f32, bool, bool) {
         let action = action.into_scalar();
         debug_assert!(
             (0..N_ACTIONS as i64).contains(&action),

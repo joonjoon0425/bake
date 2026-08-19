@@ -1,22 +1,18 @@
 //! A Batchable trait
 use burn::{Tensor, tensor::{Bool, Device, Int}};
 
-use crate::types::{DiscreteMask, NoMask};
+use crate::types::DiscreteMask;
 
 /// Can translate themselves into batch type
 pub trait Batchable : Sized + Clone {
     fn batch(data: Vec<Self>, device: &Device) -> Self;
 }
 
-impl<const ACTION_NUM: usize> Batchable for DiscreteMask<ACTION_NUM> {
+impl<const D: usize> Batchable for DiscreteMask<D> {
     fn batch(data: Vec<Self>, device: &Device) -> Self {
-        let data: Vec<Tensor<2, Bool>> = data.into_iter().map(|t| {t.0}).collect();
+        let data: Vec<Tensor<D, Bool>> = data.into_iter().map(|t| t.0).collect();
         DiscreteMask(Tensor::cat(data, 0).to_device(device))
     }
-}
-
-impl Batchable for NoMask {
-    fn batch(_: Vec<Self>, _: &Device) -> Self { NoMask }
 }
 
 impl<const D: usize> Batchable for Tensor<D> {

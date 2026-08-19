@@ -1,13 +1,12 @@
 use burn::{Tensor, module::Module, nn::{Linear, LinearConfig}, tensor::Device};
-use crate::types::ActionMask;
-use crate::head::Head;
+use crate::head::VHead;
 
 #[derive(Module, Debug)]
-pub struct ValueHead {
+pub struct LinearValueHead {
     layer: Linear
 }
 
-impl ValueHead {
+impl LinearValueHead {
     pub fn new(d_input: usize, d_output: usize, device: &Device) -> Self {
         Self {
             layer: LinearConfig::new(d_input, d_output).init(device)
@@ -15,10 +14,8 @@ impl ValueHead {
     }
 }
 
-impl Head for ValueHead {
-    type Output = Tensor<1>;
-
-    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, encoded: Tensor<2>, _: M, _: f32) -> Self::Output {
+impl VHead for LinearValueHead {
+    fn forward(&self, encoded: Tensor<2>) -> Tensor<1> {
         let x = self.layer.forward(encoded);
         x.squeeze_dim(1)
     }

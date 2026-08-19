@@ -1,7 +1,7 @@
 //! Categorical Head for policy-based methods
 use burn::{Tensor, module::Module, nn::{Linear, LinearConfig}, tensor::Device};
 
-use crate::{distribution::Categorical, head::Head, types::ActionMask};
+use crate::{distribution::Categorical, head::Head, types::DiscreteMask};
 
 #[derive(Module, Debug)]
 pub struct CategoricalHead {
@@ -18,10 +18,10 @@ impl CategoricalHead {
 
 impl Head for CategoricalHead {
     type Output = Categorical;
-
+    type Barrier = DiscreteMask;
     /// currently, fill_value is not used here
-    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, encoded: Tensor<2>, mask: M, _: f32) -> Self::Output {
+    fn forward(&self, encoded: Tensor<2>, barrier: Option<Self::Barrier>) -> Self::Output {
         let logits = self.layer.forward(encoded);
-        Categorical::new(logits, mask)
+        Categorical::new(logits, barrier)
     }
 }

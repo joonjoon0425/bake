@@ -25,7 +25,7 @@ pub fn main() {
         let mut step = 0;
         tape.reset(&mut env);
         loop {
-            let action = agent.action(tape.obs.clone(), tape.mask.clone());
+            let action = agent.action(tape.obs.clone(), tape.barrier.clone());
             let t = tape.step(&mut env, action);
             let done = t.terminated || t.truncated;
 

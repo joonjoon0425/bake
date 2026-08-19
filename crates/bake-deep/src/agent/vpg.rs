@@ -2,7 +2,7 @@
 
 use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
 
-use crate::{distribution::Distribution, network::LogitNetwork, types::{ActionMask, Batch}};
+use crate::{distribution::Distribution, network::LogitNetwork, types::Batch};
 /// A Vanilla Policy Gradient (REINFORCE) algorithm implementation
 pub struct VPGAgent<LogitNet: LogitNetwork> {
     gamma: f32,
@@ -26,22 +26,22 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
         }
     }
     /// sample an action
-    pub fn action<M: ActionMask<Value = Tensor<2>>>(&self, obs: LogitNet::Obs, mask: M) -> <LogitNet::Dist as Distribution>::Action {
-        let dist = self.online.forward(obs, mask);
+    pub fn action(&self, obs: LogitNet::Obs, barrier: Option<LogitNet::Barrier>) -> <LogitNet::Dist as Distribution>::Action {
+        let dist = self.online.forward(obs, barrier);
         dist.sample()
     }
 
     /// get the most-likely action
-    pub fn mode<M: ActionMask<Value = Tensor<2>>>(&self, obs: LogitNet::Obs, mask: M) -> <LogitNet::Dist as Distribution>::Action {
-        let dist = self.online.forward(obs, mask);
+    pub fn mode(&self, obs: LogitNet::Obs, barrier: Option<LogitNet::Barrier>) -> <LogitNet::Dist as Distribution>::Action {
+        let dist = self.online.forward(obs, barrier);
         dist.mode()
     }
 
     /// update the logit network
-    pub fn update<M: ActionMask<Value = Tensor<2>>>(mut self, t: Batch<LogitNet::Obs, <LogitNet::Dist as Distribution>::Action, M>) -> (Self, Tensor<1>) {
+    pub fn update(mut self, t: Batch<LogitNet::Obs, <LogitNet::Dist as Distribution>::Action, LogitNet::Barrier>) -> (Self, Tensor<1>) {
         let len = t.batch_size;
         let device = t.rewards.device();
-        let dist = self.online.forward(t.obss, t.masks);
+        let dist = self.online.forward(t.obss, t.barriers.into());
         let rewards: Vec<f32> = t.rewards.into_data().into_vec().unwrap();
         let mut returns = vec![0f32; len];
         returns[len - 1] = rewards[len - 1];

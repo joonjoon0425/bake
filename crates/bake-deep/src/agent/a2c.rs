@@ -3,7 +3,7 @@
 //! 
 use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
 
-use crate::{distribution::Distribution, network::ActorCriticNetwork, types::{ActionMask, Batch}};
+use crate::{distribution::Distribution, network::ActorCriticNetwork, types::Batch};
 /// An Advantage Actor-Critic Algorithm implmentation
 pub struct A2CAgent<Net: ActorCriticNetwork> {
     gamma: f32,
@@ -23,25 +23,25 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
         }
     }
     /// sample an action
-    pub fn action<M: ActionMask<Value = Tensor<2>>>(&self, obs: Net::Obs, mask: M) -> <Net::Dist as Distribution>::Action {
-        let (dist, _) = self.net.forward(obs, mask);
+    pub fn action(&self, obs: Net::Obs, barrier: Option<Net::Barrier>) -> <Net::Dist as Distribution>::Action {
+        let (dist, _) = self.net.forward(obs, barrier);
         dist.sample()
     }
 
     /// get the most-likely action
-    pub fn mode<M: ActionMask<Value = Tensor<2>>>(&self, obs: Net::Obs, mask: M) -> <Net::Dist as Distribution>::Action {
-        let (dist, _) = self.net.forward(obs, mask);
+    pub fn mode(&self, obs: Net::Obs, barrier: Option<Net::Barrier>) -> <Net::Dist as Distribution>::Action {
+        let (dist, _) = self.net.forward(obs, barrier);
         dist.mode()
     }
 
     /// update the value network and policy
-    pub fn update<M: ActionMask<Value = Tensor<2>>>(mut self, t: Batch<Net::Obs, <Net::Dist as Distribution>::Action, M>) -> (Self, Tensor<1>, Tensor<1>) {
+    pub fn update(mut self, t: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Barrier>) -> (Self, Tensor<1>, Tensor<1>) {
         let n = t.batch_size;
         let device = t.rewards.device();
         let rewards: Vec<f32> = t.rewards.into_data().into_vec().unwrap();
         let terminated: Vec<f32> = t.terminated.into_data().into_vec().unwrap();
         let truncated: Vec<f32> = t.truncated.into_data().into_vec().unwrap();
-        let (_, next_values) = self.net.forward(t.next_obss, t.next_masks);
+        let (_, next_values) = self.net.forward(t.next_obss, t.next_barriers.into());
         let next_values = next_values.detach().into_data().into_vec().unwrap();
         let mut targets = vec![0f32; n + 1];
         targets[n] = if terminated[n - 1] == 1f32 { 0f32 } else { next_values[n - 1] };
@@ -57,7 +57,7 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
         targets.truncate(n);
         // 1. advantage
         let targets: Tensor<1> = Tensor::from_data(TensorData::new(targets, [n]), &device);
-        let (dist, values) = self.net.forward(t.obss, t.masks);
+        let (dist, values) = self.net.forward(t.obss, t.barriers.into());
         let advantages = (targets.clone() - values.clone()).detach();
         let advantages = (advantages.clone() - advantages.clone().mean()) / (advantages.var(0) + 1e-9).sqrt();
         // 2. policy surrogate

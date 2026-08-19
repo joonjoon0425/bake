@@ -1,13 +1,12 @@
 use burn::{Tensor, module::Module, nn::{Linear, LinearConfig}, tensor::Device};
-use crate::types::ActionMask;
-use crate::head::Head;
+use crate::{head::QHead, types::DiscreteMask};
 
 #[derive(Module, Debug)]
-pub struct QHead {
+pub struct LinearQHead {
     layer: Linear
 }
 
-impl QHead {
+impl LinearQHead {
     pub fn new(d_input: usize, d_output: usize, device: &Device) -> Self {
         Self {
             layer: LinearConfig::new(d_input, d_output).init(device)
@@ -15,12 +14,13 @@ impl QHead {
     }
 }
 
-impl Head for QHead {
-    type Output = Tensor<2>;
-
-    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, encoded: Tensor<2>, mask: M, fill_value: f32) -> Self::Output {
+impl QHead for LinearQHead {
+    fn forward(&self, encoded: Tensor<2>, barrier: Option<DiscreteMask>) -> Tensor<2> {
         let x = self.layer.forward(encoded);
-        mask.apply(x, fill_value)
+        match barrier {
+            Some(mask) => mask.apply(x, -1e9),
+            None => x
+        }
     }
 }
 
@@ -39,13 +39,19 @@ impl DuelingQHead {
     }
 }
 
-impl Head for DuelingQHead {
-    type Output = Tensor<2>;
-
-    fn forward<M: ActionMask<Value = Tensor<2>>>(&self, encoded: Tensor<2>, mask: M, fill_value: f32) -> Self::Output {
+impl QHead for DuelingQHead {
+    fn forward(&self, encoded: Tensor<2>, barrier: Option<DiscreteMask>) -> Tensor<2> {
         let v = self.value.forward(encoded.clone());
         let a = self.advantage.forward(encoded);
-        let mean = mask.clone().mean_dim(1, a.clone());
-        mask.apply(v + (a - mean), fill_value)
+        match barrier {
+            Some(mask) => {
+                let mean = mask.clone().mean_dim(1, a.clone());
+                mask.apply(v + a - mean, -1e9)
+            },
+            None => {
+                let mean = a.clone().mean_dim(1);
+                v + a - mean
+            }
+        }
     }
 }

@@ -3,11 +3,11 @@
 
 use burn::Tensor;
 
-use crate::types::{ActionMask, Batchable, NoMask};
+use crate::types::{Batchable};
 
 /// Transition struct
 #[derive(Debug, Clone)]
-pub struct Transition<Obs: Batchable, Action: Batchable, Mask: ActionMask + Batchable = NoMask, Extra = ()> {
+pub struct Transition<Obs: Batchable, Action: Batchable, Barrier: Batchable, Extra = ()> {
     pub obs: Obs,
     pub action: Action,
     pub reward: f32,
@@ -15,22 +15,22 @@ pub struct Transition<Obs: Batchable, Action: Batchable, Mask: ActionMask + Batc
     pub terminated: bool,
     pub truncated: bool,
 
-    pub mask: Mask,
-    pub next_mask: Mask,
+    pub barrier: Option<Barrier>,
+    pub next_barrier: Option<Barrier>,
 
     pub extra: Extra,
 }
 /// A Batched `Transition` struct
 #[derive(Debug, Clone)]
-pub struct Batch<Obs, Action, Mask = NoMask, Extra = ()> {
+pub struct Batch<Obs, Action, Barrier, Extra = ()> {
     pub obss: Obs,
     pub actions: Action,
     pub rewards: Tensor<1>,
     pub next_obss: Obs,
     pub terminated: Tensor<1>,
     pub truncated: Tensor<1>,
-    pub masks: Mask,
-    pub next_masks: Mask,
+    pub barriers: Option<Barrier>,
+    pub next_barriers: Option<Barrier>,
     pub extras: Extra,
 
     pub batch_size: usize,
