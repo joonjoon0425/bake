@@ -3,8 +3,8 @@
 pub mod dqn;
 pub use dqn::*;
 
-pub mod ddqn;
-pub use ddqn::*;
+pub mod double_dqn;
+pub use double_dqn::*;
 
 pub mod vpg;
 pub use vpg::*;

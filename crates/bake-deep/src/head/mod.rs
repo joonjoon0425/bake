@@ -1,5 +1,6 @@
 //! Head trait and basic implementations
 use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
+use crate::types::Batchable;
 
 pub trait Head : AutodiffModule + Clone + ModuleDisplay {
     type Output;
@@ -16,4 +17,3 @@ pub use categoricalhead::*;
 pub mod vhead;
 pub use vhead::*;
 
-use crate::types::Batchable;
