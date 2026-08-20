@@ -1,18 +1,21 @@
-use bake_deep::{agent::A2CAgent, buffer::RolloutBuffer, config::ActorCriticConfig, encoder::MLPEncoder, env::CartPole, head::{CategoricalHead, LinearVHead}, network::SequentialActorCriticNetwork, types::Tape};
-use burn::{Tensor, nn::activation::Activation, optim::{AdamConfig, RmsPropConfig}, tensor::Device};
+use bake_deep::{agent::{PPOAgent}, buffer::RolloutBuffer, config::ActorCriticConfig, distribution::Distribution, encoder::MLPEncoder, env::CartPole, head::{CategoricalHead, LinearVHead}, network::SequentialActorCriticNetwork, types::Tape};
+use burn::{Tensor, nn::activation::Activation, optim::{RmsPropConfig}, tensor::Device};
 
 
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default().autodiff();
     device.seed(seed);
-    println!("# optimizer=rmsprop lr_p=1e-4 lr_v=1e-3 c_e=0.02 T=160 seed={seed}");
-    println!("episode,total_steps,step,entropy,value_loss");
+    println!("# optimizer=rmsprop lr_p=1e-4 lr_v=1e-3 c_e=0.02 batch_size=512 minibatch_size=128 epoch=4 seed={seed}");
+    println!("episode,total_steps,step,entropy");
     let mut env = CartPole::new(seed, &device);
-    let mut agent = A2CAgent::new(
+    let mut agent = PPOAgent::new(
+        seed,
         0.99,
         0.95,
-        0.02,
+        0.2,
+        0.01,
+        4,
         ActorCriticConfig::separated(
             1e-4,
             RmsPropConfig::new().init(),
@@ -26,18 +29,19 @@ pub fn main() {
             LinearVHead::new(128, 1, &device)
         )
     );
-    let mut buffer = RolloutBuffer::new(160.into(), device.clone());
+    let mut buffer = RolloutBuffer::new(512.into(), device.clone());
     let mut tape = Tape::new(&mut env);
     let mut total_steps = 0;
 
     for i in 0..=4000 {
         let mut entropy: Tensor<1> = Tensor::zeros([1], &device);
-        let mut loss: Tensor<1> = Tensor::zeros([1], &device);
         let mut step = 0;
         tape.reset(&mut env);
         loop {
             let action = agent.action(tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action);
+            let dist = agent.dist(tape.obs.clone(), tape.constraint.clone());
+            let t = tape.step(&mut env, action.clone());
+            let t = t.add_extra(dist.log_probs(action));
             let done = t.terminated || t.truncated;
 
             buffer.push(t);
@@ -46,17 +50,16 @@ pub fn main() {
             total_steps += 1;
             if buffer.is_full() {
                 let batch = buffer.pop();
-                (agent, loss, entropy) = agent.update(batch);
+                (agent, entropy) = agent.update(128, batch);
             }
             if done { break; }
         }
 
         if i % 10 == 0 {
-            let loss = loss.into_scalar::<f32>();
             let entropy = entropy.into_scalar::<f32>();
-            println!("{i},{total_steps},{step},{entropy},{loss}");
+            println!("{i},{total_steps},{step},{entropy}");
             if i % 100 == 0 {
-                eprintln!("Episode: {i}, Total steps: {total_steps} Steps: {step}, Entropy: {entropy}, Loss: {loss}");
+                eprintln!("Episode: {i}, Total steps: {total_steps} Steps: {step}, Entropy: {entropy}");
             }
         }
     }

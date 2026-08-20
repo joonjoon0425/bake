@@ -1,4 +1,4 @@
-use bake_deep::{agent::{A2CAgent, A2CConfig}, buffer::RolloutBuffer, constraint::{DiscreteConstraint, Unconstrained}, distribution::Categorical, encoder::{Encoder, MLPEncoder}, env::CartPole, head::{CategoricalHead, Head, LinearVHead, VHead}, network::{ActorCriticNetwork, SequentialActorCriticNetwork}, types::Tape};
+use bake_deep::{agent::A2CAgent, buffer::RolloutBuffer, config::ActorCriticConfig, constraint::{DiscreteConstraint, Unconstrained}, distribution::Categorical, encoder::{Encoder, MLPEncoder}, env::CartPole, head::{CategoricalHead, Head, LinearVHead, VHead}, network::{ActorCriticNetwork, SequentialActorCriticNetwork}, types::Tape};
 use burn::{Tensor, module::Module, nn::activation::Activation, optim::{AdamConfig, RmsPropConfig}, tensor::Device};
 
 
@@ -11,8 +11,9 @@ pub fn main() {
     let mut env = CartPole::new(seed, &device);
     let mut agent = A2CAgent::new(
         0.99,
+        0.95,
         0.02,
-        A2CConfig::separated(
+        ActorCriticConfig::separated(
             1e-4,
             RmsPropConfig::new().init(),
             1e-3,
@@ -45,7 +46,7 @@ pub fn main() {
             total_steps += 1;
             if buffer.is_full() {
                 let batch = buffer.pop();
-                (agent, loss, entropy) = agent.update(1f32, batch);
+                (agent, loss, entropy) = agent.update(batch);
             }
             if done { break; }
         }

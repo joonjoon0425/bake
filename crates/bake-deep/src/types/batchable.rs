@@ -1,10 +1,10 @@
 //! A Batchable trait
 use burn::{Tensor, tensor::{Bool, Device, Int}};
 
-use crate::constraint::{DiscreteMask, Unconstrained};
+use crate::{constraint::{DiscreteMask, Unconstrained}, types::Indexable};
 
 /// Can translate themselves into batch type
-pub trait Batchable : Sized + Clone + Send + Sync + 'static {
+pub trait Batchable : Indexable + Sized + Clone + Send + Sync + 'static {
     fn batch(data: Vec<Self>, device: &Device) -> Self;
 }
 

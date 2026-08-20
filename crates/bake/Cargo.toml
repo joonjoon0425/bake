@@ -74,3 +74,8 @@ required-features = ["deep"]
 name = "ddqn"
 path = "examples/deep/ddqn.rs"
 required-features = ["deep"]
+
+[[example]]
+name = "ppo"
+path = "examples/deep/ppo.rs"
+required-features = ["deep"]
