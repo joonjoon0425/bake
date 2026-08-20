@@ -45,7 +45,7 @@ pub fn main() {
             total_steps += 1;
             if buffer.is_full() {
                 let batch = buffer.pop();
-                (agent, loss, entropy) = agent.update(batch);
+                (agent, loss, entropy) = agent.update(1f32, batch);
             }
             if done { break; }
         }
