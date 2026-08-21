@@ -30,10 +30,10 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
         dist.sample()
     }
 
-    /// get the most-likely action
-    pub fn mode(&self, obs: LogitNet::Obs, constraint: LogitNet::Constraint) -> <LogitNet::Dist as Distribution>::Action {
+    /// get the distribution
+    pub fn mode(&self, obs: LogitNet::Obs, constraint: LogitNet::Constraint) -> LogitNet::Dist {
         let dist = self.online.forward(obs, constraint);
-        dist.mode()
+        dist
     }
 
     /// update the logit network
@@ -60,7 +60,7 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
 
         self.online = self.opt.step(self.lr, self.online, grads);
 
-        (self, VPGLog::new(loss, entropy))
+        (self, VPGLog::new(loss, entropy.mean()))
     }
 }
 

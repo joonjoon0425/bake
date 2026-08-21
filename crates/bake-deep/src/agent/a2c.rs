@@ -23,20 +23,20 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
     }
     /// sample an action
     pub fn action(&self, obs: Net::Obs, constraint: Net::Constraint) -> <Net::Dist as Distribution>::Action {
-        let (dist, _) = self.net.forward(obs, constraint);
+        let dist = self.net.actor(obs, constraint);
         dist.sample()
     }
 
-    /// get the most-likely action
-    pub fn mode(&self, obs: Net::Obs, constraint: Net::Constraint) -> <Net::Dist as Distribution>::Action {
-        let (dist, _) = self.net.forward(obs, constraint);
-        dist.mode()
+    /// get the distribution itself
+    pub fn mode(&self, obs: Net::Obs, constraint: Net::Constraint) -> Net::Dist {
+        let dist = self.net.actor(obs, constraint);
+        dist
     }
 
     /// update the value network and policy
     pub fn update(mut self, t: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint>) -> (Self, A2CLog) {
         let (dist, values) = self.net.forward(t.obss, t.constraints);
-        let (_, next_values) = self.net.forward(t.next_obss, t.next_constraints);
+        let next_values = self.net.critic(t.next_obss);
         let (adv, ret) = gae(t.rewards, values.clone(), next_values, t.terminated, t.truncated, self.gamma, self.lambda);
         // 1. advantage
         let gae = (adv.clone() - adv.clone().mean()) / (adv.clone().var(0) + 1e-9).sqrt();

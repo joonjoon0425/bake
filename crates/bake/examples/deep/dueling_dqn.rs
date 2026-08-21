@@ -1,5 +1,5 @@
 use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::CartPole, head::LinearDuelingQHead, policy::EpsGreedy, network::SequentialQNetwork, types::Tape};
-use burn::{Tensor, nn::{Relu}, optim::AdamConfig, tensor::Device};
+use burn::{nn::{Relu}, optim::AdamConfig, tensor::Device};
 use burn::nn::activation::Activation;
 pub fn main() {
     let device = Device::default().autodiff();
@@ -23,7 +23,7 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = agent.action(&mut policy, tape.obs.clone(), tape.constraint.clone());
-            let (t, _, terminated, truncated) = tape.step(&mut env, action);
+            let t = tape.step(&mut env, action);
             buffer.push(t);
 
             if let Some(batch) = buffer.sample(64) {
@@ -35,7 +35,7 @@ pub fn main() {
             }
             count += 1;
             steps += 1;
-            if terminated || truncated { break; }
+            if tape.done() { break; }
         }
         *policy.eps_mut() *= 0.999;
         if episode % 100 == 0 { println!("episode: {episode}, steps: {steps}, loss: {}, q_mean: {}, td_error: {}, eps: {}", log.loss(), log.q_mean(), log.mean_td_error(), policy.eps()); }

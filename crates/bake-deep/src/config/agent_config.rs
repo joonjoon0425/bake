@@ -2,6 +2,7 @@
 use burn::optim::ModuleOptimizer;
 
 /// enum for branching between encoder-sharing and encoder-separated
+/// - Do not mix up the Config and network structure. Using separate with shared network architecture will cause problem and vice versa
 pub enum ActorCriticConfig {
     /// An encoder-sharing variant
     Shared{

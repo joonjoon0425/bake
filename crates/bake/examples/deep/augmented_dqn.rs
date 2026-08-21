@@ -1,5 +1,5 @@
 use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::CartPole, head::{LinearQHead}, network::SequentialQNetwork, policy::EpsGreedy, types::Tape};
-use burn::{Tensor, grad_clipping::GradientClippingConfig, nn::Relu, optim::AdamConfig, tensor::Device};
+use burn::{grad_clipping::GradientClippingConfig, nn::Relu, optim::AdamConfig, tensor::Device};
 use burn::nn::activation::Activation;
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
@@ -26,7 +26,7 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = agent.action(&mut policy, tape.obs.clone(), tape.constraint.clone());
-            let (t, _, terminated, truncated) = tape.step(&mut env, action);
+            let t= tape.step(&mut env, action);
             let mut t2 = t.clone();
             t2.obss = t2.obss.neg();
             t2.next_obss = t2.next_obss.neg();
@@ -44,7 +44,7 @@ pub fn main() {
             }
             count += 1;
             steps += 1;
-            if terminated || truncated { break; }
+            if tape.done() { break; }
         }
         *policy.eps_mut() = (policy.eps() * 0.999).max(0.05);
         if episode % 10 == 0 {

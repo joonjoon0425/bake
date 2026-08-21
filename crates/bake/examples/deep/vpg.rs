@@ -1,5 +1,5 @@
 use bake_deep::{agent::{Baseline, VPGAgent}, buffer::RolloutBuffer, encoder::MLPEncoder, env::CartPole, head::CategoricalHead, network::SequentialLogitNetwork, types::Tape};
-use burn::{Tensor, nn::activation::Activation, optim::AdamConfig, tensor::Device};
+use burn::{nn::activation::Activation, optim::AdamConfig, tensor::Device};
 
 
 pub fn main() {
@@ -26,11 +26,11 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = agent.action(tape.obs.clone(), tape.constraint.clone());
-            let (t, _, terminated, truncated) = tape.step(&mut env, action);
+            let t = tape.step(&mut env, action);
             buffer.push(t);
 
             step += 1;
-            if terminated || truncated {
+            if tape.done() {
                 let batch = buffer.pop();
                 (agent, log) = agent.update(batch);
                 break;

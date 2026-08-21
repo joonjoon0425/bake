@@ -87,5 +87,5 @@ impl DQNLog {
     /// loss
     pub fn loss(&self) -> f32 { self.loss.clone().map_or(0f32, |q| q.into_scalar()) }
     /// td error
-    pub fn mean_td_error(&self) -> f32 { self.td_error.clone().map_or(0f32, |q| q.into_scalar()) }
+    pub fn mean_td_error(&self) -> f32 { self.td_error.clone().map_or(0f32, |q| q.mean().into_scalar()) }
 }

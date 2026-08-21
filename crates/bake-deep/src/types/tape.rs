@@ -5,6 +5,9 @@ use crate::{env::Env, types::{Batch, Batchable}};
 pub struct Tape<E: Env> {
     pub obs: E::Obs,
     pub constraint: E::Constraint,
+    pub reward: f32,
+    pub terminated: bool,
+    pub truncated: bool,
 }
 
 impl<E: Env> Tape<E> {
@@ -12,7 +15,10 @@ impl<E: Env> Tape<E> {
         let (obs, constraint) = env.reset();
         Self {
             obs,
-            constraint
+            constraint,
+            reward: 0f32,
+            terminated: false,
+            truncated: false,
         }
     }
 
@@ -22,7 +28,7 @@ impl<E: Env> Tape<E> {
         self.constraint = mask;
     }
 
-    pub fn step(&mut self, env: &mut E, actions: E::Action) -> (Batch<E::Obs, E::Action, E::Constraint>, f32, bool, bool) {
+    pub fn step(&mut self, env: &mut E, actions: E::Action) -> Batch<E::Obs, E::Action, E::Constraint> {
         let ((next_obs, next_mask), reward, terminated, truncated) = env.step(actions.clone());
         let obss = std::mem::replace(&mut self.obs, next_obs);
         let device = obss.device();
@@ -38,6 +44,11 @@ impl<E: Env> Tape<E> {
             next_constraints: self.constraint.clone(),
             extras: ()
         };
-        (t, reward, terminated, truncated)
+        self.reward = reward;
+        self.terminated = terminated;
+        self.truncated = truncated;
+        t
     }
+
+    pub fn done(&self) -> bool { self.terminated || self.truncated }
 }

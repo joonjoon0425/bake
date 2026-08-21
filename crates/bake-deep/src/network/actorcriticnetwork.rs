@@ -10,25 +10,31 @@ pub trait ActorCriticNetwork : AutodiffModule + Clone + ModuleDisplay {
     type Dist: Distribution;
     type Constraint: Batchable;
 
-    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> (Self::Dist, Tensor<1>);
+    fn actor(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist;
+    fn critic(&self, obs: Self::Obs) -> Tensor<1>;
+
+    /// For the encoder-sharing network, this function must be overloaded appropriately
+    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> (Self::Dist, Tensor<1>) {
+        (self.actor(obs.clone(), constraint), self.critic(obs))
+    }
 }
 
 /// A helper for creating an ActorCriticNetwork
 #[derive(Module, Debug)]
 pub struct SequentialActorCriticNetwork<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> {
-    policy_encoder: E,
-    value_encoder: E,
-    policy: H1,
-    value: H2,
+    actor_encoder: E,
+    critic_encoder: E,
+    actor: H1,
+    critic: H2,
 }
 
 impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> SequentialActorCriticNetwork<E, H1, H2> {
-    pub fn new(policy_encoder: E, value_encoder: E, policy: H1, value: H2) -> Self {
+    pub fn new(actor_encoder: E, critic_encoder: E, actor: H1, critic: H2) -> Self {
         Self {
-            policy_encoder,
-            value_encoder,
-            policy,
-            value
+            actor_encoder,
+            critic_encoder,
+            actor,
+            critic
         }
     }
 }
@@ -38,10 +44,12 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCriticNetwork f
     type Dist = H1::Output;
     type Constraint = H1::Constraint;
 
-    fn forward(&self, obs: Self::Obs, constraint: H1::Constraint) -> (Self::Dist, Tensor<1>) {
-        let dist = self.policy.forward(self.policy_encoder.forward(obs.clone()), constraint);
-        let value = self.value.forward(self.value_encoder.forward(obs));
-        (dist, value)
+    fn actor(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
+        self.actor.forward(self.actor_encoder.forward(obs), constraint)
+    }
+
+    fn critic(&self, obs: Self::Obs) -> Tensor<1> {
+        self.critic.forward(self.critic_encoder.forward(obs))
     }
 }
 
@@ -49,16 +57,16 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCriticNetwork f
 #[derive(Module, Debug)]
 pub struct SharedActorCriticNetwork<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> {
     encoder: E,
-    policy: H1,
-    value: H2,
+    actor: H1,
+    critic: H2,
 }
 
 impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> SharedActorCriticNetwork<E, H1, H2> {
-    pub fn new(encoder: E, policy: H1, value: H2) -> Self {
+    pub fn new(encoder: E, actor: H1, critic: H2) -> Self {
         Self {
             encoder,
-            policy,
-            value
+            actor,
+            critic
         }
     }
 }
@@ -68,10 +76,18 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCriticNetwork f
     type Dist = H1::Output;
     type Constraint = H1::Constraint;
 
+    fn actor(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
+        self.actor.forward(self.encoder.forward(obs), constraint)
+    }
+
+    fn critic(&self, obs: Self::Obs) -> Tensor<1> {
+        self.critic.forward(self.encoder.forward(obs))
+    }
+
     fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> (Self::Dist, Tensor<1>) {
         let encoded = self.encoder.forward(obs);
-        let dist = self.policy.forward(encoded.clone(), constraint);
-        let value = self.value.forward(encoded);
+        let dist = self.actor.forward(encoded.clone(), constraint);
+        let value = self.critic.forward(encoded);
         (dist, value)
     }
 }

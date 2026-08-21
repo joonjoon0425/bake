@@ -1,5 +1,5 @@
-use bake_deep::{agent::{PPOAgent}, buffer::RolloutBuffer, config::ActorCriticConfig, distribution::Distribution, encoder::MLPEncoder, env::CartPole, head::{CategoricalHead, LinearVHead}, network::SequentialActorCriticNetwork, types::Tape};
-use burn::{nn::activation::Activation, optim::{RmsPropConfig}, tensor::Device};
+use bake_deep::{agent::PPOAgent, buffer::RolloutBuffer, config::ActorCriticConfig, constraint::DiscreteConstraint, distribution::{Categorical, Distribution}, encoder::{Encoder, MLPEncoder}, env::CartPole, head::{CategoricalHead, Head, LinearVHead, VHead}, network::ActorCriticNetwork, types::Tape};
+use burn::{Tensor, module::Module, nn::activation::Activation, optim::RmsPropConfig, tensor::Device};
 
 
 pub fn main() {
@@ -22,7 +22,7 @@ pub fn main() {
             1e-3,
             RmsPropConfig::new().init()
         ),
-        SequentialActorCriticNetwork::new(
+        Z2Symmetrized::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             CategoricalHead::new(128, 2, &device),
@@ -62,5 +62,45 @@ pub fn main() {
                 eprintln!("Episode: {i}, Total steps: {total_steps} Steps: {step}, Entropy: {entropy}, Approx KL: {approx_kl} Clip ratio: {clip_ratio}");
             }
         }
+    }
+}
+
+
+#[derive(Module, Debug)]
+pub struct Z2Symmetrized<E: Encoder, Ph: Head<Output = Categorical>, Vh: VHead> {
+    policy_encoder: E,
+    value_encoder: E,
+    policy_head: Ph,
+    value_head: Vh,
+}
+
+impl<E: Encoder, Ph: Head<Output = Categorical>, Vh: VHead> Z2Symmetrized<E, Ph, Vh> {
+    pub fn new(policy_encoder: E, value_encoder: E, policy_head: Ph, value_head: Vh) -> Self {
+        Self {
+            policy_encoder,
+            value_encoder,
+            policy_head,
+            value_head,
+        }
+    }
+}
+
+impl<E: Encoder<Obs = Tensor<2>>, Ph: Head<Output = Categorical, Constraint: DiscreteConstraint>, Vh: VHead> ActorCriticNetwork for Z2Symmetrized<E, Ph, Vh> {
+    type Obs = E::Obs;
+    type Constraint = <Ph as Head>::Constraint;
+    type Dist = Ph::Output;
+
+    fn actor(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
+        let dist_pos = self.policy_head.forward(self.policy_encoder.forward(obs.clone()), constraint.clone());
+        let dist_neg = self.policy_head.forward(self.policy_encoder.forward(-(obs.clone())), constraint.clone());
+        let logits = (dist_pos.logits().clone() + dist_neg.logits().clone().flip([1])) * 0.5;
+        Categorical::new(logits, constraint)
+    }
+
+    fn critic(&self, obs: Self::Obs) -> Tensor<1> {
+        let v_pos = self.value_head.forward(self.value_encoder.forward(obs.clone()));
+        let v_neg = self.value_head.forward(self.value_encoder.forward(-obs));
+        let value = (v_pos + v_neg) * 0.5;
+        value
     }
 }

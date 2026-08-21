@@ -25,8 +25,8 @@ impl<E: Encoder, H: QHead> SequentialQNetwork<E, H> {
     }
 }
 
-impl<E: Encoder<Obs = Tensor<2>>, H: QHead> QNetwork for SequentialQNetwork<E, H> {
-    type Obs = Tensor<2>;
+impl<E: Encoder, H: QHead> QNetwork for SequentialQNetwork<E, H> {
+    type Obs = E::Obs;
 
     fn forward(&self, obs: Self::Obs, constraint: impl DiscreteConstraint) -> Tensor<2> {
         let qvalues = self.head.forward(self.encoder.forward(obs), constraint);

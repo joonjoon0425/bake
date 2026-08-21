@@ -1,5 +1,5 @@
-use bake_deep::{agent::A2CAgent, buffer::RolloutBuffer, config::ActorCriticConfig, constraint::{DiscreteConstraint, Unconstrained}, distribution::Categorical, encoder::{Encoder, MLPEncoder}, env::CartPole, head::{CategoricalHead, Head, LinearVHead, VHead}, network::{ActorCriticNetwork, SequentialActorCriticNetwork}, types::Tape};
-use burn::{Tensor, module::Module, nn::activation::Activation, optim::{AdamConfig, RmsPropConfig}, tensor::Device};
+use bake_deep::{agent::A2CAgent, buffer::RolloutBuffer, config::ActorCriticConfig, constraint::{DiscreteConstraint}, distribution::Categorical, encoder::{Encoder, MLPEncoder}, env::CartPole, head::{CategoricalHead, Head, LinearVHead, VHead}, network::ActorCriticNetwork, types::Tape};
+use burn::{Tensor, module::Module, nn::activation::Activation, optim::{RmsPropConfig}, tensor::Device};
 
 
 pub fn main() {
@@ -35,7 +35,7 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = agent.action(tape.obs.clone(), tape.constraint.clone());
-            let (t, _, terminated, truncated) = tape.step(&mut env, action);
+            let t = tape.step(&mut env, action);
 
             buffer.push(t);
 
@@ -45,7 +45,7 @@ pub fn main() {
                 let batch = buffer.pop();
                 (agent, log) = agent.update(batch);
             }
-            if terminated || truncated { break; }
+            if tape.done() { break; }
         }
 
         if i % 10 == 0 {
@@ -82,15 +82,18 @@ impl<E: Encoder<Obs = Tensor<2>>, Ph: Head<Output = Categorical, Constraint: Dis
     type Obs = E::Obs;
     type Constraint = <Ph as Head>::Constraint;
     type Dist = Ph::Output;
-    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> (Self::Dist, Tensor<1>) {
+
+    fn actor(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
         let dist_pos = self.policy_head.forward(self.policy_encoder.forward(obs.clone()), constraint.clone());
-        let v_pos = self.value_head.forward(self.value_encoder.forward(obs.clone()));
-
         let dist_neg = self.policy_head.forward(self.policy_encoder.forward(-(obs.clone())), constraint.clone());
-        let v_neg = self.value_head.forward(self.value_encoder.forward(-obs));
-
         let logits = (dist_pos.logits().clone() + dist_neg.logits().clone().flip([1])) * 0.5;
+        Categorical::new(logits, constraint)
+    }
+
+    fn critic(&self, obs: Self::Obs) -> Tensor<1> {
+        let v_pos = self.value_head.forward(self.value_encoder.forward(obs.clone()));
+        let v_neg = self.value_head.forward(self.value_encoder.forward(-obs));
         let value = (v_pos + v_neg) * 0.5;
-        (Categorical::new(logits, constraint), value)
+        value
     }
 }

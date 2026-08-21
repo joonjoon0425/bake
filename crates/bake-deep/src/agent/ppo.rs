@@ -43,21 +43,21 @@ impl<Net: ActorCriticNetwork> PPOAgent<Net> {
     }
     /// sample an action
     pub fn action(&self, obs: Net::Obs, constraint: Net::Constraint) -> <Net::Dist as Distribution>::Action {
-        let (dist, _) = self.net.forward(obs, constraint);
+        let dist= self.net.actor(obs, constraint);
         dist.sample()
     }
 
     /// get current log_prob distribution of actions
     pub fn dist(&self, obs: Net::Obs, constraint: Net::Constraint) -> Net::Dist {
-        let (dist, _) = self.net.forward(obs, constraint);
+        let dist = self.net.actor(obs, constraint);
         dist
     }
 
     /// update the approximators
     pub fn update(mut self, minibatch_size: usize, mut batch: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint, Tensor<1>>) -> (Self, PPOLog){
         let device = batch.rewards.device();
-        let (_, values) = self.net.forward(batch.obss.clone(), batch.constraints.clone());
-        let (_, next_values) = self.net.forward(batch.next_obss.clone(), batch.next_constraints.clone());
+        let values = self.net.critic(batch.obss.clone());
+        let next_values = self.net.critic(batch.next_obss.clone());
         let (adv, ret) = gae(batch.rewards.clone(), values, next_values, batch.terminated.clone(), batch.truncated.clone(), self.gamma, self.lambda);
         // 1. advantage
         let gae = (adv.clone() - adv.clone().mean()) / (adv.clone().var(0) + 1e-9).sqrt();
@@ -104,7 +104,7 @@ impl<Net: ActorCriticNetwork> PPOAgent<Net> {
                 }
             }
         }
-        let (dist, _) = self.net.forward(batch.obss, batch.constraints);
+        let dist = self.net.actor(batch.obss, batch.constraints);
         let log_ratio = dist.log_probs(batch.actions) - old_log_probs;
         let approx_kl = ((log_ratio.clone().exp() - 1f32) - log_ratio.clone()).mean();
         let clip_ratio = (log_ratio.exp() - 1f32).abs().greater_elem(self.eps).float().mean();

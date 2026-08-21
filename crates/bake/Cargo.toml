@@ -79,3 +79,8 @@ required-features = ["deep"]
 name = "ppo"
 path = "examples/deep/ppo.rs"
 required-features = ["deep"]
+
+[[example]]
+name = "equivariant_ppo"
+path = "examples/deep/equivariant_ppo.rs"
+required-features = ["deep"]
