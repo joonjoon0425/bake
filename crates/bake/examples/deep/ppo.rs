@@ -6,15 +6,15 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default().autodiff();
     device.seed(seed);
-    println!("# optimizer=rmsprop lr_p=1e-4 lr_v=1e-3 c_e=0.02 batch_size=512 minibatch_size=128 epoch=4 seed={seed}");
+    println!("# optimizer=rmsprop lr_p=1e-4 lr_v=1e-3 c_e=0.00 batch_size=512 minibatch_size=128 epoch=4 seed={seed}");
     println!("episode,total_steps,step,entropy");
     let mut env = CartPole::new(seed, &device);
     let mut agent = PPOAgent::new(
         seed,
         0.99,
-        0.95,
+        0.98,
         0.2,
-        0.01,
+        0.00,
         4,
         ActorCriticConfig::separated(
             1e-4,
@@ -29,7 +29,7 @@ pub fn main() {
             LinearVHead::new(128, 1, &device)
         )
     );
-    let mut buffer = RolloutBuffer::new(512.into(), device.clone());
+    let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
     let mut total_steps = 0;
 
@@ -40,19 +40,18 @@ pub fn main() {
         loop {
             let action = agent.action(tape.obs.clone(), tape.constraint.clone());
             let dist = agent.dist(tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action.clone());
+            let (t, _, terminated, truncated) = tape.step(&mut env, action.clone());
             let t = t.add_extra(dist.log_probs(action));
-            let done = t.terminated || t.truncated;
 
             buffer.push(t);
 
             step += 1;
             total_steps += 1;
-            if buffer.is_full() {
+            if buffer.len() >= 512 {
                 let batch = buffer.pop();
                 (agent, entropy) = agent.update(128, batch);
             }
-            if done { break; }
+            if terminated || truncated { break; }
         }
 
         if i % 10 == 0 {

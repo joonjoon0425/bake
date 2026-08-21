@@ -1,44 +1,105 @@
 //! A Batchable trait
 use burn::{Tensor, tensor::{Bool, Device, Int}};
 
-use crate::{constraint::{DiscreteMask, Unconstrained}, types::Indexable};
+use crate::{constraint::{DiscreteMask, Unconstrained}};
 
 /// Can translate themselves into batch type
-pub trait Batchable : Indexable + Sized + Clone + Send + Sync + 'static {
-    fn batch(data: Vec<Self>, device: &Device) -> Self;
+pub trait Batchable : Sized + Clone + Send + Sync + 'static {
+    fn concat(data: Vec<Self>) -> Self;
+    fn select(self, idx: Tensor<1, Int>) -> Self;
+    fn batch_size(&self) -> usize;
+    fn device(&self) -> Device;
 }
 
 impl<const D: usize> Batchable for DiscreteMask<D> {
-    fn batch(data: Vec<Self>, device: &Device) -> Self {
+    fn concat(data: Vec<Self>) -> Self {
         let data: Vec<Tensor<D, Bool>> = data.into_iter().map(|t| t.0).collect();
-        DiscreteMask(Tensor::cat(data, 0).to_device(device))
+        DiscreteMask(Tensor::cat(data, 0))
+    }
+
+    fn select(self, idx: Tensor<1, Int>) -> Self {
+        DiscreteMask(self.0.select(0, idx))
+    }
+
+    fn batch_size(&self) -> usize {
+        self.0.shape()[0]
+    }
+
+    fn device(&self) -> Device {
+        self.0.device()
     }
 }
 
 impl Batchable for Unconstrained {
-    fn batch(_: Vec<Self>, _: &Device) -> Self {
-        Unconstrained
-    }
+    fn concat(_: Vec<Self>) -> Self { Unconstrained }
+
+    fn select(self, _: Tensor<1, Int>) -> Self { Unconstrained }
+
+    fn batch_size(&self) -> usize { 0 }
+
+    fn device(&self) -> Device { Device::default() }
 }
 
 impl<const D: usize> Batchable for Tensor<D> {
-    fn batch(bundle: Vec<Self>, device: &Device) -> Self {
-        Tensor::cat(bundle, 0).to_device(device)
+    fn concat(bundle: Vec<Self>) -> Self {
+        Tensor::cat(bundle, 0)
+    }
+
+    fn select(self, idx: Tensor<1, Int>) -> Self {
+        self.select(0, idx)
+    }
+
+    fn batch_size(&self) -> usize {
+        self.shape()[0]
+    }
+
+    fn device(&self) -> Device {
+        self.device()
     }
 }
 
 impl<const D: usize> Batchable for Tensor<D, Int> {
-    fn batch(bundle: Vec<Self>, device: &Device) -> Self {
-        Tensor::cat(bundle, 0).to_device(device)
+    fn concat(bundle: Vec<Self>) -> Self {
+        Tensor::cat(bundle, 0)
+    }
+
+    fn select(self, idx: Tensor<1, Int>) -> Self {
+        self.select(0, idx)
+    }
+
+    fn batch_size(&self) -> usize {
+        self.shape()[0]
+    }
+
+    fn device(&self) -> Device {
+        self.device()
     }
 }
 
 impl<const D: usize> Batchable for Tensor<D, Bool> {
-    fn batch(bundle: Vec<Self>, device: &Device) -> Self {
-        Tensor::cat(bundle, 0).to_device(device)
+    fn concat(bundle: Vec<Self>) -> Self {
+        Tensor::cat(bundle, 0)
+    }
+
+    fn select(self, idx: Tensor<1, Int>) -> Self {
+        self.select(0, idx)
+    }
+
+    fn batch_size(&self) -> usize {
+        self.shape()[0]
+    }
+
+    fn device(&self) -> Device {
+        self.device()
     }
 }
 
+impl Batchable for () {
+    fn concat(_bundle: Vec<Self>) -> Self {}
+    fn select(self, _: Tensor<1, Int>) -> Self {}
+    fn batch_size(&self) -> usize { 0 }
+    fn device(&self) -> Device { Device::default() }
+}
 // macro_rules! impl_batchable_tensor {
 //     ($d:literal => $db:literal) => {
 //         impl Batchable for Tensor<$d> {
@@ -119,7 +180,3 @@ impl<const D: usize> Batchable for Tensor<D, Bool> {
 //         Tensor::from_data(TensorData::new(flat, [n, D]), device)
 //     }
 // }
-
-impl Batchable for () {
-    fn batch(_bundle: Vec<Self>, _device: &Device) -> Self {}
-}

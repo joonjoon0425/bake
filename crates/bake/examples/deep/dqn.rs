@@ -17,7 +17,7 @@ pub fn main() {
             AdamConfig::new().with_grad_clipping(Some(GradientClippingConfig::Norm(10.0))).init()
         );
     let mut policy = EpsGreedy::new(seed, 1.0f32);
-    let mut buffer = ReplayBuffer::new(12, 10000, device.clone());
+    let mut buffer = ReplayBuffer::new(12, 10000);
     let mut tape = Tape::new(&mut env);
     let mut count = 0;
     for episode in 0..=4000 {
@@ -28,9 +28,7 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = agent.action(&mut policy, tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action);
-
-            let done = t.terminated || t.truncated;
+            let (t, _, terminated, truncated) = tape.step(&mut env, action);
             buffer.push(t);
 
             if count % 10 == 0 && let Some(batch) = buffer.sample(64) {
@@ -42,7 +40,7 @@ pub fn main() {
             }
             count += 1;
             steps += 1;
-            if done { break; }
+            if terminated || truncated { break; }
         }
         *policy.eps_mut() = (policy.eps() * 0.999).max(0.05);
         if episode % 10 == 0 {

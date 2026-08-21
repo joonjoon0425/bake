@@ -14,7 +14,7 @@ pub fn main() {
             AdamConfig::new().init()
         );
     let mut policy = EpsGreedy::new(123, 1.0f32);
-    let mut buffer = ReplayBuffer::new(12, 10000, device.clone());
+    let mut buffer = ReplayBuffer::new(12, 10000);
     let mut tape = Tape::new(&mut env);
     let mut count = 0;
     for episode in 0..=4000 {
@@ -25,8 +25,7 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = agent.action(&mut policy, tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action);
-            let done = t.terminated || t.truncated;
+            let (t, _, terminated, truncated) = tape.step(&mut env, action);
             buffer.push(t);
 
             if let Some(batch) = buffer.sample(64) {
@@ -38,7 +37,7 @@ pub fn main() {
             }
             count += 1;
             steps += 1;
-            if done { break; }
+            if terminated || truncated { break; }
         }
         *policy.eps_mut() *= 0.999;
         if episode % 100 == 0 { println!("episode: {episode}, steps: {steps}, loss: {}, q_mean: {}, td_error: {}, eps: {}", loss.into_scalar::<f32>(), q_mean.into_scalar::<f32>(), td_error.mean().into_scalar::<f32>(), policy.eps()); }

@@ -3,7 +3,7 @@
 //! 
 use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
 
-use crate::{config::ActorCriticConfig, distribution::Distribution, network::ActorCriticNetwork, types::Batch};
+use crate::{config::ActorCriticConfig, distribution::Distribution, network::ActorCriticNetwork, types::{Batch, Batchable}, utils::gae};
 /// An Advantage Actor-Critic Algorithm implmentation
 pub struct A2CAgent<Net: ActorCriticNetwork> {
     gamma: f32,
@@ -38,30 +38,18 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
 
     /// update the value network and policy
     pub fn update(mut self, t: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint>) -> (Self, Tensor<1>, Tensor<1>) {
-        let n = t.batch_size;
         let (dist, values) = self.net.forward(t.obss, t.constraints);
         let (_, next_values) = self.net.forward(t.next_obss, t.next_constraints);
-        // note that in the obss there are no terminal states & truncated states, since env's reset is called whenever next_obss as terminal states.
-        let deltas = t.rewards + self.gamma * next_values * (1f32 - t.terminated.clone()) - values.clone();
-        let deltas: Vec<f32> = deltas.into_data().into_vec().unwrap();
-        let mut gae = vec![0f32; n];
-        let terminated: Vec<f32> = t.terminated.into_data().into_vec().unwrap();
-        let truncated: Vec<f32> = t.truncated.into_data().into_vec().unwrap();
-        gae[n - 1] = deltas[n - 1];
-        for i in (0..n-1).rev() {
-            gae[i] = deltas[i] + self.gamma * self.lambda * gae[i + 1] * (1f32 - truncated[i]) * (1f32 - terminated[i]);
-        }
+        let (adv, ret) = gae(t.rewards, values.clone(), next_values, t.terminated, t.truncated, self.gamma, self.lambda);
         // 1. advantage
-        let gae_raw = Tensor::from_data(TensorData::new(gae, [n]), &values.device());
-        let gae = (gae_raw.clone() - gae_raw.clone().mean()) / (gae_raw.clone().var(0) + 1e-9).sqrt();
+        let gae = (adv.clone() - adv.clone().mean()) / (adv.clone().var(0) + 1e-9).sqrt();
         // 2. policy surrogate
         let log_prob = dist.log_probs(t.actions);
         let policy_loss = -(log_prob * gae).mean();
         // 3. entropy
         let entropy = dist.entropy().mean();
         // 4. value loss
-        let targets = gae_raw + values.clone().detach();
-        let value_loss = MseLoss.forward(values, targets, Reduction::Mean);
+        let value_loss = MseLoss.forward(values, ret, Reduction::Mean);
         // 5. backward
         match self.config {
             ActorCriticConfig::Shared{ lr, c_v, mut opt } => {

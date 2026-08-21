@@ -251,8 +251,18 @@ dependencies = [
 name = "bake-deep"
 version = "0.2.0"
 dependencies = [
+ "bake-macros",
  "burn",
  "rand 0.10.2",
+]
+
+[[package]]
+name = "bake-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]

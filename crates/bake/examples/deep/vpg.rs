@@ -17,7 +17,7 @@ pub fn main() {
         AdamConfig::new().init(),
         1e-3
     );
-    let mut buffer = RolloutBuffer::new(None, device.clone());
+    let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
 
     for i in 0..=4000 {
@@ -26,13 +26,11 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = agent.action(tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action);
-            let done = t.terminated || t.truncated;
-
+            let (t, _, terminated, truncated) = tape.step(&mut env, action);
             buffer.push(t);
 
             step += 1;
-            if done {
+            if terminated || truncated {
                 let batch = buffer.pop();
                 (agent, entropy) = agent.update(batch);
                 break;

@@ -2,7 +2,7 @@
 
 use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
 
-use crate::{distribution::Distribution, network::LogitNetwork, types::Batch};
+use crate::{distribution::Distribution, network::LogitNetwork, types::{Batch, Batchable}};
 /// A Vanilla Policy Gradient (REINFORCE) algorithm implementation
 pub struct VPGAgent<LogitNet: LogitNetwork> {
     gamma: f32,
@@ -39,10 +39,10 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
 
     /// update the logit network
     pub fn update(mut self, t: Batch<LogitNet::Obs, <LogitNet::Dist as Distribution>::Action, LogitNet::Constraint>) -> (Self, Tensor<1>) {
-        let len = t.batch_size;
-        let device = t.rewards.device();
+        let len = t.batch_size();
+        let device = t.device();
         let dist = self.online.forward(t.obss, t.constraints.into());
-        let rewards: Vec<f32> = t.rewards.into_data().into_vec().unwrap();
+        let rewards = t.rewards.into_data().into_vec().unwrap();
         let mut returns = vec![0f32; len];
         returns[len - 1] = rewards[len - 1];
         for i in (0..(len - 1)).rev() {

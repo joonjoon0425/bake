@@ -26,7 +26,7 @@ pub fn main() {
             LinearVHead::new(128, 1, &device)
         )
     );
-    let mut buffer = RolloutBuffer::new(160.into(), device.clone());
+    let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
     let mut total_steps = 0;
 
@@ -37,18 +37,16 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = agent.action(tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action);
-            let done = t.terminated || t.truncated;
-
+            let (t, _, terminated, truncated) = tape.step(&mut env, action);
             buffer.push(t);
 
             step += 1;
             total_steps += 1;
-            if buffer.is_full() {
+            if buffer.len() >= 160 {
                 let batch = buffer.pop();
                 (agent, loss, entropy) = agent.update(batch);
             }
-            if done { break; }
+            if terminated || truncated { break; }
         }
 
         if i % 10 == 0 {
