@@ -29,10 +29,8 @@ pub fn main() {
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
     let mut total_steps = 0;
-
+    let mut log = Default::default();
     for i in 0..=4000 {
-        let mut entropy: Tensor<1> = Tensor::zeros([1], &device);
-        let mut loss: Tensor<1> = Tensor::zeros([1], &device);
         let mut step = 0;
         tape.reset(&mut env);
         loop {
@@ -44,14 +42,14 @@ pub fn main() {
             total_steps += 1;
             if buffer.len() >= 160 {
                 let batch = buffer.pop();
-                (agent, loss, entropy) = agent.update(batch);
+                (agent, log) = agent.update(batch);
             }
             if terminated || truncated { break; }
         }
 
         if i % 10 == 0 {
-            let loss = loss.into_scalar::<f32>();
-            let entropy = entropy.into_scalar::<f32>();
+            let loss = log.value_loss();
+            let entropy = log.entropy();
             println!("{i},{total_steps},{step},{entropy},{loss}");
             if i % 100 == 0 {
                 eprintln!("Episode: {i}, Total steps: {total_steps} Steps: {step}, Entropy: {entropy}, Loss: {loss}");

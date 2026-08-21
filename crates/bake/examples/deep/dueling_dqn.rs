@@ -17,11 +17,9 @@ pub fn main() {
     let mut buffer = ReplayBuffer::new(12, 10000);
     let mut tape = Tape::new(&mut env);
     let mut count = 0;
+    let mut log = Default::default();
     for episode in 0..=4000 {
         let mut steps = 0;
-        let mut loss: Tensor<1> = Tensor::zeros([1], &device);
-        let mut td_error: Tensor<1> = Tensor::zeros([1], &device);
-        let mut q_mean: Tensor<1> = Tensor::zeros([1], &device);
         tape.reset(&mut env);
         loop {
             let action = agent.action(&mut policy, tape.obs.clone(), tape.constraint.clone());
@@ -29,7 +27,7 @@ pub fn main() {
             buffer.push(t);
 
             if let Some(batch) = buffer.sample(64) {
-                (agent, q_mean, loss, td_error) = agent.update(batch);
+                (agent, log) = agent.update(batch);
             }
 
             if count % 1000 == 0 {
@@ -40,6 +38,6 @@ pub fn main() {
             if terminated || truncated { break; }
         }
         *policy.eps_mut() *= 0.999;
-        if episode % 100 == 0 { println!("episode: {episode}, steps: {steps}, loss: {}, q_mean: {}, td_error: {}, eps: {}", loss.into_scalar::<f32>(), q_mean.into_scalar::<f32>(), td_error.mean().into_scalar::<f32>(), policy.eps()); }
+        if episode % 100 == 0 { println!("episode: {episode}, steps: {steps}, loss: {}, q_mean: {}, td_error: {}, eps: {}", log.loss(), log.q_mean(), log.mean_td_error(), policy.eps()); }
     }
 }

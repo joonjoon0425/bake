@@ -1,6 +1,6 @@
 //! A Double Deep Q-Network algorithm implementation
 use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
-use crate::{constraint::DiscreteConstraint, network::QNetwork, policy::EpsGreedy, types::Batch};
+use crate::{agent::DQNLog, constraint::DiscreteConstraint, network::QNetwork, policy::EpsGreedy, types::Batch};
 /// A Double Deep Q-Network algorithm Implmentation
 pub struct DoubleDQNAgent<QNet>
 where
@@ -38,7 +38,7 @@ where
     /// update the online network<br>
     /// returns Self, Mean Q Values, loss, and TD-error of given batches
     pub fn update(mut self, t: Batch<QNet::Obs, Tensor<1, Int>, impl DiscreteConstraint>)
-    -> (Self, Tensor<1>, Tensor<1>, Tensor<1>) {
+    -> (Self, DQNLog) {
         let qvalues = self.online.forward(t.obss, t.constraints);
         let qvalues = qvalues.gather(1, t.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
 
@@ -56,7 +56,7 @@ where
         let grads = GradientsParams::from_grads(grads, &self.online);
         self.online = self.opt.step(self.lr, self.online, grads);
 
-        (self, q_mean, loss, td_error)
+        (self, DQNLog::new(q_mean, loss, td_error))
     }
 
     /// sync target network and online network

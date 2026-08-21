@@ -34,7 +34,7 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
     }
 
     /// update the value network and policy
-    pub fn update(mut self, t: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint>) -> (Self, Tensor<1>, Tensor<1>) {
+    pub fn update(mut self, t: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint>) -> (Self, A2CLog) {
         let (dist, values) = self.net.forward(t.obss, t.constraints);
         let (_, next_values) = self.net.forward(t.next_obss, t.next_constraints);
         let (adv, ret) = gae(t.rewards, values.clone(), next_values, t.terminated, t.truncated, self.gamma, self.lambda);
@@ -68,6 +68,33 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
                 self.config = ActorCriticConfig::Separated { lr_p, opt_p, lr_v, opt_v };
             },
         }
-        (self, value_loss, entropy)
+        (self, A2CLog::new(value_loss, entropy))
+    }
+}
+
+/// A logging struct for A2C
+#[derive(Debug, Clone, Default)]
+pub struct A2CLog {
+    /// a value loss
+    pub value_loss: Option<Tensor<1>>,
+    /// entropy
+    pub entropy: Option<Tensor<1>>,
+}
+
+impl A2CLog {
+    /// create empty A2CLog
+    pub fn new(value_loss: Tensor<1>, entropy: Tensor<1>) -> Self {
+        Self {
+            value_loss: value_loss.into(),
+            entropy: entropy.into()
+        }
+    }
+    /// get value loss in scalar
+    pub fn value_loss(&self) -> f32 {
+        self.value_loss.clone().map_or(0f32, |e| e.into_scalar())
+    }
+    /// get entropy in scalar
+    pub fn entropy(&self) -> f32 {
+        self.entropy.clone().map_or(0f32, |e| e.into_scalar())
     }
 }

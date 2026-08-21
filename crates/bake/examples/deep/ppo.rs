@@ -32,9 +32,7 @@ pub fn main() {
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
     let mut total_steps = 0;
-    let mut entropy: Tensor<1> = Tensor::zeros([1], &device);
-    let mut approx_kl: Tensor<1> = Tensor::zeros([1], &device);
-    let mut clip_ratio: Tensor<1> = Tensor::zeros([1], &device);
+    let mut log = Default::default();
     for i in 0..=4000 {
         
         let mut step = 0;
@@ -51,15 +49,15 @@ pub fn main() {
             total_steps += 1;
             if buffer.len() >= 512 {
                 let batch = buffer.pop();
-                (agent, entropy, approx_kl, clip_ratio) = agent.update(128, batch);
+                (agent, log) = agent.update(128, batch);
             }
             if terminated || truncated { break; }
         }
 
         if i % 10 == 0 {
-            let entropy = entropy.clone().into_scalar::<f32>();
-            let approx_kl = approx_kl.clone().into_scalar::<f32>();
-            let clip_ratio = clip_ratio.clone().into_scalar::<f32>();
+            let entropy = log.entropy();
+            let approx_kl = log.approx_kl();
+            let clip_ratio = log.clip_ratio();
             println!("{i},{total_steps},{step},{entropy},{approx_kl},{clip_ratio}");
             if i % 100 == 0 {
                 eprintln!("Episode: {i}, Total steps: {total_steps} Steps: {step}, Entropy: {entropy}, Approx KL: {approx_kl} Clip ratio: {clip_ratio}");

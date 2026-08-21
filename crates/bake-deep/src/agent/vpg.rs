@@ -1,5 +1,4 @@
 //! Vanilla Policy Gradient (REINFORCE) algorithm implementation
-
 use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
 
 use crate::{distribution::Distribution, network::LogitNetwork, types::{Batch, Batchable}};
@@ -38,7 +37,7 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
     }
 
     /// update the logit network
-    pub fn update(mut self, t: Batch<LogitNet::Obs, <LogitNet::Dist as Distribution>::Action, LogitNet::Constraint>) -> (Self, Tensor<1>) {
+    pub fn update(mut self, t: Batch<LogitNet::Obs, <LogitNet::Dist as Distribution>::Action, LogitNet::Constraint>) -> (Self, VPGLog) {
         let len = t.batch_size();
         let device = t.device();
         let dist = self.online.forward(t.obss, t.constraints.into());
@@ -61,8 +60,31 @@ impl<LogitNet: LogitNetwork> VPGAgent<LogitNet> {
 
         self.online = self.opt.step(self.lr, self.online, grads);
 
-        (self, entropy)
+        (self, VPGLog::new(loss, entropy))
     }
+}
+
+/// logging struct for VPG
+#[derive(Debug, Clone, Default)]
+pub struct VPGLog {
+    /// surrogate loss
+    pub surrogate_loss: Option<Tensor<1>>,
+    /// entropy
+    pub entropy: Option<Tensor<1>>,
+}
+
+impl VPGLog {
+    /// create a new VPGLog struct
+    pub fn new(surrogate_loss: Tensor<1>, entropy: Tensor<1>) -> Self {
+        Self {
+            surrogate_loss: surrogate_loss.into(),
+            entropy: entropy.into()
+        }
+    }
+    /// surrogate loss
+    pub fn surrogate_loss(&self) -> f32 { self.surrogate_loss.clone().map_or(0f32, |q| q.into_scalar()) }
+    /// entropy
+    pub fn entropy(&self) -> f32 { self.entropy.clone().map_or(0f32, |q| q.into_scalar()) }
 }
 
 /// baseline enum for examining the effects of it

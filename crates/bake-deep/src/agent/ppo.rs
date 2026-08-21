@@ -54,7 +54,7 @@ impl<Net: ActorCriticNetwork> PPOAgent<Net> {
     }
 
     /// update the approximators
-    pub fn update(mut self, minibatch_size: usize, mut batch: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint, Tensor<1>>) -> (Self, Tensor<1>, Tensor<1>, Tensor<1>){
+    pub fn update(mut self, minibatch_size: usize, mut batch: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint, Tensor<1>>) -> (Self, PPOLog){
         let device = batch.rewards.device();
         let (_, values) = self.net.forward(batch.obss.clone(), batch.constraints.clone());
         let (_, next_values) = self.net.forward(batch.next_obss.clone(), batch.next_constraints.clone());
@@ -107,7 +107,36 @@ impl<Net: ActorCriticNetwork> PPOAgent<Net> {
         let (dist, _) = self.net.forward(batch.obss, batch.constraints);
         let log_ratio = dist.log_probs(batch.actions) - old_log_probs;
         let approx_kl = ((log_ratio.clone().exp() - 1f32) - log_ratio.clone()).mean();
-        let clip_frac = (log_ratio.exp() - 1f32).abs().greater_elem(self.eps).float().mean();
-        (self, dist.entropy().mean(), approx_kl, clip_frac)
+        let clip_ratio = (log_ratio.exp() - 1f32).abs().greater_elem(self.eps).float().mean();
+        let entropy = dist.entropy().mean();
+        (self, PPOLog::new(entropy, approx_kl, clip_ratio))
     }
+}
+
+/// logging struct for PPO
+#[derive(Debug, Clone, Default)]
+pub struct PPOLog {
+    /// entropy
+    pub entropy: Option<Tensor<1>>,
+    /// approximate KL divergence
+    pub approx_kl: Option<Tensor<1>>,
+    /// clipped ratio
+    pub clip_ratio: Option<Tensor<1>>,
+}
+
+impl PPOLog {
+    /// create a new PPOLog struct
+    pub fn new(entropy: Tensor<1>, approx_kl: Tensor<1>, clip_ratio: Tensor<1>) -> Self {
+        Self {
+            entropy: entropy.into(),
+            approx_kl: approx_kl.into(),
+            clip_ratio: clip_ratio.into()
+        }
+    }
+    /// entropy
+    pub fn entropy(&self) -> f32 { self.entropy.clone().map_or(0f32, |q| q.into_scalar()) }
+    /// approximate KL divergence
+    pub fn approx_kl(&self) -> f32 { self.approx_kl.clone().map_or(0f32, |q| q.into_scalar()) }
+    /// clipped ratio
+    pub fn clip_ratio(&self) -> f32 { self.clip_ratio.clone().map_or(0f32, |q| q.into_scalar()) }
 }
