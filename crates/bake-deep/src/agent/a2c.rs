@@ -46,7 +46,7 @@ impl<Net: ActorCriticNetwork> A2CAgent<Net> {
         // 3. entropy
         let entropy = dist.entropy().mean();
         // 4. value loss
-        let value_loss = MseLoss.forward(values, ret, Reduction::Mean);
+        let value_loss = MseLoss.forward(values, ret.detach(), Reduction::Mean);
         // 5. backward
         match self.config {
             ActorCriticConfig::Shared{ lr, c_v, mut opt } => {

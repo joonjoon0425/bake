@@ -26,5 +26,5 @@ pub fn gae(
     }
     let gae = Tensor::from_data(TensorData::new(gae, [n]), &device);
     let returns = gae.clone() + values;
-    (gae, returns)
+    (gae, returns.detach())
 }
