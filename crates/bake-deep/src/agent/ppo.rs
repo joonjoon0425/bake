@@ -54,7 +54,7 @@ impl<Net: ActorCriticNetwork> PPOAgent<Net> {
     }
 
     /// update the approximators
-    pub fn update(mut self, minibatch_size: usize, mut batch: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint, Tensor<1>>) -> (Self, Tensor<1>){
+    pub fn update(mut self, minibatch_size: usize, mut batch: Batch<Net::Obs, <Net::Dist as Distribution>::Action, Net::Constraint, Tensor<1>>) -> (Self, Tensor<1>, Tensor<1>, Tensor<1>){
         let device = batch.rewards.device();
         let (_, values) = self.net.forward(batch.obss.clone(), batch.constraints.clone());
         let (_, next_values) = self.net.forward(batch.next_obss.clone(), batch.next_constraints.clone());
@@ -63,7 +63,7 @@ impl<Net: ActorCriticNetwork> PPOAgent<Net> {
         let gae = (adv.clone() - adv.clone().mean()) / (adv.clone().var(0) + 1e-9).sqrt();
         // 2. K epoch minibatch rollout
         let old_log_probs = std::mem::replace(&mut batch.extras, Tensor::zeros([1], &device));
-        let batch = batch.add_extra(PPOExtra { old_log_probs, gae, targets: ret});
+        let batch = batch.add_extra(PPOExtra { old_log_probs: old_log_probs.clone(), gae, targets: ret});
         for _ in 0..self.epoch {
             let mut perm: Vec<i64> = (0..batch.batch_size() as i64).collect();
             perm.shuffle(&mut self.rng);
@@ -74,8 +74,8 @@ impl<Net: ActorCriticNetwork> PPOAgent<Net> {
                 let (dist, values) = self.net.forward(minibatch.obss, minibatch.constraints);
                 let log_probs = dist.log_probs(minibatch.actions);
                 let ratio = (log_probs - minibatch.extras.old_log_probs).exp();
-                let stacked = Tensor::stack::<2>(vec![ratio.clone(), ratio.clamp(1f32 - self.eps, 1f32 + self.eps)], 1);
-                let surrogate_loss = -(stacked.min_dim(1).squeeze_dim(1) * minibatch.extras.gae).mean();
+                let stacked = Tensor::stack::<2>(vec![ratio.clone() * minibatch.extras.gae.clone(), ratio.clamp(1f32 - self.eps, 1f32 + self.eps) * minibatch.extras.gae ], 1);
+                let surrogate_loss = -stacked.min_dim(1).mean();
                 // 2-2. value loss
                 let value_loss = MseLoss::new().forward(values.clone(), minibatch.extras.targets.clone().detach(), Reduction::Mean);
                 // 2-3 entropy
@@ -105,7 +105,9 @@ impl<Net: ActorCriticNetwork> PPOAgent<Net> {
             }
         }
         let (dist, _) = self.net.forward(batch.obss, batch.constraints);
-
-        (self, dist.entropy().mean())
+        let log_ratio = dist.log_probs(batch.actions) - old_log_probs;
+        let approx_kl = ((log_ratio.clone().exp() - 1f32) - log_ratio.clone()).mean();
+        let clip_frac = (log_ratio.exp() - 1f32).abs().greater_elem(self.eps).float().mean();
+        (self, dist.entropy().mean(), approx_kl, clip_frac)
     }
 }

@@ -2,6 +2,7 @@ use burn::{Tensor, tensor::TensorData};
 
 use crate::types::Batchable;
 
+/// A GAE compute function
 pub fn gae(
     rewards: Tensor<1>,
     values: Tensor<1>,

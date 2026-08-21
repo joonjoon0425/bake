@@ -6,15 +6,15 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default().autodiff();
     device.seed(seed);
-    println!("# optimizer=rmsprop lr_p=1e-4 lr_v=1e-3 c_e=0.00 batch_size=512 minibatch_size=128 epoch=4 seed={seed}");
-    println!("episode,total_steps,step,entropy");
+    println!("# optimizer=rmsprop lr_p=1e-4 lr_v=1e-3 c_e=0.02 batch_size=512 minibatch_size=128 epoch=4 seed={seed}");
+    println!("episode,total_steps,step,entropy,approx_kl,clip_ratio");
     let mut env = CartPole::new(seed, &device);
     let mut agent = PPOAgent::new(
         seed,
         0.99,
         0.98,
         0.2,
-        0.00,
+        0.02,
         4,
         ActorCriticConfig::separated(
             1e-4,
@@ -32,9 +32,11 @@ pub fn main() {
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
     let mut total_steps = 0;
-
+    let mut entropy: Tensor<1> = Tensor::zeros([1], &device);
+    let mut approx_kl: Tensor<1> = Tensor::zeros([1], &device);
+    let mut clip_ratio: Tensor<1> = Tensor::zeros([1], &device);
     for i in 0..=4000 {
-        let mut entropy: Tensor<1> = Tensor::zeros([1], &device);
+        
         let mut step = 0;
         tape.reset(&mut env);
         loop {
@@ -49,16 +51,18 @@ pub fn main() {
             total_steps += 1;
             if buffer.len() >= 512 {
                 let batch = buffer.pop();
-                (agent, entropy) = agent.update(128, batch);
+                (agent, entropy, approx_kl, clip_ratio) = agent.update(128, batch);
             }
             if terminated || truncated { break; }
         }
 
         if i % 10 == 0 {
-            let entropy = entropy.into_scalar::<f32>();
-            println!("{i},{total_steps},{step},{entropy}");
+            let entropy = entropy.clone().into_scalar::<f32>();
+            let approx_kl = approx_kl.clone().into_scalar::<f32>();
+            let clip_ratio = clip_ratio.clone().into_scalar::<f32>();
+            println!("{i},{total_steps},{step},{entropy},{approx_kl},{clip_ratio}");
             if i % 100 == 0 {
-                eprintln!("Episode: {i}, Total steps: {total_steps} Steps: {step}, Entropy: {entropy}");
+                eprintln!("Episode: {i}, Total steps: {total_steps} Steps: {step}, Entropy: {entropy}, Approx KL: {approx_kl} Clip ratio: {clip_ratio}");
             }
         }
     }

@@ -1,9 +1,6 @@
 //! An A2C algorithm implementation
-//! 
-//! 
-use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
-
-use crate::{config::ActorCriticConfig, distribution::Distribution, network::ActorCriticNetwork, types::{Batch, Batchable}, utils::gae};
+use burn::{Tensor, nn::loss::{MseLoss, Reduction}, optim::GradientsParams};
+use crate::{config::ActorCriticConfig, distribution::Distribution, network::ActorCriticNetwork, types::Batch, utils::gae};
 /// An Advantage Actor-Critic Algorithm implmentation
 pub struct A2CAgent<Net: ActorCriticNetwork> {
     gamma: f32,
