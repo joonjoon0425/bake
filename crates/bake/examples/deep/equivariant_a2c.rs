@@ -1,4 +1,4 @@
-use bake_deep::{agent::A2CAgent, buffer::RolloutBuffer, config::ActorCriticConfig, constraint::{DiscreteConstraint}, distribution::Categorical, encoder::{Encoder, MLPEncoder}, env::CartPole, head::{CategoricalHead, Head, LinearVHead, VHead}, network::ActorCriticNetwork, types::Tape};
+use bake_deep::{agent::A2CAgent, buffer::RolloutBuffer, config::ActorCriticConfig, constraint::{DiscreteConstraint}, distribution::Categorical, approximator::encoder::{Encoder, MLPEncoder}, env::CartPole, approximator::head::{CategoricalHead, Head, LinearVHead, VHead}, approximator::ActorCritic, types::Tape};
 use burn::{Tensor, module::Module, nn::activation::Activation, optim::{RmsPropConfig}, tensor::Device};
 
 
@@ -78,7 +78,7 @@ impl<E: Encoder, Ph: Head<Output = Categorical>, Vh: VHead> Z2Symmetrized<E, Ph,
     }
 }
 
-impl<E: Encoder<Obs = Tensor<2>>, Ph: Head<Output = Categorical, Constraint: DiscreteConstraint>, Vh: VHead> ActorCriticNetwork for Z2Symmetrized<E, Ph, Vh> {
+impl<E: Encoder<Obs = Tensor<2>>, Ph: Head<Output = Categorical, Constraint: DiscreteConstraint>, Vh: VHead> ActorCritic for Z2Symmetrized<E, Ph, Vh> {
     type Obs = E::Obs;
     type Constraint = <Ph as Head>::Constraint;
     type Dist = Ph::Output;

@@ -35,9 +35,9 @@ impl Batchable for Unconstrained {
 
     fn select(self, _: Tensor<1, Int>) -> Self { Unconstrained }
 
-    fn batch_size(&self) -> usize { 0 }
+    fn batch_size(&self) -> usize { unimplemented!() }
 
-    fn device(&self) -> Device { Device::default() }
+    fn device(&self) -> Device { unimplemented!() }
 }
 
 impl<const D: usize> Batchable for Tensor<D> {
@@ -97,8 +97,40 @@ impl<const D: usize> Batchable for Tensor<D, Bool> {
 impl Batchable for () {
     fn concat(_bundle: Vec<Self>) -> Self {}
     fn select(self, _: Tensor<1, Int>) -> Self {}
-    fn batch_size(&self) -> usize { 0 }
-    fn device(&self) -> Device { Device::default() }
+    fn batch_size(&self) -> usize { unimplemented!() }
+    fn device(&self) -> Device { unimplemented!() }
+}
+
+impl<T: Batchable> Batchable for Option<T> {
+    fn concat(data: Vec<Self>) -> Self {
+        if data[0].is_some() {
+            let data: Vec<T> = data.into_iter().map(|v| v.unwrap()).collect();
+            return Some(T::concat(data));
+        } else {
+            return None;
+        }
+    }
+
+    fn select(self, idx: Tensor<1, Int>) -> Self {
+        match self {
+            Some(v) => Some(v.select(idx)),
+            None => None
+        }
+    }
+
+    fn batch_size(&self) -> usize {
+        match self {
+            Some(v) => v.batch_size(),
+            None => panic!("called device() from None"),
+        }
+    }
+
+    fn device(&self) -> Device {
+        match self {
+            Some(v) => v.device(),
+            None => panic!("called device() from None"),
+        }
+    }
 }
 // macro_rules! impl_batchable_tensor {
 //     ($d:literal => $db:literal) => {

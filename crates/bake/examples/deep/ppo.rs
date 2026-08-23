@@ -1,4 +1,4 @@
-use bake_deep::{agent::{PPOAgent}, buffer::RolloutBuffer, config::ActorCriticConfig, distribution::Distribution, encoder::MLPEncoder, env::CartPole, head::{CategoricalHead, LinearVHead}, network::SequentialActorCriticNetwork, types::Tape};
+use bake_deep::{agent::{PPOAgent}, buffer::RolloutBuffer, config::ActorCriticConfig, distribution::Distribution, approximator::encoder::MLPEncoder, env::CartPole, approximator::head::{CategoricalHead, LinearVHead}, approximator::SeparatedActorCritic, types::Tape};
 use burn::{nn::activation::Activation, optim::{RmsPropConfig}, tensor::Device};
 
 
@@ -22,7 +22,7 @@ pub fn main() {
             1e-3,
             RmsPropConfig::new().init()
         ),
-        SequentialActorCriticNetwork::new(
+        SeparatedActorCritic::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             CategoricalHead::new(128, 2, &device),

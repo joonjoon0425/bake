@@ -1,15 +1,12 @@
 //! A Deep Reinforcement Learning Framework
 #[warn(missing_docs)]
-
-pub mod agent;
+pub mod approximator;
+pub mod algorithm;
 pub mod buffer;
 pub mod config;
 pub mod constraint;
 pub mod distribution;
 pub mod env;
-pub mod encoder;
-pub mod head;
-pub mod network;
-pub mod policy;
+pub mod exploration;
 pub mod types;
 pub mod utils;

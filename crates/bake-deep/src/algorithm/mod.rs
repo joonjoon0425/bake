@@ -1,7 +1,5 @@
-//! # Deep Reinforcement Learning Algorithm Implementations
-
 pub mod dqn;
-pub use dqn::*;
+pub use dqn::{Dqn, DqnLoss};
 
 pub mod double_dqn;
 pub use double_dqn::*;

@@ -1,4 +1,4 @@
-use bake_deep::{agent::{Baseline, VPGAgent}, buffer::RolloutBuffer, encoder::MLPEncoder, env::CartPole, head::CategoricalHead, network::SequentialLogitNetwork, types::Tape};
+use bake_deep::{agent::{Baseline, VPGAgent}, buffer::RolloutBuffer, approximator::encoder::MLPEncoder, env::CartPole, approximator::head::CategoricalHead, approximator::ComposedPolicy, types::Tape};
 use burn::{nn::activation::Activation, optim::AdamConfig, tensor::Device};
 
 
@@ -9,7 +9,7 @@ pub fn main() {
     let mut agent = VPGAgent::new(
         0.99,
         Baseline::Mean,
-        SequentialLogitNetwork::new(
+        ComposedPolicy::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             CategoricalHead::new(128, 2, &device)
         ),

@@ -1,7 +1,7 @@
 //! A simple MLP Encoder
 use burn::{Tensor, module::Module, nn::{Linear, LinearConfig, activation::Activation}, tensor::Device};
 
-use crate::encoder::Encoder;
+use crate::approximator::Encoder;
 
 #[derive(Module, Debug)]
 pub struct MLPEncoder {

@@ -1,4 +1,4 @@
-use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, encoder::MLPEncoder, env::CartPole, head::LinearDuelingQHead, policy::EpsGreedy, network::SequentialQNetwork, types::Tape};
+use bake_deep::{agent::DQNAgent, buffer::ReplayBuffer, approximator::encoder::MLPEncoder, env::CartPole, approximator::head::LinearDuelingQHead, exploration::EpsGreedy, approximator::ComposedQFunction, types::Tape};
 use burn::{nn::{Relu}, optim::AdamConfig, tensor::Device};
 use burn::nn::activation::Activation;
 pub fn main() {
@@ -6,7 +6,7 @@ pub fn main() {
     device.seed(12);
     let mut env = CartPole::new(12, &device);
     let mut agent = DQNAgent::new(0.99,    
-        SequentialQNetwork::new(
+        ComposedQFunction::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(Relu), &device),
             LinearDuelingQHead::new(128, 2, &device)
         ),
