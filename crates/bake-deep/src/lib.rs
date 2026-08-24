@@ -1,4 +1,5 @@
-//! A Deep Reinforcement Learning Framework
+//! # A Deep Reinforcement Learning Framework
+//! Works with burn
 #[warn(missing_docs)]
 pub mod approximator;
 pub mod algorithm;
