@@ -5,6 +5,7 @@ use burn::{Tensor, module::Module, nn::{Linear, LinearConfig}, tensor::Device};
 
 use crate::{approximator::Head, constraint::DiscreteConstraint, distribution::Categorical};
 
+/// the head which produces categirical distribution
 #[derive(Module, Debug)]
 pub struct CategoricalHead<Constraint> {
     layer: Linear,
@@ -14,6 +15,7 @@ pub struct CategoricalHead<Constraint> {
 }
 
 impl<Constraint: DiscreteConstraint> CategoricalHead<Constraint> {
+    /// create a new CatgoricalHead
     pub fn new(d_input: usize, d_output: usize, device: &Device) -> Self {
         Self {
             layer: LinearConfig::new(d_input, d_output).init(device),

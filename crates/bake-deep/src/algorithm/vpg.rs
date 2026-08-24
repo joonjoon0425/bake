@@ -1,6 +1,8 @@
-use burn::{Tensor, tensor::TensorData};
+use std::collections::HashMap;
 
-use crate::{approximator::Policy, distribution::Distribution, types::{Batch, Batchable}};
+use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
+
+use crate::{approximator::Policy, distribution::Distribution, types::{Batch, Batchable, Recordable}};
 
 pub struct Vpg {
     pub gamma: f32,
@@ -36,6 +38,21 @@ impl Vpg {
         let loss = -(returns * log_probs).mean();
 
         VpgLoss { loss, entropy }
+    }
+
+    pub fn update<P: Policy>(policy: P, loss: VpgLoss, c_e: f32, lr: f64, opt: &mut ModuleOptimizer) -> P {
+        let grads = (loss.loss - c_e * loss.entropy).backward();
+        let grads = GradientsParams::from_grads(grads, &policy);
+        opt.step(lr, policy, grads)
+    }
+}
+
+impl Recordable for VpgLoss {
+    fn to_record(&self) -> HashMap<&'static str, Tensor<1>> {
+        let mut record = HashMap::new();
+        record.insert("loss", self.loss.clone().detach());
+        record.insert("entropy", self.entropy.clone().detach());
+        record
     }
 }
 

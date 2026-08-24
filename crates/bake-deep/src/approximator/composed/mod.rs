@@ -1,3 +1,5 @@
+//! A helper structs for approximators
+
 use burn::{Tensor, module::Module};
 use crate::{approximator::*, constraint::DiscreteConstraint, distribution::Distribution};
 
@@ -9,6 +11,7 @@ pub struct ComposedPolicy<E: Encoder, H: Head<Output: Distribution>> {
 }
 
 impl<E: Encoder, H: Head<Output: Distribution>> ComposedPolicy<E, H> {
+    /// create a new composed policy
     pub fn new(encoder: E, head: H) -> Self {
         Self {
             encoder,
@@ -36,6 +39,7 @@ pub struct ComposedQFunction<E: Encoder, H: QHead> {
 }
 
 impl<E: Encoder, H: QHead> ComposedQFunction<E, H> {
+    /// create a new composed q function
     pub fn new(encoder: E, head: H) -> Self {
         Self {
             encoder,
@@ -63,6 +67,7 @@ pub struct SeparatedActorCritic<E: Encoder, H1: Head<Output: Distribution>, H2: 
 }
 
 impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> SeparatedActorCritic<E, H1, H2> {
+    /// create a new encoder-separated actor and critic
     pub fn new(actor_encoder: E, critic_encoder: E, actor: H1, critic: H2) -> Self {
         Self {
             actor_encoder,
@@ -85,6 +90,8 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCritic for Sepa
     fn critic(&self, obs: Self::Obs) -> Tensor<1> {
         self.critic.forward(self.critic_encoder.forward(obs))
     }
+
+    fn shares_encoder(&self) -> bool { false }
 }
 
 /// A helper for creating an encoder-sharing actor-critic network
@@ -96,6 +103,7 @@ pub struct SharedActorCritic<E: Encoder, H1: Head<Output: Distribution>, H2: VHe
 }
 
 impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> SharedActorCritic<E, H1, H2> {
+    /// creat a new encoder-shared actor and critic
     pub fn new(encoder: E, actor: H1, critic: H2) -> Self {
         Self {
             encoder,
@@ -124,4 +132,6 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCritic for Shar
         let value = self.critic.forward(encoded);
         (dist, value)
     }
+
+    fn shares_encoder(&self) -> bool { true }
 }

@@ -1,6 +1,8 @@
-use burn::{Tensor, tensor::Int};
+use std::collections::HashMap;
 
-use crate::{algorithm::dqn::ValueLoss, approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable}};
+use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
+
+use crate::{algorithm::dqn::ValueLoss, approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable, Recordable}};
 
 pub struct DoubleDqn {
     pub gamma: f32,
@@ -33,10 +35,26 @@ impl DoubleDqn {
         let next_qvalues = next_qvalues_target.gather(1, argmax).squeeze_dim::<1>(1);
         let targets = (batch.rewards + config.gamma * next_qvalues * (1f32 - batch.terminated)).detach();
 
-        let td_error = targets.clone() - qvalues.clone();
-        let qmean = qvalues.clone().mean();
+        let td_error = (targets.clone() - qvalues.clone()).detach();
+        let qmean = qvalues.clone().detach().mean();
         let loss = config.value_loss.forward(qvalues, targets);
 
         DoubleDqnLoss { loss, td_error, qmean }
+    }
+
+    pub fn update<Q: QFunction>(online: Q, loss: DoubleDqnLoss, lr: f64, opt: &mut ModuleOptimizer) -> Q {
+        let grads = loss.loss.backward();
+        let grads = GradientsParams::from_grads(grads, &online);
+        opt.step(lr, online, grads)
+    }
+}
+
+impl Recordable for DoubleDqnLoss {
+    fn to_record(&self) -> HashMap<&'static str, Tensor<1>> {
+        let mut record = HashMap::new();
+        record.insert("loss", self.loss.clone().detach());
+        record.insert("td_error", self.td_error.clone().detach());
+        record.insert("qmean", self.qmean.clone().detach());
+        record
     }
 }

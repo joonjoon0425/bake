@@ -1,3 +1,5 @@
+//! Traits and implementations for all sort of approximators (deep neural networks)
+
 pub mod qfunction;
 pub use qfunction::*;
 

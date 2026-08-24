@@ -2,9 +2,13 @@
 use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
 use crate::types::Batchable;
 
+/// basic trait for heads
 pub trait Head : AutodiffModule + Clone + ModuleDisplay {
+    /// the result which head peoduces
     type Output;
+    /// the constraint
     type Constraint: Batchable;
+    /// produce the result of head
     fn forward(&self, encoded: Tensor<2>, constraint: Self::Constraint) -> Self::Output;
 }
 

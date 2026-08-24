@@ -8,3 +8,6 @@ pub use batchable::*;
 
 pub mod tape;
 pub use tape::*;
+
+pub mod logger;
+pub use logger::*;

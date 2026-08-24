@@ -1,12 +1,15 @@
 //! Network structure for actor-critic method
 
 use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
-
 use crate::{distribution::Distribution, types::Batchable};
 
+/// ActorCritic trait which all actor-critic algorithms require
 pub trait ActorCritic : AutodiffModule + Clone + ModuleDisplay {
+    /// the observation of environment
     type Obs: Batchable;
+    /// the distribution which actor produces
     type Dist: Distribution;
+    /// the constraint associated with observation
     type Constraint: Batchable;
 
     /// returns the distribution object according to current obs and constraint
@@ -23,4 +26,7 @@ pub trait ActorCritic : AutodiffModule + Clone + ModuleDisplay {
     fn action(&self, obs: Self::Obs, constraint: Self::Constraint) -> <Self::Dist as Distribution>::Action {
         self.actor(obs, constraint).sample()
     }
+
+    /// checks whether this actor-critic shares encoder
+    fn shares_encoder(&self) -> bool;
 }

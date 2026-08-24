@@ -1,30 +1,29 @@
 use burn::{Tensor, tensor::TensorData};
 
-use crate::types::Batchable;
+use crate::{approximator::ActorCritic, distribution::Distribution, types::{Batch, Batchable}};
 
 /// A GAE compute function
-pub fn gae(
-    rewards: Tensor<1>,
-    values: Tensor<1>,
-    next_values: Tensor<1>,
-    terminated: Tensor<1>,
-    truncated: Tensor<1>,
+pub fn gae<Ac: ActorCritic, Extra: Batchable>(
+    actor_critic: &Ac,
+    batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Action, Ac::Constraint, Extra>,
     gamma: f32,
     lambda: f32,
 ) -> (Tensor<1>, Tensor<1>) {
-    let n = rewards.batch_size();
-    let device = rewards.device();
-    let deltas = rewards + gamma * next_values * (1f32 - terminated.clone()) - values.clone();
+    let n = batch.batch_size();
+    let device = batch.rewards.device();
+    let values = actor_critic.critic(batch.obss);
+    let next_values = actor_critic.critic(batch.next_obss);
+    let deltas = batch.rewards + gamma * next_values * (1f32 - batch.terminated.clone()) - values.clone();
     let deltas: Vec<f32> = deltas.into_data().into_vec().unwrap();
-    let terminated: Vec<f32> = terminated.into_data().into_vec().unwrap();
-    let truncated: Vec<f32> = truncated.into_data().into_vec().unwrap();
+    let terminated: Vec<f32> = batch.terminated.into_data().into_vec().unwrap();
+    let truncated: Vec<f32> = batch.truncated.into_data().into_vec().unwrap();
 
-    let mut gae = vec![0f32; n];
-    gae[n - 1] = deltas[n - 1];
+    let mut adv = vec![0f32; n];
+    adv[n - 1] = deltas[n - 1];
     for i in (0..n-1).rev() {
-        gae[i] = deltas[i] + gamma * lambda * gae[i + 1] * (1f32 - truncated[i]) * (1f32 - terminated[i]);
+        adv[i] = deltas[i] + gamma * lambda * adv[i + 1] * (1f32 - truncated[i]) * (1f32 - terminated[i]);
     }
-    let gae = Tensor::from_data(TensorData::new(gae, [n]), &device);
-    let returns = gae.clone() + values;
-    (gae, returns.detach())
+    let adv = Tensor::from_data(TensorData::new(adv, [n]), &device);
+    let returns = adv.clone() + values;
+    (adv.detach(), returns.detach())
 }

@@ -66,11 +66,6 @@ path = "examples/deep/equivariant_a2c.rs"
 required-features = ["deep"]
 
 [[example]]
-name = "augmented_dqn"
-path = "examples/deep/augmented_dqn.rs"
-required-features = ["deep"]
-
-[[example]]
 name = "ddqn"
 path = "examples/deep/ddqn.rs"
 required-features = ["deep"]

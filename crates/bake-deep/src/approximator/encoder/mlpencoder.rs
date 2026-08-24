@@ -3,6 +3,7 @@ use burn::{Tensor, module::Module, nn::{Linear, LinearConfig, activation::Activa
 
 use crate::approximator::Encoder;
 
+/// A Simple mlp encoder struct
 #[derive(Module, Debug)]
 pub struct MLPEncoder {
     layers: Vec<Linear>,
@@ -10,6 +11,7 @@ pub struct MLPEncoder {
 }
 
 impl MLPEncoder {
+    /// create a new MlpEncoder struct with given dimensions and activation unit
     pub fn new(dims: Vec<usize>, activation: Activation, device: &Device) -> Self {
         if dims.len() < 2 { panic!("MLPEncoder requires at least two dims: input dimension and output dimension."); }
 
