@@ -1,15 +1,17 @@
 use std::collections::HashMap;
 
-use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}};
+use burn::{Tensor, config::Config, optim::{GradientsParams, ModuleOptimizer}};
 
 use crate::{algorithm::dqn::ValueLoss, approximator::ActorCritic, distribution::Distribution, types::{Batch, Recordable}, utils::gae};
 
+#[derive(Debug, Config)]
 pub struct A2C {
     pub gamma: f32,
     pub lambda: f32, // for GAE calculation
     pub value_loss: ValueLoss,
 }
 
+#[derive(Debug, Config)]
 pub struct A2CLoss {
     pub actor_loss: Tensor<1>,
     pub critic_loss: Tensor<1>,
@@ -17,8 +19,6 @@ pub struct A2CLoss {
 }
 
 impl A2C {
-    pub fn new(gamma: f32, lambda: f32, value_loss: ValueLoss) -> Self { Self { gamma, lambda, value_loss } }
-
     pub fn loss<Ac: ActorCritic>(config: &A2C, actor_critic: &Ac, batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Action, Ac::Constraint>) -> A2CLoss {
         let (dist, values) = actor_critic.forward(batch.obss.clone(), batch.constraints.clone());
         let (adv, ret) = gae(actor_critic, batch.clone(), config.gamma, config.lambda);

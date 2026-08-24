@@ -254,6 +254,7 @@ dependencies = [
  "bake-macros",
  "burn",
  "rand 0.10.2",
+ "serde",
 ]
 
 [[package]]

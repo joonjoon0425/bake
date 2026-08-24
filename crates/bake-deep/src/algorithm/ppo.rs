@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use bake_macros::Batchable;
+use burn::config::Config;
 use burn::optim::{GradientsParams, ModuleOptimizer};
 use burn::{Tensor, tensor::Int};
 
@@ -8,7 +9,7 @@ use crate::algorithm::dqn::ValueLoss;
 use crate::types::Recordable;
 use crate::{distribution::Distribution, approximator::ActorCritic, types::{Batch, Batchable}};
 
-
+#[derive(Debug, Config)]
 pub struct Ppo {
     pub gamma: f32,
     pub lambda: f32,
@@ -16,6 +17,7 @@ pub struct Ppo {
     pub value_loss: ValueLoss,
 }
 
+#[derive(Debug, Clone)]
 pub struct PpoLoss {
     pub actor_loss: Tensor<1>,
     pub critic_loss: Tensor<1>,
@@ -33,8 +35,6 @@ pub struct PpoExtra {
 }
 
 impl Ppo {
-    pub fn new(gamma: f32, lambda: f32, eps: f32, value_loss: ValueLoss) -> Self { Self { gamma, lambda, eps, value_loss } }
-
     pub fn loss<Ac: ActorCritic>(config: &Ppo, actor_critic: &Ac, minibatch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Action, Ac::Constraint, PpoExtra>) -> PpoLoss {
         let (dist, values) = actor_critic.forward(minibatch.obss, minibatch.constraints);
         let log_ratio = dist.log_probs(minibatch.actions) - minibatch.extras.old_log_probs;

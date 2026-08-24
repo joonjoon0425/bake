@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 
 use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
+use serde::Deserialize;
 
 use crate::{algorithm::dqn::ValueLoss, approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable, Recordable}};
 
+#[derive(Debug, Clone, Deserialize)]
 pub struct DoubleDqn {
     pub gamma: f32,
     pub value_loss: ValueLoss,
 }
 
+#[derive(Debug, Clone, Deserialize)]
 pub struct DoubleDqnLoss {
     pub loss: Tensor<1>,
     pub td_error: Tensor<1>,

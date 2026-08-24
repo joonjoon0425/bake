@@ -1,24 +1,22 @@
 use std::collections::HashMap;
 
-use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
+use burn::{Tensor, config::Config, optim::{GradientsParams, ModuleOptimizer}, tensor::TensorData};
 
 use crate::{approximator::Policy, distribution::Distribution, types::{Batch, Batchable, Recordable}};
 
+#[derive(Debug, Config)]
 pub struct Vpg {
     pub gamma: f32,
     pub baseline: Baseline
 }
 
+#[derive(Debug, Clone)]
 pub struct VpgLoss {
     pub loss: Tensor<1>,
     pub entropy: Tensor<1>,
 }
 
 impl Vpg {
-    pub fn new(gamma: f32, baseline: Baseline) -> Self {
-        Self { gamma, baseline }
-    }
-
     pub fn loss<P: Policy>(config: &Vpg, policy: &P, batch: Batch<P::Obs, <P::Dist as Distribution>::Action, P::Constraint>) -> VpgLoss {
         let len = batch.batch_size();
         let device = batch.device();
@@ -57,7 +55,7 @@ impl Recordable for VpgLoss {
 }
 
 /// baseline enum for examining the effects of it
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Config)]
 pub enum Baseline {
     /// No baseline is applied
     None,

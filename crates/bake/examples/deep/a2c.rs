@@ -1,31 +1,34 @@
-use bake_deep::{algorithm::*, approximator::{ActorCritic, SeparatedActorCritic, encoder::MLPEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, env::CartPole, types::{Logger, Tape}};
-use burn::{nn::activation::Activation, optim::RmsPropConfig, tensor::Device};
+use bake_deep::{algorithm::*, approximator::{ActorCritic, SeparatedActorCritic, encoder::MLPEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, types::{Logger, Tape}};
+use burn::{config::Config, nn::activation::Activation, tensor::Device};
 
 
 pub fn main() {
-    let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
+    let path = std::env::args().nth(1).unwrap_or_else(|| "crates/bake/configs/deep/a2c_cartpole.json".to_string());
+    let config = A2CConfig::load(&path).expect("failed to load config");
+    
     let device = Device::default().autodiff();
-    device.seed(seed);
-    let mut env = CartPole::new(seed, &device);
-    let config = A2C::new(0.99, 0.95, dqn::ValueLoss::MseLoss);
+    device.seed(config.seed);
+    let mut env = CartPole::new(config.seed, &device);
     let mut actor_critic = SeparatedActorCritic::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             CategoricalHead::new(128, 2, &device),
             LinearVHead::new(128, 1, &device)
         );
-    let c_e = 0.02;
-    let mut opt_a = RmsPropConfig::new().init();
-    let mut opt_c = RmsPropConfig::new().init();
-    let lr_a = 1e-4;
-    let lr_c = 1e-3;
+
+    let (lr_a, lr_c, mut opt_a, mut opt_c) = match &config.encoder_config {
+        ActorCriticEncoderConfig::Separated { lr_actor, opt_actor_config, lr_critic, opt_critic_config } => {
+            (*lr_actor, *lr_critic, opt_actor_config.init(), opt_critic_config.init())
+        },
+        _ => { panic!("Current code uses encoder-separated actor and critic") }
+    };
 
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
     let mut total_steps = 0;
     let mut logger = Logger::default();
 
-    for i in 0..=4000 {
+    for i in 0..=config.total_episode {
         let mut step = 0;
         tape.reset(&mut env);
         loop {
@@ -35,16 +38,16 @@ pub fn main() {
 
             step += 1;
             total_steps += 1;
-            if buffer.len() >= 160 {
+            if buffer.len() >= config.rollout_size {
                 let batch = buffer.pop();
-                let loss = A2C::loss(&config, &actor_critic, batch);
+                let loss = A2C::loss(&config.a2c, &actor_critic, batch);
                 logger.record(&loss);
-                actor_critic = A2C::update_separated(actor_critic, loss, c_e, lr_a, &mut opt_a, lr_c, &mut opt_c)
+                actor_critic = A2C::update_separated(actor_critic, loss, config.coeff_entropy, lr_a, &mut opt_a, lr_c, &mut opt_c)
             }
             if tape.done() { break; }
         }
 
-        if i % 10 == 0 {
+        if i % config.log_interval == 0 {
             let mean = logger.mean();
             let loss = mean.get("critic_loss").unwrap_or(&0f32);
             let entropy = mean.get("entropy").unwrap_or(&0f32);

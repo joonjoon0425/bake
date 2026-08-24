@@ -1,25 +1,24 @@
-use bake_deep::{algorithm::{Baseline, Vpg}, approximator::{ComposedPolicy, Policy, encoder::MLPEncoder, head::CategoricalHead}, buffer::RolloutBuffer, env::CartPole, types::{Logger, Tape}};
-use burn::{nn::activation::Activation, optim::AdamConfig, tensor::Device};
-
+use bake_deep::{algorithm::Vpg, approximator::{ComposedPolicy, Policy, encoder::MLPEncoder, head::CategoricalHead}, buffer::RolloutBuffer, config::VpgConfig, env::CartPole, types::{Logger, Tape}};
+use burn::{config::Config, nn::activation::Activation, tensor::Device};
 
 pub fn main() {
+    let path = std::env::args().nth(1).unwrap_or_else(|| "crates/bake/configs/deep/vpg_cartpole.json".to_string());
+    let config = VpgConfig::load(path).expect("Failed to read config");
+
     let device = Device::default().autodiff();
-    device.seed(1);
-    let mut env = CartPole::new(12, &device);
-    let config = Vpg::new(0.99, Baseline::Normalized);
+    device.seed(config.seed);
+    let mut env = CartPole::new(config.seed, &device);
     let mut policy = ComposedPolicy::new(
             MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
             CategoricalHead::new(128, 2, &device)
         );
-    let c_e = 0.00;
-    let lr = 1e-3;
-    let mut opt = AdamConfig::new().init();
+    let mut opt = config.opt_config.init();
 
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
     let mut logger = Logger::default();
 
-    for i in 0..=4000 {
+    for i in 0..=config.total_episode {
         let mut step = 0;
         tape.reset(&mut env);
         loop {
@@ -30,14 +29,14 @@ pub fn main() {
             step += 1;
             if tape.done() {
                 let batch = buffer.pop();
-                let loss = Vpg::loss(&config, &policy, batch);
+                let loss = Vpg::loss(&config.vpg, &policy, batch);
                 logger.record(&loss);
-                policy = Vpg::update(policy, loss, c_e, lr, &mut opt);
+                policy = Vpg::update(policy, loss, config.coeff_entropy, config.lr, &mut opt);
                 break;
             }
         }
 
-        if i % 100 == 0 {
+        if i % config.log_interval == 0 {
             let mean = logger.mean();
             println!("Episode: {i}, Steps: {step}, Entropy: {}, Surrogate loss: {}", mean.get("entropy").unwrap_or(&0f32), mean.get("loss").unwrap_or(&0f32));
         }

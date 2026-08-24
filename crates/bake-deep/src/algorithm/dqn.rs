@@ -2,14 +2,16 @@
 
 use std::collections::HashMap;
 
-use burn::{Tensor, nn::loss::{HuberLossConfig, MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
+use burn::{Tensor, config::Config, nn::loss::{HuberLossConfig, MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
 use crate::{approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable, Recordable}};
 
+#[derive(Debug, Config)]
 pub struct Dqn {
     pub gamma: f32,
     pub value_loss: ValueLoss,
 }
 
+#[derive(Debug, Clone)]
 pub struct DqnLoss {
     pub loss: Tensor<1>,
     pub td_error: Tensor<1>,
@@ -17,10 +19,6 @@ pub struct DqnLoss {
 }
 
 impl Dqn {
-    pub fn new(gamma: f32, value_loss: ValueLoss) -> Self {
-        Self { gamma, value_loss }
-    }
-
     pub fn loss<Q, Obs, Constraint>(config: &Dqn, online: &Q, target: &Q, batch: Batch<Obs, Tensor<1, Int>, Constraint>) -> DqnLoss
     where
         Q: QFunction<Obs = Obs>,
@@ -57,6 +55,7 @@ impl Recordable for DqnLoss {
     }
 }
 
+#[derive(Debug, Config)]
 pub enum ValueLoss {
     MseLoss,
     HuberLoss{ delta: f32 },

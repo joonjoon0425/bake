@@ -7,3 +7,4 @@ edition = "2024"
 burn = "0.22.0-pre.2"
 rand = "0.10.2"
 bake-macros = { path = "../bake-macros" }
+serde = "1.0.229"
