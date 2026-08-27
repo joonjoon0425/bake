@@ -21,7 +21,7 @@ impl Vpg {
         let len = batch.batch_size();
         let device = batch.device();
         let dist = policy.forward(batch.obss, batch.constraints.into());
-        let rewards = batch.rewards.into_data().into_vec().unwrap();
+        let rewards = batch.rewards.into_data().try_into_vec().unwrap();
         let mut returns = vec![0f32; len];
         returns[len - 1] = rewards[len - 1];
         for i in (0..(len - 1)).rev() {

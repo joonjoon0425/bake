@@ -1,7 +1,7 @@
-use serde::Deserialize;
+use burn::config::Config;
 use crate::{algorithm::Dqn, config::OptimizerConfig};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Config)]
 pub struct DqnConfig {
     pub dqn: Dqn,
     pub total_episode: usize,

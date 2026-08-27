@@ -1,17 +1,16 @@
 use std::collections::HashMap;
 
-use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
-use serde::Deserialize;
+use burn::{Tensor, config::Config, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
 
 use crate::{algorithm::dqn::ValueLoss, approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable, Recordable}};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Config)]
 pub struct DoubleDqn {
     pub gamma: f32,
     pub value_loss: ValueLoss,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct DoubleDqnLoss {
     pub loss: Tensor<1>,
     pub td_error: Tensor<1>,
@@ -19,10 +18,6 @@ pub struct DoubleDqnLoss {
 }
 
 impl DoubleDqn {
-    pub fn new(gamma: f32, value_loss: ValueLoss) -> Self {
-        Self { gamma, value_loss }
-    }
-
     pub fn loss<Q, Obs, Constraint>(config: &DoubleDqn, online: &Q, target: &Q, batch: Batch<Obs, Tensor<1, Int>, Constraint>) -> DoubleDqnLoss
     where
         Q: QFunction<Obs = Obs>,
