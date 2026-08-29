@@ -3,7 +3,7 @@ use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Devic
 
 
 pub fn main() {
-    let path = std::env::args().nth(1).unwrap_or_else(|| "crates/bake/configs/deep/a2c_cartpole.json".to_string());
+    let path = std::env::args().nth(1).unwrap_or_else(|| "crates/bake/configs/deep/noisy_a2c_cartpole.json".to_string());
     let config = A2CConfig::load(&path).expect("failed to load config");
     
     let device = Device::default().autodiff();
@@ -42,8 +42,7 @@ pub fn main() {
                 let batch = buffer.pop();
                 let loss = A2C::loss(&config.a2c, &actor_critic, batch);
                 logger.record(&loss);
-                // ignore the entropy coefficient
-                actor_critic = A2C::update_separated(actor_critic, loss, 0.0, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                actor_critic = A2C::update_separated(actor_critic, loss, config.coeff_entropy, lr_a, &mut opt_a, lr_c, &mut opt_c);
                 actor_critic.reset_noise();
             }
             if tape.done() { break; }

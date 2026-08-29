@@ -34,7 +34,7 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
-            let dist = actor_critic.actor(tape.obs.clone(), tape.constraint.clone());
+            let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
             let t = tape.step(&mut env, action.clone()).add_extra(dist.log_probs(action));
 
             buffer.push(t);

@@ -34,8 +34,6 @@ impl<Constraint: DiscreteConstraint> Head for CategoricalHead<Constraint> {
     }
 }
 
-impl<Constraint: DiscreteConstraint> NoiseReset for CategoricalHead<Constraint> {}
-
 /// the head which produces categirical distribution
 #[derive(Module, Debug)]
 pub struct NoisyCategoricalHead<Constraint> {

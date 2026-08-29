@@ -11,8 +11,8 @@ pub fn gae<Ac: ActorCritic, Extra: Batchable>(
 ) -> (Tensor<1>, Tensor<1>) {
     let n = batch.batch_size();
     let device = batch.rewards.device();
-    let values = actor_critic.critic(batch.obss);
-    let next_values = actor_critic.critic(batch.next_obss);
+    let values = actor_critic.value(batch.obss);
+    let next_values = actor_critic.value(batch.next_obss);
     let deltas = batch.rewards + gamma * next_values * (1f32 - batch.terminated.clone()) - values.clone();
     let deltas: Vec<f32> = deltas.into_data().try_into_vec().unwrap();
     let terminated: Vec<f32> = batch.terminated.into_data().try_into_vec().unwrap();

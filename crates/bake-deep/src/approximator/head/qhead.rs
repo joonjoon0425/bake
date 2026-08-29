@@ -24,7 +24,6 @@ impl LinearQHead {
     }
 }
 
-impl NoiseReset for LinearQHead {}
 
 impl QHead for LinearQHead {
     fn forward(&self, encoded: Tensor<2>, constraint: impl DiscreteConstraint) -> Tensor<2> {
@@ -49,8 +48,6 @@ impl LinearDuelingQHead {
         }
     }
 }
-
-impl NoiseReset for LinearDuelingQHead {}
 
 impl QHead for LinearDuelingQHead {
     fn forward(&self, encoded: Tensor<2>, constraint: impl DiscreteConstraint) -> Tensor<2> {

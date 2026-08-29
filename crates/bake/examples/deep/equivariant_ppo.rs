@@ -36,7 +36,7 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
-            let dist = actor_critic.actor(tape.obs.clone(), tape.constraint.clone());
+            let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
             let t = tape.step(&mut env, action.clone()).add_extra(dist.log_probs(action));
 
             buffer.push(t);
@@ -103,14 +103,14 @@ impl<E: Encoder<Obs = Tensor<2>>, Ph: Head<Output = Categorical, Constraint: Dis
     type Constraint = <Ph as Head>::Constraint;
     type Dist = Ph::Output;
 
-    fn actor(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
+    fn dist(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
         let dist_pos = self.policy_head.forward(self.policy_encoder.forward(obs.clone()), constraint.clone());
         let dist_neg = self.policy_head.forward(self.policy_encoder.forward(-(obs.clone())), constraint.clone());
         let logits = (dist_pos.logits().clone() + dist_neg.logits().clone().flip([1])) * 0.5;
         Categorical::new(logits, constraint)
     }
 
-    fn critic(&self, obs: Self::Obs) -> Tensor<1> {
+    fn value(&self, obs: Self::Obs) -> Tensor<1> {
         let v_pos = self.value_head.forward(self.value_encoder.forward(obs.clone()));
         let v_neg = self.value_head.forward(self.value_encoder.forward(-obs));
         let value = (v_pos + v_neg) * 0.5;

@@ -19,8 +19,9 @@ pub struct NoisyLinear {
 impl NoisyLinear {
     pub fn new(d_input: usize, d_output: usize, device: &Device) -> Self {
         let range = 1f64 / (d_input as f64).sqrt();
+        let range_bias = 1f64 / (d_output as f64).sqrt();
         let weight_mean = Tensor::random([d_input, d_output], Distribution::Uniform(-range, range), device);
-        let bias_mean = Tensor::random([d_output], Distribution::Uniform(-range, range), device);
+        let bias_mean = Tensor::random([d_output], Distribution::Uniform(-range_bias, range_bias), device);
         let weight_std = Tensor::from_data(TensorData::new(vec![range * 0.5f64; d_input * d_output], [d_input, d_output]), device);
         let bias_std = Tensor::from_data(TensorData::new(vec![range * 0.5f64; d_output], [d_output]), device);
 

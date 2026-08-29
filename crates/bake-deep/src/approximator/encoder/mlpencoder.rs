@@ -39,7 +39,6 @@ impl Encoder for MlpEncoder {
         x
     }
 }
-impl NoiseReset for MlpEncoder {}
 
 /// A Simple noisy mlp encoder struct
 #[derive(Module, Debug)]
