@@ -11,5 +11,11 @@ pub trait Encoder : AutodiffModule + Clone + ModuleDisplay {
     fn forward(&self, obs: Self::Obs) -> Tensor<2>;
 }
 
+/// Encoder trait for NoisyNet
+pub trait NoisyEncoder : Encoder {
+    /// reset the noises
+    fn set_noise(&mut self);
+}
+
 pub mod mlpencoder;
 pub use mlpencoder::*;

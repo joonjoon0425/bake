@@ -1,5 +1,5 @@
-use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, SeparatedActorCritic, encoder::MLPEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::CartPole, types::{Batchable, Logger, Tape}, utils::gae};
-use burn::{Tensor, config::Config, nn::activation::Activation, tensor::{Device, Int, TensorData}};
+use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, SeparatedActorCritic, encoder::MlpEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::CartPole, types::{Batchable, Logger, Tape}, utils::gae};
+use burn::{Tensor, config::Config, nn::activation::ActivationConfig::Relu, tensor::{Device, Int, TensorData}};
 use rand::{SeedableRng, seq::SliceRandom};
 
 
@@ -11,10 +11,10 @@ pub fn main() {
     device.seed(config.seed);
     let mut env = CartPole::new(config.seed, &device);
     let mut actor_critic = SeparatedActorCritic::new(
-            MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
-            MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
+            MlpEncoder::new(vec![4, 128], Relu, &device),
+            MlpEncoder::new(vec![4, 128], Relu, &device),
             CategoricalHead::new(128, 2, &device),
-            LinearVHead::new(128, 1, &device)
+            LinearVHead::new(128, &device)
         );
     let (lr_a, lr_c, mut opt_a, mut opt_c) = match &config.encoder_config {
         ActorCriticEncoderConfig::Separated { lr_actor, opt_actor_config, lr_critic, opt_critic_config } => {
@@ -34,7 +34,7 @@ pub fn main() {
         tape.reset(&mut env);
         loop {
             let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
-            let dist = actor_critic.actor(tape.obs.clone(), tape.constraint.clone());
+            let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
             let t = tape.step(&mut env, action.clone()).add_extra(dist.log_probs(action));
 
             buffer.push(t);

@@ -1,5 +1,5 @@
-use bake_deep::{algorithm::*, approximator::{ActorCritic, Encoder, Head, VHead, encoder::MLPEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, constraint::DiscreteConstraint, distribution::Categorical, env::CartPole, types::{Logger, Tape}};
-use burn::{Tensor, module::Module, nn::activation::Activation, optim::RmsPropConfig, tensor::Device};
+use bake_deep::{algorithm::*, approximator::{ActorCritic, Encoder, Head, VHead, encoder::MlpEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, constraint::DiscreteConstraint, distribution::Categorical, env::CartPole, types::{Logger, Tape}};
+use burn::{Tensor, module::Module, nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
 
 pub fn main() {
@@ -9,10 +9,10 @@ pub fn main() {
     let mut env = CartPole::new(seed, &device);
     let config = A2C::new(0.99, 0.95, dqn::ValueLoss::MseLoss);
     let mut actor_critic = Z2Symmetrized::new(
-            MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
-            MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
+            MlpEncoder::new(vec![4, 128], Relu, &device),
+            MlpEncoder::new(vec![4, 128], Relu, &device),
             CategoricalHead::new(128, 2, &device),
-            LinearVHead::new(128, 1, &device)
+            LinearVHead::new(128, &device)
         );
     let c_e = 0.02;
     let mut opt_a = RmsPropConfig::new().init();
@@ -81,14 +81,14 @@ impl<E: Encoder<Obs = Tensor<2>>, Ph: Head<Output = Categorical, Constraint: Dis
     type Constraint = <Ph as Head>::Constraint;
     type Dist = Ph::Output;
 
-    fn actor(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
+    fn dist(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
         let dist_pos = self.policy_head.forward(self.policy_encoder.forward(obs.clone()), constraint.clone());
         let dist_neg = self.policy_head.forward(self.policy_encoder.forward(-(obs.clone())), constraint.clone());
         let logits = (dist_pos.logits().clone() + dist_neg.logits().clone().flip([1])) * 0.5;
         Categorical::new(logits, constraint)
     }
 
-    fn critic(&self, obs: Self::Obs) -> Tensor<1> {
+    fn value(&self, obs: Self::Obs) -> Tensor<1> {
         let v_pos = self.value_head.forward(self.value_encoder.forward(obs.clone()));
         let v_neg = self.value_head.forward(self.value_encoder.forward(-obs));
         let value = (v_pos + v_neg) * 0.5;
