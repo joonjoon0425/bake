@@ -6,9 +6,9 @@ Learn RL with rust's burn, by building a framework. This repository was created 
 - Q-Learning, Sarsa, Expected Sarsa
 - n-step Sarsa, n-step Q-Learning with tree backup method
 ### Deep RL
-- DQN, Double DQN, + dueling versions
+- DQN, Double DQN, + dueling versions + NoisyNet versions
 - Vanilla Policy Gradient (REINFORCE)
-- Advantage Actor-Critic (A2C)
+- Advantage Actor-Critic (A2C) + NoisyNet version
 - Proximal Policy Optimization (PPO)
 
 ## Environment
@@ -43,5 +43,7 @@ Followings are possible example names:
     - equivariant_ppo
     - ppo
     - vpg
+    - noisy_dqn
+    - noisy_a2c
 
 Example codes can be found in `crate/bake/examples`.
