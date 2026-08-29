@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::{ComposedQFunction, LinearDuelingQHead, encoder::MLPEncoder}, buffer::ReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, types::{Logger, Tape}};
+use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::{ComposedQFunction, LinearDuelingQHead, encoder::MlpEncoder}, buffer::ReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, types::{Logger, Tape}};
 use burn::{grad_clipping::GradientClippingConfig, nn::activation::ActivationConfig::Relu, optim::AdamConfig, tensor::Device};
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
@@ -7,7 +7,7 @@ pub fn main() {
     let mut env = CartPole::new(seed, &device);
     let config = Dqn::new(0.99, ValueLoss::MseLoss);
     let mut online = ComposedQFunction::new(
-            MLPEncoder::new(vec![4, 128], Relu, &device),
+            MlpEncoder::new(vec![4, 128], Relu, &device),
             LinearDuelingQHead::new(128, 2, &device)
         );
     let mut target = online.clone();

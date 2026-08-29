@@ -1,7 +1,7 @@
 //! A helper structs for approximators
 
 use burn::{Tensor, module::Module};
-use crate::{approximator::*, constraint::DiscreteConstraint, distribution::Distribution};
+use crate::{approximator::*, constraint::DiscreteConstraint, distribution::Distribution, exploration::NoiseReset};
 
 /// A helper for creating a LogitNetwork
 #[derive(Module, Debug)]
@@ -30,6 +30,12 @@ impl<E: Encoder, H: Head<Output: Distribution>> Policy for ComposedPolicy<E, H> 
     }
 }
 
+impl<E: Encoder + NoiseReset, H: Head<Output: Distribution> + NoiseReset> NoiseReset for ComposedPolicy<E, H> {
+    fn reset_noise(&mut self) {
+        self.encoder.reset_noise();
+        self.head.reset_noise();
+    }
+}
 
 /// A helper for creating encoder-head q network
 #[derive(Module, Debug)]
@@ -57,6 +63,12 @@ impl<E: Encoder, H: QHead> QFunction for ComposedQFunction<E, H> {
     }
 }
 
+impl<E: Encoder + NoiseReset, H: QHead + NoiseReset> NoiseReset for ComposedQFunction<E, H> {
+    fn reset_noise(&mut self) {
+        self.encoder.reset_noise();
+        self.head.reset_noise();
+    }
+}
 /// A helper for creating an ActorCriticNetwork
 #[derive(Module, Debug)]
 pub struct SeparatedActorCritic<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> {
@@ -92,6 +104,15 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCritic for Sepa
     }
 
     fn shares_encoder(&self) -> bool { false }
+}
+
+impl<E: Encoder + NoiseReset, H1: Head<Output: Distribution> + NoiseReset, H2: VHead + NoiseReset> NoiseReset for SeparatedActorCritic<E, H1, H2> {
+    fn reset_noise(&mut self) {
+        self.critic_encoder.reset_noise();
+        self.actor_encoder.reset_noise();
+        self.critic.reset_noise();
+        self.actor.reset_noise();
+    }
 }
 
 /// A helper for creating an encoder-sharing actor-critic network
@@ -134,4 +155,12 @@ impl<E: Encoder, H1: Head<Output: Distribution>, H2: VHead> ActorCritic for Shar
     }
 
     fn shares_encoder(&self) -> bool { true }
+}
+
+impl<E: Encoder + NoiseReset, H1: Head<Output: Distribution> + NoiseReset, H2: VHead + NoiseReset> NoiseReset for SharedActorCritic<E, H1, H2> {
+    fn reset_noise(&mut self) {
+        self.encoder.reset_noise();
+        self.critic.reset_noise();
+        self.actor.reset_noise();
+    }
 }

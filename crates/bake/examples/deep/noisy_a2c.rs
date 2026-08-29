@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::*, approximator::{ActorCritic, SeparatedActorCritic, encoder::MlpEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, types::{Logger, Tape}};
+use bake_deep::{algorithm::*, approximator::{ActorCritic, NoisyCategoricalHead, NoisyMlpEncoder, NoisyVHead, SeparatedActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, exploration::NoiseReset, types::{Logger, Tape}};
 use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
 
 
@@ -10,10 +10,10 @@ pub fn main() {
     device.seed(config.seed);
     let mut env = CartPole::new(config.seed, &device);
     let mut actor_critic = SeparatedActorCritic::new(
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            CategoricalHead::new(128, 2, &device),
-            LinearVHead::new(128, &device)
+            NoisyMlpEncoder::new(vec![4, 128], Relu, &device),
+            NoisyMlpEncoder::new(vec![4, 128], Relu, &device),
+            NoisyCategoricalHead::new(128, 2, &device),
+            NoisyVHead::new(128, &device)
         );
 
     let (lr_a, lr_c, mut opt_a, mut opt_c) = match &config.encoder_config {
@@ -42,7 +42,9 @@ pub fn main() {
                 let batch = buffer.pop();
                 let loss = A2C::loss(&config.a2c, &actor_critic, batch);
                 logger.record(&loss);
-                actor_critic = A2C::update_separated(actor_critic, loss, config.coeff_entropy, lr_a, &mut opt_a, lr_c, &mut opt_c)
+                // ignore the entropy coefficient
+                actor_critic = A2C::update_separated(actor_critic, loss, 0.0, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                actor_critic.reset_noise();
             }
             if tape.done() { break; }
         }

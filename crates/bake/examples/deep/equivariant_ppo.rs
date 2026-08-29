@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::{Ppo, PpoExtra, dqn::ValueLoss}, approximator::{ActorCritic, Encoder, Head, VHead, encoder::MLPEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, constraint::DiscreteConstraint, distribution::{Categorical, Distribution}, env::CartPole, types::{Batchable, Logger, Tape}, utils::gae};
+use bake_deep::{algorithm::{Ppo, PpoExtra, dqn::ValueLoss}, approximator::{ActorCritic, Encoder, Head, VHead, encoder::MlpEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, constraint::DiscreteConstraint, distribution::{Categorical, Distribution}, env::CartPole, types::{Batchable, Logger, Tape}, utils::gae};
 use burn::{Tensor, module::Module, nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::{Device, Int, TensorData}};
 use rand::{SeedableRng, seq::SliceRandom};
 
@@ -10,10 +10,10 @@ pub fn main() {
     let mut env = CartPole::new(seed, &device);
     let config = Ppo::new(0.99, 0.98, 0.2, ValueLoss::MseLoss);
     let mut actor_critic = Z2Symmetrized::new(
-            MLPEncoder::new(vec![4, 128], Relu, &device),
-            MLPEncoder::new(vec![4, 128], Relu, &device),
+            MlpEncoder::new(vec![4, 128], Relu, &device),
+            MlpEncoder::new(vec![4, 128], Relu, &device),
             CategoricalHead::new(128, 2, &device),
-            LinearVHead::new(128, 1, &device)
+            LinearVHead::new(128, &device)
         );
     let lr_a = 1e-4;
     let lr_c = 1e-3;
