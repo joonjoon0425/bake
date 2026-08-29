@@ -1,5 +1,5 @@
 //! A simple MLP Encoder
-use burn::{Tensor, module::Module, nn::{Linear, LinearConfig, activation::Activation}, tensor::Device};
+use burn::{Tensor, module::Module, nn::{Linear, LinearConfig, activation::{Activation, ActivationConfig}}, tensor::Device};
 
 use crate::approximator::Encoder;
 
@@ -12,7 +12,7 @@ pub struct MLPEncoder {
 
 impl MLPEncoder {
     /// create a new MlpEncoder struct with given dimensions and activation unit
-    pub fn new(dims: Vec<usize>, activation: Activation, device: &Device) -> Self {
+    pub fn new(dims: Vec<usize>, activation: ActivationConfig, device: &Device) -> Self {
         if dims.len() < 2 { panic!("MLPEncoder requires at least two dims: input dimension and output dimension."); }
 
         let mut layers = Vec::with_capacity(dims.len());
@@ -23,7 +23,7 @@ impl MLPEncoder {
         
         Self {
             layers,
-            activation,
+            activation: activation.init(device),
         }
     }
 }

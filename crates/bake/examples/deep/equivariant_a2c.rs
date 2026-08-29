@@ -1,5 +1,5 @@
 use bake_deep::{algorithm::*, approximator::{ActorCritic, Encoder, Head, VHead, encoder::MLPEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, constraint::DiscreteConstraint, distribution::Categorical, env::CartPole, types::{Logger, Tape}};
-use burn::{Tensor, module::Module, nn::activation::Activation, optim::RmsPropConfig, tensor::Device};
+use burn::{Tensor, module::Module, nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
 
 pub fn main() {
@@ -9,8 +9,8 @@ pub fn main() {
     let mut env = CartPole::new(seed, &device);
     let config = A2C::new(0.99, 0.95, dqn::ValueLoss::MseLoss);
     let mut actor_critic = Z2Symmetrized::new(
-            MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
-            MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
+            MLPEncoder::new(vec![4, 128], Relu, &device),
+            MLPEncoder::new(vec![4, 128], Relu, &device),
             CategoricalHead::new(128, 2, &device),
             LinearVHead::new(128, 1, &device)
         );

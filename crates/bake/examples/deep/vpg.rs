@@ -1,5 +1,5 @@
 use bake_deep::{algorithm::Vpg, approximator::{ComposedPolicy, Policy, encoder::MLPEncoder, head::CategoricalHead}, buffer::RolloutBuffer, config::VpgConfig, env::CartPole, types::{Logger, Tape}};
-use burn::{config::Config, nn::activation::Activation, tensor::Device};
+use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
 
 pub fn main() {
     let path = std::env::args().nth(1).unwrap_or_else(|| "crates/bake/configs/deep/vpg_cartpole.json".to_string());
@@ -9,7 +9,7 @@ pub fn main() {
     device.seed(config.seed);
     let mut env = CartPole::new(config.seed, &device);
     let mut policy = ComposedPolicy::new(
-            MLPEncoder::new(vec![4, 128], Activation::Relu(burn::nn::Relu), &device),
+            MLPEncoder::new(vec![4, 128], Relu, &device),
             CategoricalHead::new(128, 2, &device)
         );
     let mut opt = config.opt_config.init();
