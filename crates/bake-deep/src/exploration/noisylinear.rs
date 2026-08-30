@@ -65,6 +65,6 @@ impl NoiseReset for NoisyLinear {
 }
 
 pub trait NoiseReset {
-    /// Reset the noise if required. Since the base implementation is no-op, be careful.
-    fn reset_noise(&mut self) {}
+    /// Reset the noise
+    fn reset_noise(&mut self);
 }

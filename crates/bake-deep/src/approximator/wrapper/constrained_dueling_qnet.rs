@@ -1,7 +1,7 @@
 //! A wrapper which produces Constrained QNetwork from custom dueling qnet
 //! 
 use burn::prelude::*;
-use crate::{approximator::QFunction, constraint::DiscreteConstraint, network::DuelingQNet};
+use crate::{approximator::QFunction, constraint::DiscreteConstraint, exploration::NoiseReset, network::DuelingQNet};
 
 /// A wrapper which produces Constrained QNetwork from custom dueling qnet
 #[derive(Module, Debug)]
@@ -11,6 +11,8 @@ impl<T: DuelingQNet> ConstrainedDuelingQNet<T> {
     /// create a new Constrained Dueling QNet
     pub fn new(net: T) -> Self { Self { net } }
 }
+
+impl<T: DuelingQNet + NoiseReset> NoiseReset for ConstrainedDuelingQNet<T> { fn reset_noise(&mut self) { self.net.reset_noise(); } }
 
 impl<T: DuelingQNet> QFunction for ConstrainedDuelingQNet<T> {
     type Obs = T::Obs;

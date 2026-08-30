@@ -2,7 +2,7 @@
 //! 
 use std::marker::PhantomData;
 use burn::{Tensor, module::Module};
-use crate::{approximator::ActorCritic, constraint::DiscreteConstraint, distribution::Categorical, network::{ActorCriticNet, EncoderType}};
+use crate::{approximator::ActorCritic, constraint::DiscreteConstraint, distribution::Categorical, exploration::NoiseReset, network::{ActorCriticNet, EncoderType}};
 /// A PolicyNet wrapper for Categorical Distributions
 #[derive(Module, Debug)]
 pub struct CategoricalActorCritic<T: ActorCriticNet<Params = Tensor<2>>, C: DiscreteConstraint> {
@@ -17,6 +17,8 @@ impl<T: ActorCriticNet<Params = Tensor<2>>, C: DiscreteConstraint> CategoricalAc
         Self { net, c: PhantomData }
     }
 }
+
+impl<T: ActorCriticNet<Params = Tensor<2>> + NoiseReset, C: DiscreteConstraint> NoiseReset for CategoricalActorCritic<T, C> { fn reset_noise(&mut self) { self.net.reset_noise(); } }
 
 impl<T: ActorCriticNet<Params = Tensor<2>>, C: DiscreteConstraint> ActorCritic for CategoricalActorCritic<T, C> {
     type Obs = T::Obs;

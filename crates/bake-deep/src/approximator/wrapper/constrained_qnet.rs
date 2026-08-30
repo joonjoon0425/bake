@@ -1,7 +1,7 @@
 //! A wrapper which produces Constrained QNetwork from custom qnet
 //! 
 use burn::prelude::*;
-use crate::{approximator::QFunction, constraint::DiscreteConstraint, network::QNet};
+use crate::{approximator::QFunction, constraint::DiscreteConstraint, exploration::NoiseReset, network::QNet};
 
 /// A wrapper which produces Constrained QNetwork from custom qnet
 #[derive(Module, Debug)]
@@ -10,6 +10,12 @@ pub struct ConstrainedQNet<T: QNet> { net: T }
 impl<T: QNet> ConstrainedQNet<T> {
     /// create a new Constrained QNet
     pub fn new(net: T) -> Self { Self { net } }
+}
+
+impl<T: QNet + NoiseReset> NoiseReset for ConstrainedQNet<T> {
+    fn reset_noise(&mut self) {
+        self.net.reset_noise();
+    }
 }
 
 impl<T: QNet> QFunction for ConstrainedQNet<T> {
