@@ -21,7 +21,7 @@ Learn RL with rust's burn, by building a framework. This repository was created 
 - Supports json configuration (only for deep rl now)
 
 ## Examples
-There are five examples in tabular algorithms, and eight examples in deep rl algorithms. They can be run with
+There are five examples in tabular algorithms, and eleven examples in deep rl algorithms. They can be run with
 ```bash
 git clone https://github.com/joonjoon0425/bake.git
 cd bake
@@ -41,7 +41,10 @@ Followings are possible example names:
     - dueling_dqn
     - equivariant_a2c
     - equivariant_ppo
+    - noisy_dqn
+    - noisy_a2c
     - ppo
     - vpg
+    - dqn_per
 
 Example codes can be found in `crate/bake/examples`.
