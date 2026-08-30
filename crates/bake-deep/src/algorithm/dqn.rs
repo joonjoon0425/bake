@@ -38,6 +38,25 @@ impl Dqn {
         DqnLoss { loss, td_error, qmean, }
     }
 
+    pub fn loss_per<Q, Obs, Constraint>(config: &Dqn, online: &Q, target: &Q, batch: Batch<Obs, Tensor<1, Int>, Constraint, Tensor<1>>) -> DqnLoss
+    where
+        Q: QFunction<Obs = Obs>,
+        Obs: Batchable,
+        Constraint: DiscreteConstraint
+    {
+        let qvalues = online.forward(batch.obss, batch.constraints);
+        let qvalues = qvalues.gather(1, batch.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
+
+        let next_qvalues = target.forward(batch.next_obss, batch.next_constraints).detach();
+        let targets = (batch.rewards + config.gamma * next_qvalues.max_dim(1).squeeze_dim(1) * (1f32 - batch.terminated)).detach();
+
+        let td_error = (targets.clone() - qvalues.clone()).detach();
+        let qmean = qvalues.clone().detach().mean();
+        let loss = config.value_loss.forward_per(qvalues, targets, batch.extras);
+
+        DqnLoss { loss, td_error, qmean, }
+    }
+
     pub fn update<Q: QFunction>(online: Q, loss: DqnLoss, lr: f64, opt: &mut ModuleOptimizer) -> Q {
         let grads = loss.loss.backward();
         let grads = GradientsParams::from_grads(grads, &online);
@@ -69,6 +88,23 @@ impl ValueLoss {
             },
             ValueLoss::HuberLoss { delta } => {
                 HuberLossConfig::new(*delta).init().forward(logits, targets, Reduction::Mean)
+            }
+        }
+    }
+
+    pub fn forward_per(&self, logits: Tensor<1>, targets: Tensor<1>, is_weights: Tensor<1>) -> Tensor<1> {
+        match self {
+            ValueLoss::MseLoss => {
+                let mse_loss = MseLoss::new();
+                let raw = mse_loss.forward_no_reduction(logits, targets);
+                let raw = raw * is_weights;
+                raw.mean()
+            },
+            ValueLoss::HuberLoss { delta } => {
+                let huber_loss = HuberLossConfig::new(*delta).init();
+                let raw = huber_loss.forward_no_reduction(logits, targets);
+                let raw = raw * is_weights;
+                raw.mean()
             }
         }
     }

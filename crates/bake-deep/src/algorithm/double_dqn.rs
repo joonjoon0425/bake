@@ -40,6 +40,28 @@ impl DoubleDqn {
         DoubleDqnLoss { loss, td_error, qmean }
     }
 
+    pub fn loss_per<Q, Obs, Constraint>(config: &DoubleDqn, online: &Q, target: &Q, batch: Batch<Obs, Tensor<1, Int>, Constraint, Tensor<1>>) -> DoubleDqnLoss
+    where
+        Q: QFunction<Obs = Obs>,
+        Obs: Batchable,
+        Constraint: DiscreteConstraint
+    {
+        let qvalues = online.forward(batch.obss, batch.constraints);
+        let qvalues = qvalues.gather(1, batch.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
+
+        let next_qvalues_online = online.forward(batch.next_obss.clone(), batch.next_constraints.clone()).detach();
+        let argmax = next_qvalues_online.argmax(1);
+        let next_qvalues_target = target.forward(batch.next_obss, batch.next_constraints).detach();
+        let next_qvalues = next_qvalues_target.gather(1, argmax).squeeze_dim::<1>(1);
+        let targets = (batch.rewards + config.gamma * next_qvalues * (1f32 - batch.terminated)).detach();
+
+        let td_error = (targets.clone() - qvalues.clone()).detach();
+        let qmean = qvalues.clone().detach().mean();
+        let loss = config.value_loss.forward_per(qvalues, targets, batch.extras);
+
+        DoubleDqnLoss { loss, td_error, qmean }
+    }
+
     pub fn update<Q: QFunction>(online: Q, loss: DoubleDqnLoss, lr: f64, opt: &mut ModuleOptimizer) -> Q {
         let grads = loss.loss.backward();
         let grads = GradientsParams::from_grads(grads, &online);

@@ -26,7 +26,6 @@ impl Logger {
             return HashMap::new();
         }
 
-        // 키별로 텐서를 누적
         let mut sums: HashMap<&'static str, Tensor<1>> = HashMap::new();
         for map in &self.logs {
             for (name, value) in map {
@@ -36,8 +35,6 @@ impl Logger {
                 }
             }
         }
-
-        // 마지막에 한 번만 host로
         let n = self.logs.len() as f32;
         sums.into_iter()
             .map(|(name, sum)| (name, (sum.mean() / n).into_scalar::<f32>()))

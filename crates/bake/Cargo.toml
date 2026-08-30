@@ -89,3 +89,8 @@ required-features = ["deep"]
 name = "noisy_a2c"
 path = "examples/deep/noisy_a2c.rs"
 required-features = ["deep"]
+
+[[example]]
+name = "dqn_per"
+path = "examples/deep/dqn_per.rs"
+required-features = ["deep"]

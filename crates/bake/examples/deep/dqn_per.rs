@@ -1,0 +1,58 @@
+use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::ConstrainedQNet, buffer::PriortizedExperienceReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, network::MlpQNet, types::{Logger, Tape}};
+use burn::{nn::activation::ActivationConfig::Relu, optim::AdamConfig, tensor::Device};
+
+pub fn main() {
+    let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
+    let device = Device::default().autodiff();
+    device.seed(seed);
+    let mut env = CartPole::new(seed, &device);
+    let config = Dqn::new(0.99, ValueLoss::HuberLoss { delta: 10.0f32 });
+    let mut online = ConstrainedQNet::new(MlpQNet::new(&[4, 128, 2], Relu, &device));
+    let mut target = online.clone();
+    let lr = 1e-3;
+    let mut opt = AdamConfig::new().init();
+
+    let mut exploration = EpsGreedy::new(seed, 1.0f32);
+    let beta0 = 0.4;
+    let mut buffer = PriortizedExperienceReplayBuffer::new(12, 10000, 0.6, beta0);
+    let mut tape = Tape::new(&mut env);
+    let mut count = 0;
+    let mut logger = Logger::default();
+    for episode in 0..=4000 {
+        let mut steps = 0;
+        tape.reset(&mut env);
+        loop {
+            let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
+            let t = tape.step(&mut env, action);
+            buffer.push(t);
+
+            if count % 4 == 0 && let Some((batch, indices)) = buffer.sample(64) {
+                let loss = Dqn::loss_per(&config, &online, &target, batch);
+                logger.record(&loss);
+                buffer.update(&indices, loss.td_error.clone());
+                online = Dqn::update(online, loss, lr, &mut opt);
+            }
+
+            if count % 1000 == 0 {
+                target = online.clone();
+            }
+            count += 1;
+            steps += 1;
+            *buffer.beta_mut() = beta0 + (1.0 - beta0) * (count as f64 / 1000000f64).min(1.0);
+            if tape.done() { break; }
+        }
+        *exploration.eps_mut() = (exploration.eps() * 0.995).max(0.05);
+        if episode % 10 == 0 {
+            let mean = logger.mean();
+            let loss = mean.get("loss").unwrap_or(&0f32);
+            let q_mean = mean.get("qmean").unwrap_or(&0f32);
+            let td_error = mean.get("td_error").unwrap_or(&0f32);
+            let eps = exploration.eps();
+            println!("{episode} {count} {steps} {loss} {q_mean} {td_error} {eps}");
+            if episode % 100 == 0 {
+                eprintln!("Episode: {episode} Total steps: {count} Steps: {steps} Loss: {loss} Q-Mean: {q_mean} TD-error: {td_error} Eps: {eps}");
+            }
+            logger.clear();
+        }
+    }
+}

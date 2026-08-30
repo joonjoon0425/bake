@@ -1,5 +1,3 @@
-use std::{fmt, ops::Index};
-
 use rand::random_range;
 
 fn main() {
@@ -13,7 +11,7 @@ fn main() {
 }
 
 #[derive(Debug, Clone)]
-struct SumTree {
+pub struct SumTree {
     tree: Vec<f32>,
     n: usize,
 }
@@ -69,8 +67,8 @@ impl SumTree {
         for i in 0..n {
             let mut r = random_range(i as f32 * range..(i + 1) as f32 * range);
             let mut index = 1;
-            while 2 * index < 2 * self.n {
-                if self.tree[2 * index] > r {
+            while index < self.n {
+                if self.tree[2 * index] >= r {
                     index = 2 * index;
                 } else {
                     r -= self.tree[2 * index];
@@ -96,12 +94,5 @@ impl SumTree {
             }
             index /= 2;
         }
-    }
-}
-
-impl Index<usize> for SumTree {
-    type Output = f32;
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.tree[self.n + index]
     }
 }
