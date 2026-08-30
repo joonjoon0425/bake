@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*"]
+members = ["crates/*", "experimental"]
 
 [workspace.dependencies]
 bake-tabular = { path = "crates/bake-tabular", version = "1.0.0" }

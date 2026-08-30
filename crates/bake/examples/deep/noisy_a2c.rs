@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, exploration::NoiseReset, network::{MlpActorCriticNet, NoisyMlpActorCriticNet}, types::{Logger, Tape}};
+use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, exploration::NoiseReset, network::NoisyMlpActorCriticNet, types::{Logger, Tape}};
 use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
 
 pub fn main() {
