@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::*, approximator::{ActorCritic, SeparatedActorCritic, encoder::MlpEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, types::{Logger, Tape}};
+use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, network::MlpActorCriticNet, types::{Logger, Tape}};
 use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
 
 
@@ -9,12 +9,7 @@ pub fn main() {
     let device = Device::default().autodiff();
     device.seed(config.seed);
     let mut env = CartPole::new(config.seed, &device);
-    let mut actor_critic = SeparatedActorCritic::new(
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            CategoricalHead::new(128, 2, &device),
-            LinearVHead::new(128, &device)
-        );
+    let mut actor_critic = CategoricalActorCritic::new(MlpActorCriticNet::new(&[4, 128, 2], Relu, &device));
 
     let (lr_a, lr_c, mut opt_a, mut opt_c) = match &config.encoder_config {
         ActorCriticEncoderConfig::Separated { lr_actor, opt_actor_config, lr_critic, opt_critic_config } => {

@@ -1,7 +1,6 @@
-use bake_deep::{algorithm::{Ppo, PpoExtra, dqn::ValueLoss}, approximator::{ActorCritic, Encoder, Head, VHead, encoder::MlpEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, constraint::DiscreteConstraint, distribution::{Categorical, Distribution}, env::CartPole, types::{Batchable, Logger, Tape}, utils::gae};
+use bake_deep::{algorithm::{Ppo, PpoExtra, dqn::ValueLoss}, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, distribution::Distribution, env::CartPole, network::{ActorCriticNet, EncoderType::Separated, MlpActorCriticNet}, types::{Batchable, Logger, Tape}, utils::gae};
 use burn::{Tensor, module::Module, nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::{Device, Int, TensorData}};
 use rand::{SeedableRng, seq::SliceRandom};
-
 
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
@@ -9,12 +8,7 @@ pub fn main() {
     device.seed(seed);
     let mut env = CartPole::new(seed, &device);
     let config = Ppo::new(0.99, 0.98, 0.2, ValueLoss::MseLoss);
-    let mut actor_critic = Z2Symmetrized::new(
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            CategoricalHead::new(128, 2, &device),
-            LinearVHead::new(128, &device)
-        );
+    let mut actor_critic = CategoricalActorCritic::new(Z2SymNet::new(MlpActorCriticNet::new(&[4, 128, 2], Relu, &device)));
     let lr_a = 1e-4;
     let lr_c = 1e-3;
     let c_e = 0.02;
@@ -80,42 +74,35 @@ pub fn main() {
 
 
 #[derive(Module, Debug)]
-pub struct Z2Symmetrized<E: Encoder, Ph: Head<Output = Categorical>, Vh: VHead> {
-    policy_encoder: E,
-    value_encoder: E,
-    policy_head: Ph,
-    value_head: Vh,
+pub struct Z2SymNet<Ac: ActorCriticNet> {
+    net: Ac,
 }
 
-impl<E: Encoder, Ph: Head<Output = Categorical>, Vh: VHead> Z2Symmetrized<E, Ph, Vh> {
-    pub fn new(policy_encoder: E, value_encoder: E, policy_head: Ph, value_head: Vh) -> Self {
+impl<Ac: ActorCriticNet> Z2SymNet<Ac> {
+    pub fn new(net: Ac) -> Self {
         Self {
-            policy_encoder,
-            value_encoder,
-            policy_head,
-            value_head,
+            net
         }
     }
 }
 
-impl<E: Encoder<Obs = Tensor<2>>, Ph: Head<Output = Categorical, Constraint: DiscreteConstraint>, Vh: VHead> ActorCritic for Z2Symmetrized<E, Ph, Vh> {
-    type Obs = E::Obs;
-    type Constraint = <Ph as Head>::Constraint;
-    type Dist = Ph::Output;
+impl<Ac: ActorCriticNet<Obs = Tensor<2>, Params = Tensor<2>>> ActorCriticNet for Z2SymNet<Ac> {
+    type Obs = Tensor<2>;
+    type Params = Tensor<2>;
 
-    fn dist(&self, obs: Self::Obs, constraint: Self::Constraint) -> Self::Dist {
-        let dist_pos = self.policy_head.forward(self.policy_encoder.forward(obs.clone()), constraint.clone());
-        let dist_neg = self.policy_head.forward(self.policy_encoder.forward(-(obs.clone())), constraint.clone());
-        let logits = (dist_pos.logits().clone() + dist_neg.logits().clone().flip([1])) * 0.5;
-        Categorical::new(logits, constraint)
+    fn params(&self, obs: Self::Obs) -> Self::Params {
+        let logits_pos = self.net.params(obs.clone());
+        let logits_neg = self.net.params(-obs);
+        (logits_pos + logits_neg.flip([1])) * 0.5
     }
 
-    fn value(&self, obs: Self::Obs) -> Tensor<1> {
-        let v_pos = self.value_head.forward(self.value_encoder.forward(obs.clone()));
-        let v_neg = self.value_head.forward(self.value_encoder.forward(-obs));
-        let value = (v_pos + v_neg) * 0.5;
-        value
+    fn values(&self, obs: Self::Obs) -> Tensor<1> {
+        let v_pos = self.net.values(obs.clone());
+        let v_neg = self.net.values(-obs);
+        (v_pos + v_neg) * 0.5
     }
 
-    fn shares_encoder(&self) -> bool { false }
+    fn encoder_type(&self) -> bake_deep::network::EncoderType {
+        Separated
+    }
 }

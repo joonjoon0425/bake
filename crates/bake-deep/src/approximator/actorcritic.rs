@@ -1,7 +1,7 @@
 //! Network structure for actor-critic method
 
 use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
-use crate::{distribution::Distribution, types::Batchable};
+use crate::{distribution::Distribution, network::EncoderType, types::Batchable};
 
 /// ActorCritic trait which all actor-critic algorithms require
 pub trait ActorCritic : AutodiffModule + Clone + ModuleDisplay {
@@ -17,10 +17,8 @@ pub trait ActorCritic : AutodiffModule + Clone + ModuleDisplay {
     /// return the state value according to given obs
     fn value(&self, obs: Self::Obs) -> Tensor<1>;
 
-    /// For the encoder-sharing network, this function must be overloaded appropriately
-    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> (Self::Dist, Tensor<1>) {
-        (self.dist(obs.clone(), constraint), self.value(obs))
-    }
+    /// returns the distribution and state value simultaneousely. Efficient when the encoder is shared.
+    fn forward(&self, obs: Self::Obs, constraint: Self::Constraint) -> (Self::Dist, Tensor<1>);
 
     /// sample an action from actor
     fn action(&self, obs: Self::Obs, constraint: Self::Constraint) -> <Self::Dist as Distribution>::Action {
@@ -28,5 +26,5 @@ pub trait ActorCritic : AutodiffModule + Clone + ModuleDisplay {
     }
 
     /// checks whether this actor-critic shares encoder
-    fn shares_encoder(&self) -> bool;
+    fn encoder_type(&self) -> EncoderType;
 }

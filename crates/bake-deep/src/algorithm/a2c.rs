@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use burn::{Tensor, config::Config, optim::{GradientsParams, ModuleOptimizer}};
 
-use crate::{algorithm::dqn::ValueLoss, approximator::ActorCritic, distribution::Distribution, types::{Batch, Recordable}, utils::gae};
+use crate::{algorithm::dqn::ValueLoss, approximator::ActorCritic, distribution::Distribution, network::EncoderType::{Separated, Shared}, types::{Batch, Recordable}, utils::gae};
 
 #[derive(Debug, Config)]
 pub struct A2C {
@@ -36,7 +36,7 @@ impl A2C {
     }
 
     pub fn update_separated<Ac: ActorCritic>(actor_critic: Ac, loss: A2CLoss, c_e: f32, lr_a: f64, opt_a: &mut ModuleOptimizer, lr_c: f64, opt_c: &mut ModuleOptimizer) -> Ac {
-        assert!(!actor_critic.shares_encoder(), "The update_separated cannot be called with encoder-sharing actor critic");
+        assert!(actor_critic.encoder_type() == Separated, "The update_separated cannot be called with encoder-sharing actor critic");
         let actor_loss = loss.actor_loss - loss.entropy * c_e;
         let grads = actor_loss.backward();
         let grads = GradientsParams::from_grads(grads, &actor_critic);
@@ -49,7 +49,7 @@ impl A2C {
     }
 
     pub fn update_shared<Ac: ActorCritic>(actor_critic: Ac, loss: A2CLoss, c_e: f32, c_c: f32, lr: f64, opt: &mut ModuleOptimizer) -> Ac {
-        assert!(actor_critic.shares_encoder(), "The update_shared cannot be called with encoder-separated actor critic");
+        assert!(actor_critic.encoder_type() == Shared, "The update_shared cannot be called with encoder-separated actor critic");
         let loss = loss.actor_loss - loss.entropy * c_e + loss.critic_loss * c_c;
         let grads = loss.backward();
         let grads = GradientsParams::from_grads(grads, &actor_critic);

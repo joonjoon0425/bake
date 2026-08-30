@@ -43,7 +43,5 @@ Followings are possible example names:
     - equivariant_ppo
     - ppo
     - vpg
-    - noisy_dqn
-    - noisy_a2c
 
 Example codes can be found in `crate/bake/examples`.

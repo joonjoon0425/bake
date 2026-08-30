@@ -9,11 +9,14 @@ pub use policy::*;
 pub mod actorcritic;
 pub use actorcritic::*;
 
-pub mod encoder;
-pub use encoder::*;
+pub mod wrapper;
+pub use wrapper::*;
 
-pub mod head;
-pub use head::*;
+// pub mod encoder;
+// pub use encoder::*;
 
-pub mod composed;
-pub use composed::*;
+// pub mod head;
+// pub use head::*;
+
+// pub mod composed;
+// pub use composed::*;

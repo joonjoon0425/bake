@@ -9,5 +9,6 @@ pub mod constraint;
 pub mod distribution;
 pub mod env;
 pub mod exploration;
+pub mod network;
 pub mod types;
 pub mod utils;

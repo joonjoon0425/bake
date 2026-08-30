@@ -79,13 +79,3 @@ required-features = ["deep"]
 name = "equivariant_ppo"
 path = "examples/deep/equivariant_ppo.rs"
 required-features = ["deep"]
-
-[[example]]
-name = "noisy_dqn"
-path = "examples/deep/noisy_dqn.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "noisy_a2c"
-path = "examples/deep/noisy_a2c.rs"
-required-features = ["deep"]

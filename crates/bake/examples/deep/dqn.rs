@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::{ComposedQFunction, encoder::MlpEncoder, head::LinearQHead}, buffer::ReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, types::{Logger, Tape}};
+use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::ConstrainedQNet, buffer::ReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, network::MlpQNet, types::{Logger, Tape}};
 use burn::{nn::activation::ActivationConfig::Relu, optim::AdamConfig, tensor::Device};
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
@@ -6,10 +6,7 @@ pub fn main() {
     device.seed(seed);
     let mut env = CartPole::new(seed, &device);
     let config = Dqn::new(0.99, ValueLoss::HuberLoss { delta: 10.0f32 });
-    let mut online = ComposedQFunction::new(
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            LinearQHead::new(128, 2, &device)
-    );
+    let mut online = ConstrainedQNet::new(MlpQNet::new(&[4, 128, 2], Relu, &device));
     let mut target = online.clone();
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();

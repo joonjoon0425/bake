@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, SeparatedActorCritic, encoder::MlpEncoder, head::{CategoricalHead, LinearVHead}}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::CartPole, types::{Batchable, Logger, Tape}, utils::gae};
+use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::CartPole, network::MlpActorCriticNet, types::{Batchable, Logger, Tape}, utils::gae};
 use burn::{Tensor, config::Config, nn::activation::ActivationConfig::Relu, tensor::{Device, Int, TensorData}};
 use rand::{SeedableRng, seq::SliceRandom};
 
@@ -10,12 +10,7 @@ pub fn main() {
     let device = Device::default().autodiff();
     device.seed(config.seed);
     let mut env = CartPole::new(config.seed, &device);
-    let mut actor_critic = SeparatedActorCritic::new(
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            CategoricalHead::new(128, 2, &device),
-            LinearVHead::new(128, &device)
-        );
+    let mut actor_critic = CategoricalActorCritic::new(MlpActorCriticNet::new(&[4, 128, 2], Relu, &device));
     let (lr_a, lr_c, mut opt_a, mut opt_c) = match &config.encoder_config {
         ActorCriticEncoderConfig::Separated { lr_actor, opt_actor_config, lr_critic, opt_critic_config } => {
             (*lr_actor, *lr_critic, opt_actor_config.init(), opt_critic_config.init())

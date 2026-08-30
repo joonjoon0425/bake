@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::Vpg, approximator::{ComposedPolicy, Policy, encoder::MlpEncoder, head::CategoricalHead}, buffer::RolloutBuffer, config::VpgConfig, env::CartPole, types::{Logger, Tape}};
+use bake_deep::{algorithm::Vpg, approximator::{CategoricalPolicy, Policy}, buffer::RolloutBuffer, config::VpgConfig, env::CartPole, network::MlpPolicyNet, types::{Logger, Tape}};
 use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
 
 pub fn main() {
@@ -8,10 +8,7 @@ pub fn main() {
     let device = Device::default().autodiff();
     device.seed(config.seed);
     let mut env = CartPole::new(config.seed, &device);
-    let mut policy = ComposedPolicy::new(
-            MlpEncoder::new(vec![4, 128], Relu, &device),
-            CategoricalHead::new(128, 2, &device)
-        );
+    let mut policy = CategoricalPolicy::new(MlpPolicyNet::new(&[4, 128, 2], Relu, &device));
     let mut opt = config.opt_config.init();
 
     let mut buffer = RolloutBuffer::new();
