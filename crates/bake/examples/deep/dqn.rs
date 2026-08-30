@@ -11,7 +11,7 @@ pub fn main() {
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
 
-    let mut exploration = EpsGreedy::new(seed,1.0f32);
+    let mut exploration = EpsGreedy::new(seed, 1.0f32);
     let mut buffer = ReplayBuffer::new(12, 10000);
     let mut tape = Tape::new(&mut env);
     let mut count = 0;

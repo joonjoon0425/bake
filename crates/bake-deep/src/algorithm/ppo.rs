@@ -6,6 +6,7 @@ use burn::optim::{GradientsParams, ModuleOptimizer};
 use burn::{Tensor, tensor::Int};
 
 use crate::algorithm::dqn::ValueLoss;
+use crate::network::EncoderType::{Separated, Shared};
 use crate::types::Recordable;
 use crate::{distribution::Distribution, approximator::ActorCritic, types::{Batch, Batchable}};
 
@@ -51,6 +52,7 @@ impl Ppo {
     }
 
     pub fn update_separated<Ac: ActorCritic>(actor_critic: Ac, loss: PpoLoss, c_e: f32, lr_a: f64, opt_a: &mut ModuleOptimizer, lr_c: f64, opt_c: &mut ModuleOptimizer) -> Ac {
+        assert!(actor_critic.encoder_type() == Separated, "The update_separated cannot be called with encoder-sharing actor critic");
         let actor_loss = loss.actor_loss - loss.entropy * c_e;
         let grads = actor_loss.backward();
         let grads = GradientsParams::from_grads(grads, &actor_critic);
@@ -63,6 +65,7 @@ impl Ppo {
     }
 
     pub fn update_shared<Ac: ActorCritic>(actor_critic: Ac, loss: PpoLoss, c_e: f32, c_c: f32, lr: f64, opt: &mut ModuleOptimizer) -> Ac {
+        assert!(actor_critic.encoder_type() == Shared, "The update_shared cannot be called with encoder-separated actor critic");
         let loss = loss.actor_loss - loss.entropy * c_e + loss.critic_loss * c_c;
         let grads = loss.backward();
         let grads = GradientsParams::from_grads(grads, &actor_critic);
