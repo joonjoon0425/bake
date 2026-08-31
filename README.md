@@ -24,7 +24,7 @@ Learn RL with rust's burn, by building a framework. This repository was created 
 - Supports json configuration (only for deep rl now)
 
 ## Examples
-There are five examples in tabular algorithms, tweleve examples in deep rl algorithms, and four examples with gymnasium environments. They can be run with
+There are five examples in tabular algorithms, tweleve examples in deep rl algorithms, and five examples with gymnasium environments. They can be run with
 ```bash
 git clone https://github.com/joonjoon0425/bake.git
 cd bake
@@ -54,6 +54,7 @@ Followings are possible example names:
     - gym_cartpole_dqn
     - gym_mountaincar_dqn_per
     - gym_lunarlander_ppo
+    - gym_lunarlander_dqn
     - gym_acrobot_a2c
 
 Example codes can be found in `crate/bake/examples`.

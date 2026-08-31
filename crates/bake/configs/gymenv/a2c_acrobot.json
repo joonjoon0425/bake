@@ -5,7 +5,7 @@
         "value_loss": "MseLoss"
     },
     "coeff_entropy": 0.02,
-    "total_steps": 500000,
+    "total_steps": 1000000,
     "rollout_size": 512,
     "encoder_config": {
         "Separated": {

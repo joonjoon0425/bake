@@ -8,7 +8,7 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default().autodiff();
     device.seed(seed);
-    let mut env = GymnasiumEnv::<MountainCarInfo>::new(seed, &device, false);
+    let mut env = GymnasiumEnv::<LunarLanderInfo>::new(seed, &device, false);
     let config = Dqn::new(0.99, ValueLoss::MseLoss);
     let mut online = ConstrainedQNet::new(MlpQNet::new(&[env.obs_dim(), 128, 84, env.n_actions()], Relu, &device));
     let mut target = online.clone();
@@ -76,7 +76,7 @@ pub fn main() {
     }
 
     // Evaluation
-    let mut env = GymnasiumEnv::<MountainCarInfo>::new(seed, &device, true);
+    let mut env = GymnasiumEnv::<LunarLanderInfo>::new(seed, &device, true);
     let mut greedy = Greedy;
     for _ in 0..5 {
         let (mut obs, mut constraint) = env.reset();

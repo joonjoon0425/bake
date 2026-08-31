@@ -122,3 +122,8 @@ required-features = ["deep"]
 name = "gym_acrobot_a2c"
 path = "examples/gymenv/gym_acrobot_a2c.rs"
 required-features = ["deep"]
+
+[[example]]
+name = "gym_lunarlander_dqn_per"
+path = "examples/gymenv/gym_lunarlander_dqn_per.rs"
+required-features = ["deep"]
