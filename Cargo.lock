@@ -313,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "bake"
-version = "0.1.0"
+version = "0.2.4"
 dependencies = [
  "bake-common",
  "bake-deep",
@@ -324,11 +324,11 @@ dependencies = [
 
 [[package]]
 name = "bake-common"
-version = "0.1.0"
+version = "0.2.4"
 
 [[package]]
 name = "bake-deep"
-version = "0.2.0"
+version = "0.2.4"
 dependencies = [
  "bake-macros",
  "burn",
@@ -337,7 +337,7 @@ dependencies = [
 
 [[package]]
 name = "bake-macros"
-version = "0.1.0"
+version = "0.2.4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -346,7 +346,7 @@ dependencies = [
 
 [[package]]
 name = "bake-tabular"
-version = "1.0.0"
+version = "0.2.4"
 dependencies = [
  "rand 0.10.2",
 ]

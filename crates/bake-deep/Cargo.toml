@@ -1,9 +1,11 @@
 [package]
 name = "bake-deep"
-version = "0.2.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
-burn = "0.22.0-pre.3"
-rand = "0.10.2"
+burn.workspace = true
+rand.workspace = true
 bake-macros = { path = "../bake-macros" }

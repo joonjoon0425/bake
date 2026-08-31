@@ -1,15 +1,17 @@
 [package]
 name = "bake"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
 bake-tabular = { workspace = true, optional = true }
 bake-deep = { workspace = true, optional = true }
 bake-common = { workspace = true }
 
-rand = "0.10.2"
-burn = "0.22.0-pre.2"
+rand.workspace = true
+burn.workspace = true
 
 [features]
 default = ["tabular", "deep"]

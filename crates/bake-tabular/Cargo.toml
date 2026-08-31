@@ -1,7 +1,9 @@
 [package]
 name = "bake-tabular"
-version = "1.0.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
-rand = "0.10.2"
+rand.workspace = true
