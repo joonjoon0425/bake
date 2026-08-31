@@ -1,17 +1,16 @@
 use std::collections::VecDeque;
 
-use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, exploration::NoiseReset, network::NoisyMlpActorCriticNet, types::{Logger, Tape}};
-use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
-
+use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::*, network::MlpActorCriticNet, types::{Logger, Tape}};
+use burn::{config::Config, nn::activation::ActivationConfig::*, tensor::Device};
 
 pub fn main() {
-    let path = std::env::args().nth(1).unwrap_or_else(|| "crates/bake/configs/deep/noisy_a2c_cartpole.json".to_string());
+    let path = std::env::args().nth(1).unwrap_or_else(|| "crates/bake/configs/gymenv/a2c_acrobot.json".to_string());
     let config = A2CConfig::load(&path).expect("failed to load config");
     
     let device = Device::default().autodiff();
     device.seed(config.seed);
-    let mut env = CartPole::new(config.seed, &device);
-    let mut actor_critic = CategoricalActorCritic::new(NoisyMlpActorCriticNet::new(&[4, 128, 2], Relu, &device));
+    let mut env = GymnasiumEnv::<AcrobotInfo>::new(config.seed, &device, false);
+    let mut actor_critic = CategoricalActorCritic::new(MlpActorCriticNet::new(&[env.obs_dim(), 128, env.n_actions()], Relu, &device));
 
     let (lr_a, lr_c, mut opt_a, mut opt_c) = match &config.encoder_config {
         ActorCriticEncoderConfig::Separated { lr_actor, opt_actor_config, lr_critic, opt_critic_config } => {
@@ -23,7 +22,7 @@ pub fn main() {
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
 
-    let window = 20;
+    let window = 100;
     let mut ep_rewards = VecDeque::with_capacity(window);
     let mut ep_reward = 0f32;
     let mut logger = Logger::default();
@@ -38,8 +37,7 @@ pub fn main() {
             let batch = buffer.pop();
             let loss = A2C::loss(&config.a2c, &actor_critic, batch);
             logger.record(&loss);
-            actor_critic = A2C::update_separated(actor_critic, loss, config.coeff_entropy, lr_a, &mut opt_a, lr_c, &mut opt_c);
-            actor_critic.reset_noise();
+            actor_critic = A2C::update_separated(actor_critic, loss, config.coeff_entropy, lr_a, &mut opt_a, lr_c, &mut opt_c)
         }
 
         if tape.done() {
@@ -58,6 +56,22 @@ pub fn main() {
             let entropy = mean.get("entropy").unwrap_or(&0f32);
             println!("count: {count}, reward_avg: {ep_reward_average}, loss: {loss}, entropy: {entropy}");
             logger.clear();
+        }
+    }
+
+    // Evaluation
+    let mut env = GymnasiumEnv::<AcrobotInfo>::new(config.seed, &device, true);
+    for _ in 0..5 {
+        let (mut obs, mut constraint) = env.reset();
+        loop {
+            let action = actor_critic.action(obs, constraint);
+            let ((next_obs, next_constraint), _, terminated, truncated) = env.step(action);
+            obs = next_obs;
+            constraint = next_constraint;
+
+            if terminated || truncated {
+                break;
+            }
         }
     }
 }

@@ -332,6 +332,8 @@ version = "0.2.4"
 dependencies = [
  "bake-macros",
  "burn",
+ "numpy",
+ "pyo3",
  "rand 0.10.2",
 ]
 
