@@ -1,0 +1,38 @@
+{
+    "a2c": {
+        "gamma": 0.99,
+        "lambda": 0.98,
+        "value_loss": "MseLoss"
+    },
+    "coeff_entropy": 0.02,
+    "total_steps": 500000,
+    "rollout_size": 512,
+    "encoder_config": {
+        "Separated": {
+            "lr_actor": 1e-3,
+            "opt_actor_config": {
+                "Adam": {
+                    "weight_decay": null,
+                    "grad_clipping": null,
+                    "beta_1": 0.9,
+                    "beta_2": 0.999,
+                    "epsilon": 0.00001,
+                    "amsgrad": false
+                }
+            },
+            "lr_critic": 1e-3,
+            "opt_critic_config": {
+                "Adam": {
+                    "weight_decay": null,
+                    "grad_clipping": null,
+                    "beta_1": 0.9,
+                    "beta_2": 0.999,
+                    "epsilon": 0.00001,
+                    "amsgrad": false
+                }
+            }
+        }
+    },
+    "seed": 12,
+    "log_interval": 5000
+}

@@ -17,3 +17,6 @@ pub trait Env {
 
 pub mod cartpole;
 pub use cartpole::*;
+
+pub mod gymnasium_env;
+pub use gymnasium_env::*;

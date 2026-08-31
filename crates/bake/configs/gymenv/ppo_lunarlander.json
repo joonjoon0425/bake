@@ -1,0 +1,41 @@
+{
+    "ppo": {
+        "gamma": 0.999,
+        "lambda": 0.98,
+        "eps": 0.2,
+        "value_loss": "MseLoss"
+    },
+    "coeff_entropy": 0.01,
+    "rollout_size": 1024,
+    "minibatch_size": 64,
+    "epoch": 4,
+    "encoder_config": {
+        "Separated": {
+            "lr_actor": 3e-4,
+            "opt_actor_config": {
+                "Adam": {
+                    "weight_decay": null,
+                    "grad_clipping": null,
+                    "beta_1": 0.9,
+                    "beta_2": 0.999,
+                    "epsilon": 0.00001,
+                    "amsgrad": false
+                }
+            },
+            "lr_critic": 3e-4,
+            "opt_critic_config": {
+                "Adam": {
+                    "weight_decay": null,
+                    "grad_clipping": null,
+                    "beta_1": 0.9,
+                    "beta_2": 0.999,
+                    "epsilon": 0.00001,
+                    "amsgrad": false
+                }
+            }
+        }
+    },
+    "total_steps": 1000000,
+    "seed": 12,
+    "log_interval": 5000
+}

@@ -16,7 +16,8 @@ pub fn main() {
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
 
-    let mut ep_rewards = VecDeque::with_capacity(20);
+    let window = 20;
+    let mut ep_rewards = VecDeque::with_capacity(window);
     let mut ep_reward = 0f32;
     let mut logger = Logger::default();
 
@@ -33,7 +34,7 @@ pub fn main() {
             policy = Vpg::update(policy, loss, config.coeff_entropy, config.lr, &mut opt);
 
             tape.reset(&mut env);
-            if ep_rewards.len() >= 20 {
+            if ep_rewards.len() >= window {
                 ep_rewards.pop_front();
             }
             ep_rewards.push_back(ep_reward);

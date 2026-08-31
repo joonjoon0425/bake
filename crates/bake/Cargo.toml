@@ -102,3 +102,23 @@ required-features = ["deep"]
 name = "dueling_ddqn_per"
 path = "examples/deep/dueling_ddqn_per.rs"
 required-features = ["deep"]
+
+[[example]]
+name = "gym_cartpole_dqn"
+path = "examples/gymenv/gym_cartpole_dqn.rs"
+required-features = ["deep"]
+
+[[example]]
+name = "gym_lunarlander_ppo"
+path = "examples/gymenv/gym_lunarlander_ppo.rs"
+required-features = ["deep"]
+
+[[example]]
+name = "gym_mountaincar_dqn_per"
+path = "examples/gymenv/gym_mountaincar_dqn_per.rs"
+required-features = ["deep"]
+
+[[example]]
+name = "gym_acrobot_a2c"
+path = "examples/gymenv/gym_acrobot_a2c.rs"
+required-features = ["deep"]
