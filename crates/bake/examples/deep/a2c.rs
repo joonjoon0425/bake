@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, network::MlpActorCriticNet, types::{Logger, Tape}};
 use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
 
@@ -20,37 +22,40 @@ pub fn main() {
 
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
-    let mut total_steps = 0;
+
+    let mut ep_rewards = VecDeque::with_capacity(20);
+    let mut ep_reward = 0f32;
     let mut logger = Logger::default();
 
-    for i in 0..=config.total_episode {
-        let mut step = 0;
-        tape.reset(&mut env);
-        loop {
-            let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action);
-            buffer.push(t);
+    for count in 0..=config.total_steps {
+        let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
+        let t = tape.step(&mut env, action);
+        buffer.push(t);
+        ep_reward += tape.reward;
 
-            step += 1;
-            total_steps += 1;
-            if buffer.len() >= config.rollout_size {
-                let batch = buffer.pop();
-                let loss = A2C::loss(&config.a2c, &actor_critic, batch);
-                logger.record(&loss);
-                actor_critic = A2C::update_separated(actor_critic, loss, config.coeff_entropy, lr_a, &mut opt_a, lr_c, &mut opt_c)
-            }
-            if tape.done() { break; }
+        if buffer.len() >= config.rollout_size {
+            let batch = buffer.pop();
+            let loss = A2C::loss(&config.a2c, &actor_critic, batch);
+            logger.record(&loss);
+            actor_critic = A2C::update_separated(actor_critic, loss, config.coeff_entropy, lr_a, &mut opt_a, lr_c, &mut opt_c)
         }
 
-        if i % config.log_interval == 0 {
+        if tape.done() {
+            tape.reset(&mut env);
+            if ep_rewards.len() >= 20 {
+                ep_rewards.pop_front();
+            }
+            ep_rewards.push_back(ep_reward);
+            ep_reward = 0f32;
+        }
+
+        if count % config.log_interval == 0 {
+            let ep_reward_average = ep_rewards.iter().sum::<f32>() / ep_rewards.len() as f32;
             let mean = logger.mean();
             let loss = mean.get("critic_loss").unwrap_or(&0f32);
             let entropy = mean.get("entropy").unwrap_or(&0f32);
-            println!("{i},{total_steps},{step},{entropy},{loss}");
-            if i % 100 == 0 {
-                eprintln!("Episode: {i}, Total steps: {total_steps} Steps: {step}, Entropy: {entropy}, Loss: {loss}");
-            }
-            logger.clear()
+            println!("count: {count}, reward_avg: {ep_reward_average}, loss: {loss}, entropy: {entropy}");
+            logger.clear();
         }
     }
 }

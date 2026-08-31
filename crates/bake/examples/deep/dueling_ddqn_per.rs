@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use bake_common::LinearSchedular;
-use bake_deep::{algorithm::{DoubleDqn, dqn::ValueLoss}, approximator::ConstrainedQNet, buffer::ReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, network::MlpQNet, types::{Logger, Tape}};
+use bake_deep::{algorithm::{DoubleDqn, dqn::ValueLoss}, approximator::ConstrainedDuelingQNet, buffer::PriortizedExperienceReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, network::MlpDuelingQNet, types::{Logger, Tape}};
 use burn::{module::Module, nn::{activation::ActivationConfig::Relu}, optim::AdamConfig, tensor::Device};
 
 pub fn main() {
@@ -10,13 +10,14 @@ pub fn main() {
     device.seed(seed);
     let mut env = CartPole::new(seed, &device);
     let config = DoubleDqn::new(0.99, ValueLoss::MseLoss);
-    let mut online = ConstrainedQNet::new(MlpQNet::new(&[4, 128, 84, 2], Relu, &device));
+    let mut online = ConstrainedDuelingQNet::new(MlpDuelingQNet::new(&[4, 128, 84, 2], Relu, &device));
     let mut target = online.clone();
     let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();
 
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
-    let mut buffer = ReplayBuffer::new(seed, 10000);
+    let beta0 = 0.4;
+    let mut buffer = PriortizedExperienceReplayBuffer::new(seed, 10000, 0.3, beta0, 1.0.into());
     let mut tape = Tape::new(&mut env);
     let mut logger = Logger::default();
 
@@ -30,6 +31,7 @@ pub fn main() {
     let mut ep_rewards = VecDeque::with_capacity(window);
     let mut ep_reward = 0f32;
 
+    let mut beta_sch = LinearSchedular::new(beta0, 1.0, total_steps);
     let mut eps_sch = LinearSchedular::new(1.0, 0.05, total_steps / 4);
 
     for count in 0..=total_steps {
@@ -38,9 +40,10 @@ pub fn main() {
         buffer.push(t);
         ep_reward += tape.reward;
 
-        if count >= warmup && count % update_freq == 0 && let Some(batch) = buffer.sample(batch_size) {
-            let loss = DoubleDqn::loss(&config, &online, &target, batch);
+        if count >= warmup && count % update_freq == 0 && let Some((batch, indices)) = buffer.sample(batch_size) {
+            let loss = DoubleDqn::loss_per(&config, &online, &target, batch);
             logger.record(&loss);
+            buffer.update(&indices, loss.td_error.clone());
             online = DoubleDqn::update(online, loss, lr, &mut opt);
         }
 
@@ -64,10 +67,11 @@ pub fn main() {
             let loss = mean.get("loss").unwrap_or(&0f32);
             let td_error = mean.get("td_error").unwrap_or(&0f32);
             let qmean = mean.get("qmean").unwrap_or(&0f32);
-            println!("count: {count}, reward_avg: {ep_reward_average}, loss: {loss}, td_error: {td_error}, qmean: {qmean}, eps: {}", exploration.eps());
+            println!("count: {count}, reward_avg: {ep_reward_average}, loss: {loss}, td_error: {td_error}, qmean: {qmean}, eps: {}, beta: {}", exploration.eps(), buffer.beta());
             logger.clear();
         }
 
+        *buffer.beta_mut() = beta_sch.step();
         *exploration.eps_mut() = eps_sch.step() as f32;
     }
 }

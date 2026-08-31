@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 bake-tabular = { workspace = true, optional = true }
 bake-deep = { workspace = true, optional = true }
+bake-common = { workspace = true }
 
 rand = "0.10.2"
 burn = "0.22.0-pre.2"
@@ -93,4 +94,9 @@ required-features = ["deep"]
 [[example]]
 name = "dqn_per"
 path = "examples/deep/dqn_per.rs"
+required-features = ["deep"]
+
+[[example]]
+name = "dueling_ddqn_per"
+path = "examples/deep/dueling_ddqn_per.rs"
 required-features = ["deep"]

@@ -14,7 +14,7 @@ pub struct PriortizedExperienceReplayBuffer<Obs: Batchable, Action: Batchable, C
     batch: Vec<Batch<Obs, Action, Constraint, Extra>>,
     sum_tree: SumTree,
     min_tree: MinTree,
-
+    priority_clip: Option<f64>,
     max_priority: f64,
 }
 
@@ -25,7 +25,7 @@ where
     Constraint: Batchable,
     Extra: Batchable
 {
-    pub fn new(seed: u64, capacity: usize, alpha: f64, beta: f64) -> Self {
+    pub fn new(seed: u64, capacity: usize, alpha: f64, beta: f64, priority_clip: Option<f64>) -> Self {
         let batch = Vec::with_capacity(capacity);
         let sum_tree = SumTree::new(seed, capacity);
         let min_tree = MinTree::new(capacity);
@@ -38,6 +38,7 @@ where
             alpha,
             beta,
             max_priority: 1f64,
+            priority_clip,
         }
     }
 
@@ -55,7 +56,11 @@ where
     }
 
     pub fn update(&mut self, indices: &[usize], td_errors: Tensor<1>) {
-        let p: Vec<f32> = (td_errors.abs() + 1e-6).powf_scalar(self.alpha).into_data().try_into_vec().unwrap();
+        let e = match self.priority_clip {
+            Some(c) => td_errors.abs().clamp_max(c as f32),
+            None => td_errors.abs()
+        };
+        let p: Vec<f32> = (e + 1e-6).powf_scalar(self.alpha).into_data().try_into_vec().unwrap();
         for (i, &index) in indices.iter().enumerate() {
             let v = p[i] as f64;
             self.sum_tree.update(index, v);
@@ -200,4 +205,26 @@ impl MinTree {
         }
     }
     pub fn min(&self) -> f64 { self.tree[1] }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sampling_distribution_converges() {
+        let priors = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+        let mut tree = SumTree::from_vec(12, priors.clone());
+        let mut counts = [0usize; 8];
+        for _ in 0..60_000 {
+            for i in tree.sample_idx(8) { counts[i] += 1; }
+        }
+        let total: usize = counts.iter().sum();
+        let sum: f64 = priors.iter().sum();
+        for i in 0..8 {
+            let observed = counts[i] as f64 / total as f64;
+            let expected = priors[i] / sum;
+            assert!((observed - expected).abs() < 5e-3, "leaf {i}: {observed} vs {expected}");
+        }
+    }
 }

@@ -1,55 +1,73 @@
+use std::collections::VecDeque;
+
+use bake_common::LinearSchedular;
 use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::ConstrainedDuelingQNet, buffer::ReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, network::MlpDuelingQNet, types::{Logger, Tape}};
-use burn::{nn::activation::ActivationConfig::Relu, optim::AdamConfig, tensor::Device};
+use burn::{module::Module, nn::{activation::ActivationConfig::Relu}, optim::AdamConfig, tensor::Device};
+
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default().autodiff();
     device.seed(seed);
     let mut env = CartPole::new(seed, &device);
-    let config = Dqn::new(0.99, ValueLoss::HuberLoss { delta: 10.0 });
-    let mut online = ConstrainedDuelingQNet::new(MlpDuelingQNet::new(&[4, 128, 2], Relu, &device));
+    let config = Dqn::new(0.99, ValueLoss::MseLoss);
+    let mut online = ConstrainedDuelingQNet::new(MlpDuelingQNet::new(&[4, 128, 84, 2], Relu, &device));
     let mut target = online.clone();
-    let lr = 1e-3;
+    let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();
 
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
-    let mut buffer = ReplayBuffer::new(12, 10000);
+    let mut buffer = ReplayBuffer::new(seed, 10000);
     let mut tape = Tape::new(&mut env);
-    let mut count = 0;
     let mut logger = Logger::default();
-    for episode in 0..=4000 {
-        let mut steps = 0;
-        tape.reset(&mut env);
-        loop {
-            let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action);
-            buffer.push(t);
 
-            if count % 4 == 0 && let Some(batch) = buffer.sample(64) {
-                let loss = Dqn::loss(&config, &online, &target, batch);
-                logger.record(&loss);
-                online = Dqn::update(online, loss, lr, &mut opt);
-            }
+    let total_steps = 500000;
+    let warmup = 10000;
+    let update_freq = 10;
+    let sync_freq = 500;
+    let batch_size = 128;
 
-            if count % 1000 == 0 {
-                target = online.clone();
-            }
-            count += 1;
-            steps += 1;
-            if tape.done() { break; }
+    let window = 20;
+    let mut ep_rewards = VecDeque::with_capacity(window);
+    let mut ep_reward = 0f32;
+
+    let mut eps_sch = LinearSchedular::new(1.0, 0.05, total_steps / 4);
+
+    for count in 0..=total_steps {
+        let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
+        let t = tape.step(&mut env, action);
+        buffer.push(t);
+        ep_reward += tape.reward;
+
+        if count >= warmup && count % update_freq == 0 && let Some(batch) = buffer.sample(batch_size) {
+            let loss = Dqn::loss(&config, &online, &target, batch);
+            logger.record(&loss);
+            online = Dqn::update(online, loss, lr, &mut opt);
         }
-        *exploration.eps_mut() = (exploration.eps() * 0.995).max(0.05);
-        
-        if episode % 10 == 0 {
+
+        if count % sync_freq == 0 {
+            let record = online.clone().into_record();
+            target = target.load_record(record);
+        }
+
+        if tape.done() {
+            tape.reset(&mut env);
+            if ep_rewards.len() >= window {
+                ep_rewards.pop_front();
+            }
+            ep_rewards.push_back(ep_reward);
+            ep_reward = 0f32;
+        }
+
+        if count % 5000 == 0 {
+            let ep_reward_average = ep_rewards.iter().sum::<f32>() / ep_rewards.len() as f32;
             let mean = logger.mean();
             let loss = mean.get("loss").unwrap_or(&0f32);
-            let q_mean = mean.get("qmean").unwrap_or(&0f32);
             let td_error = mean.get("td_error").unwrap_or(&0f32);
-            let eps = exploration.eps();
-            println!("{episode} {count} {steps} {loss} {q_mean} {td_error} {eps}");
-            if episode % 100 == 0 {
-                eprintln!("Episode: {episode} Total steps: {count} Steps: {steps} Loss: {loss} Q-Mean: {q_mean} TD-error: {td_error} Eps: {eps}");
-            }
+            let qmean = mean.get("qmean").unwrap_or(&0f32);
+            println!("count: {count}, reward_avg: {ep_reward_average}, loss: {loss}, td_error: {td_error}, qmean: {qmean}, eps: {}", exploration.eps());
             logger.clear();
         }
+
+        *exploration.eps_mut() = eps_sch.step() as f32;
     }
 }

@@ -6,7 +6,7 @@ use crate::{algorithm::A2C, config::OptimizerConfig};
 pub struct A2CConfig {
     pub a2c: A2C,
     pub coeff_entropy: f32,
-    pub total_episode: usize,
+    pub total_steps: usize,
     pub rollout_size: usize,
 
     pub encoder_config: ActorCriticEncoderConfig,

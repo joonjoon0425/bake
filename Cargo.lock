@@ -315,11 +315,16 @@ dependencies = [
 name = "bake"
 version = "0.1.0"
 dependencies = [
+ "bake-common",
  "bake-deep",
  "bake-tabular",
  "burn",
  "rand 0.10.2",
 ]
+
+[[package]]
+name = "bake-common"
+version = "0.1.0"
 
 [[package]]
 name = "bake-deep"

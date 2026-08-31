@@ -4,7 +4,7 @@ use crate::{algorithm::Dqn, config::OptimizerConfig};
 #[derive(Debug, Config)]
 pub struct DqnConfig {
     pub dqn: Dqn,
-    pub total_episode: usize,
+    pub total_steps: usize,
     pub update_freq: usize,
     pub sync_freq: usize,
     pub batch_size: usize,

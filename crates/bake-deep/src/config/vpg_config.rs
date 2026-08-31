@@ -5,7 +5,7 @@ use crate::{algorithm::Vpg, config::OptimizerConfig};
 pub struct VpgConfig {
     pub vpg: Vpg,
     pub coeff_entropy: f32,
-    pub total_episode: usize,
+    pub total_steps: usize,
 
     pub lr: f64,
     pub opt_config: OptimizerConfig,

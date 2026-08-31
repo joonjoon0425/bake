@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use bake_deep::{algorithm::Vpg, approximator::{CategoricalPolicy, Policy}, buffer::RolloutBuffer, config::VpgConfig, env::CartPole, network::MlpPolicyNet, types::{Logger, Tape}};
 use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
 
@@ -13,30 +15,37 @@ pub fn main() {
 
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
+
+    let mut ep_rewards = VecDeque::with_capacity(20);
+    let mut ep_reward = 0f32;
     let mut logger = Logger::default();
 
-    for i in 0..=config.total_episode {
-        let mut step = 0;
-        tape.reset(&mut env);
-        loop {
-            let action = policy.action(tape.obs.clone(), tape.constraint.clone());
-            let t = tape.step(&mut env, action);
-            buffer.push(t);
+    for count in 0..=config.total_steps {
+        let action = policy.action(tape.obs.clone(), tape.constraint.clone());
+        let t = tape.step(&mut env, action);
+        buffer.push(t);
+        ep_reward += tape.reward;
 
-            step += 1;
-            if tape.done() {
-                let batch = buffer.pop();
-                let loss = Vpg::loss(&config.vpg, &policy, batch);
-                logger.record(&loss);
-                policy = Vpg::update(policy, loss, config.coeff_entropy, config.lr, &mut opt);
-                break;
+        if tape.done() {
+            let batch = buffer.pop();
+            let loss = Vpg::loss(&config.vpg, &policy, batch);
+            logger.record(&loss);
+            policy = Vpg::update(policy, loss, config.coeff_entropy, config.lr, &mut opt);
+
+            tape.reset(&mut env);
+            if ep_rewards.len() >= 20 {
+                ep_rewards.pop_front();
             }
+            ep_rewards.push_back(ep_reward);
+            ep_reward = 0f32;
         }
 
-        if i % config.log_interval == 0 {
+        if count % config.log_interval == 0 {
+            let reward_avg = ep_rewards.iter().sum::<f32>() / ep_rewards.len() as f32;
             let mean = logger.mean();
-            println!("Episode: {i}, Steps: {step}, Entropy: {}, Surrogate loss: {}", mean.get("entropy").unwrap_or(&0f32), mean.get("loss").unwrap_or(&0f32));
+            println!("count: {count}, reward_avg: {reward_avg}, entropy: {}, surrogate loss: {}", mean.get("entropy").unwrap_or(&0f32), mean.get("loss").unwrap_or(&0f32));
+            logger.clear();
         }
-        logger.clear();
+        
     }
 }

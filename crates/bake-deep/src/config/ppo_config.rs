@@ -5,7 +5,7 @@ use crate::{algorithm::Ppo, config::ActorCriticEncoderConfig};
 pub struct PpoConfig {
     pub ppo: Ppo,
     pub coeff_entropy: f32,
-    pub total_episode: usize,
+    pub total_steps: usize,
     pub rollout_size: usize,
     pub minibatch_size: usize,
     pub epoch: usize,
