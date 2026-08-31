@@ -1,7 +1,5 @@
-
 pub struct LinearSchedular {
     start: f32,
-    end: f32,
     steps: usize,
 
     cur_step: usize,
@@ -12,7 +10,6 @@ impl LinearSchedular {
     pub fn new(start: f32, end: f32, steps: usize) -> Self {
         Self {
             start,
-            end,
             steps,
             cur_step: 0,
             slope: (end - start) / steps as f32
@@ -35,7 +32,7 @@ mod tests {
     use crate::LinearSchedular;
 
     #[test]
-    pub fn check_linear_schduling() {
+    pub fn check_linear_scheduling() {
         let s = 0f32;
         let e = 1f32;
         let total_steps = 10000;
