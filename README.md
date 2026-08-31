@@ -14,6 +14,8 @@ Learn RL with rust's burn, by building a framework. This repository was created 
 ## Environment
 ### Tabular
 - Grid world
+- Blackjack
+- Masked Grid world
 ### Deep RL
 - CartPole-v1 referenced from [Gymnasium](https://gymnasium.farama.org)
 
