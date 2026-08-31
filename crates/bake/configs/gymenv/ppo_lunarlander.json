@@ -1,17 +1,21 @@
 {
     "ppo": {
         "gamma": 0.999,
-        "lambda": 0.98,
+        "lambda": 0.95,
         "eps": 0.2,
-        "value_loss": "MseLoss"
+        "value_loss": {
+            "HuberLoss" : {
+                "delta": 10.0
+            }
+        }
     },
-    "coeff_entropy": 0.01,
-    "rollout_size": 1024,
-    "minibatch_size": 64,
-    "epoch": 4,
+    "coeff_entropy": 0.05,
+    "rollout_size": 2048,
+    "minibatch_size": 256,
+    "epoch": 10,
     "encoder_config": {
         "Separated": {
-            "lr_actor": 3e-4,
+            "lr_actor": 2.5e-4,
             "opt_actor_config": {
                 "Adam": {
                     "weight_decay": null,
@@ -22,7 +26,7 @@
                     "amsgrad": false
                 }
             },
-            "lr_critic": 3e-4,
+            "lr_critic": 2.5e-4,
             "opt_critic_config": {
                 "Adam": {
                     "weight_decay": null,
@@ -35,7 +39,7 @@
             }
         }
     },
-    "total_steps": 1000000,
+    "total_steps": 1500000,
     "seed": 12,
     "log_interval": 5000
 }

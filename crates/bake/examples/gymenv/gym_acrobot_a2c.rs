@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::*, network::MlpActorCriticNet, types::{Logger, Tape}};
+use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, distribution::Distribution, env::*, network::MlpActorCriticNet, types::{Logger, Tape}};
 use burn::{config::Config, nn::activation::ActivationConfig::*, tensor::Device};
 
 pub fn main() {
@@ -64,7 +64,7 @@ pub fn main() {
     for _ in 0..5 {
         let (mut obs, mut constraint) = env.reset();
         loop {
-            let action = actor_critic.action(obs, constraint);
+            let action = actor_critic.dist(obs, constraint).mode();
             let ((next_obs, next_constraint), _, terminated, truncated) = env.step(action);
             obs = next_obs;
             constraint = next_constraint;

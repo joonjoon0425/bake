@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+use bake_common::LinearSchedular;
 use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::*, network::MlpActorCriticNet, types::{Batchable, Logger, Tape}, utils::gae};
 use burn::{Tensor, config::Config, nn::activation::ActivationConfig::*, tensor::{Device, Int, TensorData}};
 use rand::{SeedableRng, seq::SliceRandom};
@@ -12,7 +13,7 @@ pub fn main() {
     let device = Device::default().autodiff();
     device.seed(config.seed);
     let mut env = GymnasiumEnv::<LunarLanderInfo>::new(config.seed, &device, false);
-    let mut actor_critic = CategoricalActorCritic::new(MlpActorCriticNet::new(&[env.obs_dim(), 128, 256, env.n_actions()], Tanh, &device));
+    let mut actor_critic = CategoricalActorCritic::new(MlpActorCriticNet::new(&[env.obs_dim(), 64, 64, env.n_actions()], Tanh, &device));
     let (lr_a, lr_c, mut opt_a, mut opt_c) = match &config.encoder_config {
         ActorCriticEncoderConfig::Separated { lr_actor, opt_actor_config, lr_critic, opt_critic_config } => {
             (*lr_actor, *lr_critic, opt_actor_config.init(), opt_critic_config.init())
@@ -23,11 +24,13 @@ pub fn main() {
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(&mut env);
 
-    let window = 20;
+    let window = 100;
     let mut ep_rewards = VecDeque::with_capacity(window);
     let mut ep_reward = 0f32;
     let mut logger = Logger::default();
     let mut rng = rand::rngs::StdRng::seed_from_u64(config.seed);
+    let mut c_e = config.coeff_entropy;
+    let mut c_e_sch = LinearSchedular::new(c_e as f64, 0.008, (config.total_steps as f32 * (3. / 4.)) as usize);
 
     for count in 0..=config.total_steps {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
@@ -50,7 +53,7 @@ pub fn main() {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let loss = Ppo::loss(&config.ppo, &actor_critic, batch.clone().select(idx));
                     logger.record(&loss);
-                    actor_critic = Ppo::update_separated(actor_critic, loss, config.coeff_entropy, lr_a, &mut opt_a, lr_c, &mut opt_c)
+                    actor_critic = Ppo::update_separated(actor_critic, loss, c_e, lr_a, &mut opt_a, lr_c, &mut opt_c)
                 }
             }
             
@@ -68,14 +71,18 @@ pub fn main() {
         if count % config.log_interval == 0 {
             let reward_avg = ep_rewards.iter().sum::<f32>() / ep_rewards.len() as f32;
             let mean = logger.mean();
+            let actor_loss = mean.get("actor_loss").unwrap_or(&0f32);
+            let critic_loss = mean.get("critic_loss").unwrap_or(&0f32);
             let entropy = mean.get("entropy").unwrap_or(&0f32);
             let approx_kl = mean.get("approx_kl").unwrap_or(&0f32);
             let clip_ratio = mean.get("clip_ratio").unwrap_or(&0f32);
             // println!("{i},{total_steps},{step},{entropy},{approx_kl},{clip_ratio}");
-            eprintln!("count: {count}, reward_avg: {reward_avg}, entropy: {entropy}, approx KL: {approx_kl}, clip ratio: {clip_ratio}");
+            eprintln!("count: {count}, reward_avg: {reward_avg}, actor_loss: {actor_loss}, critic_loss: {critic_loss}, entropy: {entropy}, approx KL: {approx_kl}, clip ratio: {clip_ratio}, c_e: {c_e}");
             
             logger.clear();
         }
+
+        c_e = c_e_sch.step() as f32;
     }
 
     // Evaluation
@@ -83,7 +90,7 @@ pub fn main() {
     for _ in 0..5 {
         let (mut obs, mut constraint) = env.reset();
         loop {
-            let action = actor_critic.action(obs, constraint);
+            let action = actor_critic.dist(obs, constraint).mode();
             let ((next_obs, next_constraint), _, terminated, truncated) = env.step(action);
             obs = next_obs;
             constraint = next_constraint;

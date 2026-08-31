@@ -17,11 +17,11 @@ pub fn main() {
 
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
     let beta0 = 0.4;
-    let mut buffer = PriortizedExperienceReplayBuffer::new(seed, 10000, 0.6, beta0, 1.0.into());
+    let mut buffer = PriortizedExperienceReplayBuffer::new(seed, 10000, 0.6, beta0, None);
     let mut tape = Tape::new(&mut env);
     let mut logger = Logger::default();
 
-    let total_steps = 500000;
+    let total_steps = 1000000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
@@ -32,7 +32,7 @@ pub fn main() {
     let mut ep_reward = 0f32;
 
     let mut beta_sch = LinearSchedular::new(beta0, 1.0, total_steps);
-    let mut eps_sch = LinearSchedular::new(1.0, 0.05, total_steps / 2);
+    let mut eps_sch = LinearSchedular::new(1.0, 0.05, (total_steps as f32 * (3. / 4.)) as usize);
 
     for count in 0..=total_steps {
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
