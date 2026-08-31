@@ -16,7 +16,6 @@ pub trait GymEnvInfo {
 /// ##### A Gymnasium Environment
 /// Currently, only 1-ranked observation with Discrete actions are supported
 pub struct GymnasiumEnv<Info: GymEnvInfo> {
-    seed: u64,
     env: Py<PyAny>,
     device: Device,
     info: PhantomData<Info>,
@@ -29,8 +28,10 @@ impl<Info: GymEnvInfo> GymnasiumEnv<Info> {
             let kwargs = PyDict::new(py);
             if render { kwargs.set_item("render_mode", "human").unwrap(); }
             let env = gym.call_method("make", (Info::name(), ), Some(&kwargs)).unwrap();
+            let kwargs = PyDict::new(py);
+            kwargs.set_item("seed", seed).unwrap();
+            env.call_method("reset", (), Some(&kwargs)).unwrap();
             Self {
-                seed,
                 env: env.unbind(),
                 device: device.clone(),
                 info: PhantomData
@@ -51,9 +52,7 @@ impl<Info: GymEnvInfo> Env for GymnasiumEnv<Info> {
     fn reset(&mut self) -> (Self::Obs, Self::Constraint) {
         return Python::attach(|py| {
             let env = self.env.bind(py);
-            let seed = PyDict::new(py);
-            seed.set_item("seed", self.seed).unwrap();
-            let tuple = env.call_method("reset", (), Some(&seed)).unwrap();
+            let tuple = env.call_method1("reset", ()).unwrap();
             let (obs, _): (Bound<'_, PyAny>, Bound<'_, PyAny>) = tuple.extract().unwrap();
             let arr = obs.cast_into::<PyArray1<f32>>().unwrap().readonly().as_array().to_vec();
             let obs: Tensor<2> = Tensor::<1>::from_floats(arr.as_slice(), &self.device).unsqueeze_dim(0);
