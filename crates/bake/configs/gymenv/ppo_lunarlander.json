@@ -1,8 +1,8 @@
 {
     "ppo": {
-        "gamma": 0.999,
+        "gamma": 0.99,
         "lambda": 0.95,
-        "eps": 0.2,
+        "eps": 0.1,
         "value_loss": {
             "HuberLoss" : {
                 "delta": 10.0

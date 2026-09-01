@@ -5,6 +5,7 @@ use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::ConstrainedQNet,
 use burn::{module::Module, nn::{activation::ActivationConfig::Relu}, optim::AdamConfig, tensor::Device};
 
 pub fn main() {
+    println!("count,ep_reward_average,loss,td_error,qmean,eps");
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default().autodiff();
     device.seed(seed);
@@ -64,7 +65,7 @@ pub fn main() {
             let loss = mean.get("loss").unwrap_or(&0f32);
             let td_error = mean.get("td_error").unwrap_or(&0f32);
             let qmean = mean.get("qmean").unwrap_or(&0f32);
-            println!("count: {count}, reward_avg: {ep_reward_average}, loss: {loss}, td_error: {td_error}, qmean: {qmean}, eps: {}", exploration.eps());
+            println!("{count},{ep_reward_average},{loss},{td_error},{qmean},{}", exploration.eps());
             logger.clear();
         }
 

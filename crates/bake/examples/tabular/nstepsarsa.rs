@@ -5,7 +5,7 @@ use bake_tabular::policy::EpsGreedy;
 use bake_tabular::types::Tape;
 
 fn main() {
-    let mut env = MaskedGridWorld::new();
+    let mut env = Blackjack::new(10);
     let mut agent = NStepSarsaAgent::new(env.n_states(), env.n_actions(), 0.3, 0.99);
     let mut policy = EpsGreedy::new(2,1f32);
     let mut tape = Tape::new(&mut env);
@@ -19,7 +19,7 @@ fn main() {
         let mut action = agent.action(&mut policy, tape.obs, tape.mask);
         loop {
             let t = tape.step(&mut env, action);
-            action = agent.action(&mut policy, t.next_obs, t.next_mask);
+            action = if t.terminated { 0 } else { agent.action(&mut policy, t.next_obs, t.next_mask) };
             let t = t.add_extra(action);
             buffer.push(t.clone());
 

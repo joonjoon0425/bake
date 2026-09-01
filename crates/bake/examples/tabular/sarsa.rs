@@ -16,7 +16,7 @@ fn main() {
         let mut action = agent.action(&mut policy, tape.obs, tape.mask);
         loop {
             let t = tape.step(&mut env, action);
-            action = agent.action(&mut policy, t.next_obs, t.next_mask);
+            action = if t.terminated { 0 } else { agent.action(&mut policy, t.next_obs, t.next_mask) };
             let t = t.add_extra(action);
             agent.update(t.clone());
             

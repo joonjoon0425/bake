@@ -5,7 +5,7 @@ use bake_tabular::policy::EpsGreedy;
 use bake_tabular::types::Tape;
 
 fn main() {
-    let mut env = MaskedGridWorld::new();
+    let mut env = GridWorld::new();
     let mut agent = NStepQLearningAgent::new(env.n_states(), env.n_actions(), 0.3, 0.99);
     let mut policy = EpsGreedy::new(2,1f32);
     let mut tape = Tape::new(&mut env);

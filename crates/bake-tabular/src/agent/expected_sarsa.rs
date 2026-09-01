@@ -27,13 +27,14 @@ impl ExpectedSarsaAgent {
 
     /// Update the QTable according to given transition and current policy
     pub fn update<M: Mask, P: Policy>(&mut self, t: Transition<M>, policy: &P) {
-        let mut expected: f32 = 0f32;
-        let next_qvalues = self.qtable.row(t.next_obs);
-        for action in t.next_mask.possible_actions() {
-            expected += policy.prob(next_qvalues, action, t.next_mask) * self.qtable[(t.next_obs, action)];
-        }
-
-        let target = t.reward + if t.terminated { 0f32 } else { self.gamma * expected };
+        let target = t.reward + if t.terminated { 0f32 } else {
+            let mut expected: f32 = 0f32;
+            let next_qvalues = self.qtable.row(t.next_obs);
+            for action in t.next_mask.possible_actions() {
+                expected += policy.prob(next_qvalues, action, t.next_mask) * next_qvalues[action];
+            }
+            self.gamma * expected
+        };
         let qvalues = &mut self.qtable[(t.obs, t.action)];
         *qvalues += self.alpha * (target - *qvalues);
     }
