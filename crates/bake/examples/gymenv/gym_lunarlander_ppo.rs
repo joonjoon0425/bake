@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bake_common::LinearSchedular;
+use bake_common::LinearScheduler;
 use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::*, network::MlpActorCriticNet, types::{Batchable, Logger, Tape}, utils::gae};
 use burn::{Tensor, config::Config, nn::activation::ActivationConfig::*, tensor::{Device, Int, TensorData}};
 use rand::{SeedableRng, seq::SliceRandom};
@@ -30,7 +30,7 @@ pub fn main() {
     let mut logger = Logger::default();
     let mut rng = rand::rngs::StdRng::seed_from_u64(config.seed);
     let mut c_e = config.coeff_entropy;
-    let mut c_e_sch = LinearSchedular::new(c_e as f64, 0.008, (config.total_steps as f32 * (3. / 4.)) as usize);
+    let mut c_e_sch = LinearScheduler::new(c_e as f64, 0.008, (config.total_steps as f32 * (3. / 4.)) as usize);
 
     for count in 0..=config.total_steps {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());

@@ -1,5 +1,5 @@
 //! A Schedular for various scalar values
-pub struct LinearSchedular {
+pub struct LinearScheduler {
     start: f64,
     steps: usize,
 
@@ -7,7 +7,7 @@ pub struct LinearSchedular {
     slope: f64,
 }
 
-impl LinearSchedular {
+impl LinearScheduler {
     pub fn new(start: f64, end: f64, steps: usize) -> Self {
         Self {
             start,
@@ -30,14 +30,14 @@ impl LinearSchedular {
 
 #[cfg(test)]
 mod tests {
-    use crate::LinearSchedular;
+    use crate::LinearScheduler;
 
     #[test]
     pub fn check_linear_schduling() {
         let s = 0.;
         let e = 1.;
         let total_steps = 10000;
-        let mut sch = LinearSchedular::new(s, e, total_steps);
+        let mut sch = LinearScheduler::new(s, e, total_steps);
         let mut observed = 0.;
         for _ in 0..total_steps / 2 { observed = sch.step(); }
         assert!((observed - 0.5).abs() < 5e-3, "got {observed}, expected: 0.5");

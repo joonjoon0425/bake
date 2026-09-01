@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
-use bake_common::LinearSchedular;
-use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::ConstrainedQNet, buffer::PriortizedExperienceReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, network::MlpQNet, types::{Logger, Tape}};
+use bake_common::LinearScheduler;
+use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::ConstrainedQNet, buffer::PrioritizedExperienceReplayBuffer, env::CartPole, exploration::{EpsGreedy, Exploration}, network::MlpQNet, types::{Logger, Tape}};
 use burn::{module::Module, nn::{activation::ActivationConfig::Relu}, optim::AdamConfig, tensor::Device};
 
 pub fn main() {
@@ -18,7 +18,7 @@ pub fn main() {
 
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
     let beta0 = 0.4;
-    let mut buffer = PriortizedExperienceReplayBuffer::new(seed, 10000, 0.3, beta0, 1.0.into());
+    let mut buffer = PrioritizedExperienceReplayBuffer::new(seed, 10000, 0.3, beta0, 1.0.into());
     let mut tape = Tape::new(&mut env);
     let mut logger = Logger::default();
 
@@ -32,8 +32,8 @@ pub fn main() {
     let mut ep_rewards = VecDeque::with_capacity(window);
     let mut ep_reward = 0f32;
 
-    let mut beta_sch = LinearSchedular::new(beta0, 1.0, total_steps);
-    let mut eps_sch = LinearSchedular::new(1.0, 0.05, total_steps / 4);
+    let mut beta_sch = LinearScheduler::new(beta0, 1.0, total_steps);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps / 4);
 
     for count in 0..=total_steps {
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());

@@ -1,2 +1,2 @@
-pub mod schedular;
-pub use schedular::*;
+pub mod scheduler;
+pub use scheduler::*;

@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bake_common::LinearSchedular;
+use bake_common::LinearScheduler;
 use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::ConstrainedQNet, buffer::ReplayBuffer, env::*, exploration::*, network::MlpQNet, types::{Logger, Tape}};
 use burn::{module::Module, nn::{activation::ActivationConfig::Relu}, optim::AdamConfig, tensor::Device};
 
@@ -30,7 +30,7 @@ pub fn main() {
     let mut ep_rewards = VecDeque::with_capacity(window);
     let mut ep_reward = 0f32;
 
-    let mut eps_sch = LinearSchedular::new(1.0, 0.05, total_steps / 2);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps / 2);
 
     for count in 0..=total_steps {
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());

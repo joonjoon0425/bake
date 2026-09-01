@@ -4,7 +4,7 @@ use burn::Tensor;
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
 use crate::types::{Batch, Batchable};
-pub struct PriortizedExperienceReplayBuffer<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable = ()> {
+pub struct PrioritizedExperienceReplayBuffer<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable = ()> {
     capacity: usize,
     head: usize,
 
@@ -18,7 +18,7 @@ pub struct PriortizedExperienceReplayBuffer<Obs: Batchable, Action: Batchable, C
     max_priority: f64,
 }
 
-impl<Obs, Action, Constraint, Extra> PriortizedExperienceReplayBuffer<Obs, Action, Constraint, Extra>
+impl<Obs, Action, Constraint, Extra> PrioritizedExperienceReplayBuffer<Obs, Action, Constraint, Extra>
 where
     Obs: Batchable,
     Action: Batchable,

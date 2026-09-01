@@ -18,7 +18,7 @@ pub fn argmaxes<M: Mask>(qvalues: &[f32], mask: M) -> Vec<bool> {
             candidates.fill(false);
             candidates[i] = true;
             qmax = qvalues[i];
-        } else if qvalues[i] - qmax < 1e-10 {
+        } else if (qvalues[i] - qmax).abs() < 1e-10 {
             candidates[i] = true;
         }
     }

@@ -54,7 +54,7 @@ impl QTable {
                 candidates.fill(false);
                 candidates[i] = true;
                 qmax = qvalues[i];
-            } else if qvalues[i] - qmax < 1e-10 {
+            } else if (qvalues[i] - qmax).abs() < 1e-10 {
                 candidates[i] = true;
             }
         }
