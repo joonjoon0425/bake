@@ -1,11 +1,53 @@
 # BAKE
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 
-Reinforcement learning framework in rust, built from scratch on [Burn](https://burn.dev/).
-Bake was built to study reinforcement learning algorithms.
+BAKE is a reinforcement learning framework written from scratch in Rust, using [Burn](https://burn.dev/).
+It was created to study reinforcement learning algorithms and their
+implementation details.
 
-## Results
-TODO: Add Experiments Results
+## Training Sanity Checks
+The following experiments verify that the implemented algorithms learn reliably.
+#### DQN variants on CartPole-v1
+![Learning curves of DQN variants on native Rust CartPole-v1](docs/dqn_plots.png)
+Summary
+| algorithm    | steps to 475   | solved seeds   |   final return |   maximum q mean |
+|:-------------|:---------------|:---------------|---------------:|-----------------:|
+| DQN          | 270k           | 5 / 5          |          493.8 |            244.9 |
+| Double DQN   | 230k           | 5 / 5          |          489.8 |            102.2 |
+| DQN with PER | 215k           | 5 / 5          |          497.3 |            103.9 |
+| Dueling DQN  | 215k           | 5 / 5          |          500   |            105.8 |
+| NoisyNet-DQN | 330k           | 5 / 5          |          490.7 |            106.3 |
+
+Hyperparameters
+|$\gamma$|$\varepsilon$|loss function|optimizer|lr|warmup|update frequency|sync frequency|batch size|buffer capacity|$\alpha$ (for PER)|$\beta$ (for PER)|
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|0.99|1.0 -> 0.05, linearly, from step 0 to 250000|MSE|Adam|2.5e-4|10000|10|500|128|10000|0.3|0.4 -> 1.0|
+
+#### PPO on LunarLander-v3
+![Learning curve of PPO on Gymnasium LunarLander-v3](docs/ppo_plots.png)
+
+Hyperparameters
+|$\gamma$|$\lambda$|clip $\epsilon$|loss function|entropy coefficient|rollout size|minibatch size|epoch|optimizer|
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|0.99|0.95|0.1|Huber loss with $\delta$=10.0|0.05 -> 0.008 linearly, from step 0 to 1250000|2048|256|10|Adam|
+
+For more information, see [PPO configuration file](crates/bake/configs/gymenv/ppo_lunarlander.json) and [PPO code](crates/bake/examples/gymenv/gym_lunarlander_ppo.rs)
+
+#### Reproduction
+##### DQN Variants
+Training Examples
+- [DQN](crates/bake/examples/deep/dqn.rs)
+- [Double DQN](crates/bake/examples/deep/ddqn.rs)
+- [DQN with PER](crates/bake/examples/deep/dqn_per.rs)
+- [Dueling DQN](crates/bake/examples/deep/dueling_dqn.rs)
+- [NoisyNet-DQN](crates/bake/examples/deep/noisy_dqn.rs)
+
+Plotting Script: [script](docs/dqn-algs-compare.py)
+##### PPO
+Configuration: [configuration](crates/bake/configs/gymenv/ppo_lunarlander.json)  
+Training Example: [example](crates/bake/examples/gymenv/gym_lunarlander_ppo.rs)  
+Plotting Script: [script](docs/lunarlander_ppo.py)
+
 ## Tabular
 ### Algorithms
 |Algorithm|Implementation|
@@ -40,14 +82,14 @@ TODO: Add Experiments Results
 |Extension|Implementation|
 |:---:|:---:|
 |Dueling|with `DuelingQNet`|
-|Priortized Experience Replay|with `PriortizedExperienceReplayBuffer`|
+|Priortized Experience Replay|with `PrioritizedExperienceReplayBuffer`|
 |NoisyNet|with `NoisyLinear`|
 
 </details>
 
 ### Environments
-- Native `CartPole` referenced from [Gymnasium](https://gymnasium.farama.org)
-- Gymnasium Environment Bindings with PyO3. More environments will be binded later.
+- Native `CartPole` modeled after [Gymnasium](https://gymnasium.farama.org)'s CartPole-v1
+- Gymnasium Environment Bindings with PyO3. More environments will be supported later.
     - `GymnasiumEnv<CartPoleInfo>`: CartPole-v1
     - `GymnasiumEnv<MountainCarInfo>`: MountainCar-v0
     - `GymnasiumEnv<AcrobotInfo>`: Acrobot-v1

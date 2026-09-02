@@ -7,12 +7,14 @@ use rand::{SeedableRng, seq::SliceRandom};
 
 
 pub fn main() {
-    let path = std::env::args().nth(1).unwrap_or_else(|| "crates/bake/configs/gymenv/ppo_lunarlander.json".to_string());
+    println!("count,ep_reward_average,ep_step_average");
+    let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
+    let path = std::env::args().nth(2).unwrap_or_else(|| "crates/bake/configs/gymenv/ppo_lunarlander.json".to_string());
     let config = PpoConfig::load(&path).expect("failed to load config");
 
     let device = Device::default().autodiff();
-    device.seed(config.seed);
-    let mut env = GymnasiumEnv::<LunarLanderInfo>::new(config.seed, &device, false);
+    device.seed(seed);
+    let mut env = GymnasiumEnv::<LunarLanderInfo>::new(seed, &device, false);
     let mut actor_critic = CategoricalActorCritic::new(MlpActorCriticNet::new(&[env.obs_dim(), 64, 64, env.n_actions()], Tanh, &device));
     let (lr_a, lr_c, mut opt_a, mut opt_c) = match &config.encoder_config {
         ActorCriticEncoderConfig::Separated { lr_actor, opt_actor_config, lr_critic, opt_critic_config } => {
@@ -27,10 +29,12 @@ pub fn main() {
     let window = 100;
     let mut ep_rewards = VecDeque::with_capacity(window);
     let mut ep_reward = 0f32;
+    let mut ep_steps = VecDeque::with_capacity(window);
+    let mut ep_step = 0usize;
     let mut logger = Logger::default();
-    let mut rng = rand::rngs::StdRng::seed_from_u64(config.seed);
+    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
     let mut c_e = config.coeff_entropy;
-    let mut c_e_sch = LinearScheduler::new(c_e as f64, 0.008, (config.total_steps as f32 * (3. / 4.)) as usize);
+    let mut c_e_sch = LinearScheduler::new(c_e as f64, 0.008, (config.total_steps as f32 * (9. / 16.)) as usize);
 
     for count in 0..=config.total_steps {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
@@ -39,6 +43,7 @@ pub fn main() {
 
         buffer.push(t);
         ep_reward += tape.reward;
+        ep_step += 1;
 
         if buffer.len() >= config.rollout_size {
             let mut batch = buffer.pop();
@@ -58,6 +63,7 @@ pub fn main() {
             }
             
         }
+
         if tape.done() {
             tape.reset(&mut env);
             if ep_rewards.len() >= window {
@@ -65,19 +71,21 @@ pub fn main() {
             }
             ep_rewards.push_back(ep_reward);
             ep_reward = 0f32;
+            ep_steps.push_back(ep_step);
+            ep_step = 0usize;
         }
-        
 
         if count % config.log_interval == 0 {
-            let reward_avg = ep_rewards.iter().sum::<f32>() / ep_rewards.len() as f32;
+            let ep_reward_avgerage = if ep_rewards.len() != 0 { ep_rewards.iter().sum::<f32>() / ep_rewards.len() as f32 } else { 0f32 };
+            let ep_step_average = if ep_steps.len() != 0 { ep_steps.iter().sum::<usize>() / ep_steps.len() } else { 0usize };
             let mean = logger.mean();
             let actor_loss = mean.get("actor_loss").unwrap_or(&0f32);
             let critic_loss = mean.get("critic_loss").unwrap_or(&0f32);
             let entropy = mean.get("entropy").unwrap_or(&0f32);
             let approx_kl = mean.get("approx_kl").unwrap_or(&0f32);
             let clip_ratio = mean.get("clip_ratio").unwrap_or(&0f32);
-            // println!("{i},{total_steps},{step},{entropy},{approx_kl},{clip_ratio}");
-            eprintln!("count: {count}, reward_avg: {reward_avg}, actor_loss: {actor_loss}, critic_loss: {critic_loss}, entropy: {entropy}, approx KL: {approx_kl}, clip ratio: {clip_ratio}, c_e: {c_e}");
+            println!("{count},{ep_reward_avgerage},{ep_step_average}");
+            eprintln!("count: {count}, reward_avg: {ep_reward_avgerage}, step_average: {ep_step_average}, actor_loss: {actor_loss}, critic_loss: {critic_loss}, entropy: {entropy}, approx KL: {approx_kl}, clip ratio: {clip_ratio}, c_e: {c_e}");
             
             logger.clear();
         }
@@ -86,7 +94,7 @@ pub fn main() {
     }
 
     // Evaluation
-    let mut env = GymnasiumEnv::<LunarLanderInfo>::new(config.seed, &device, true);
+    let mut env = GymnasiumEnv::<LunarLanderInfo>::new(seed, &device, true);
     for _ in 0..5 {
         let (mut obs, mut constraint) = env.reset();
         loop {

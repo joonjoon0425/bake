@@ -27,7 +27,7 @@ pub fn main() {
     let sync_freq = 500;
     let batch_size = 128;
 
-    let window = 20;
+    let window = 100;
     let mut ep_rewards = VecDeque::with_capacity(window);
     let mut ep_reward = 0f32;
 
