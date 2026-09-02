@@ -9,14 +9,18 @@ repository.workspace = true
 bake-tabular = { workspace = true, optional = true }
 bake-deep = { workspace = true, optional = true }
 bake-common = { workspace = true }
+pyo3 = { version = "0.29.2", optional = true }
 
 rand.workspace = true
-burn.workspace = true
+burn = { workspace = true, optional = true }
+
+[build-dependencies]
+pyo3-build-config = "0.29.2"
 
 [features]
 default = ["tabular", "deep"]
 tabular = ["dep:bake-tabular"]
-deep = ["dep:bake-deep"]
+deep = ["dep:bake-deep", "dep:pyo3", "dep:burn"]
 
 [[example]]
 name = "sarsa"

@@ -64,6 +64,9 @@ git clone https://github.com/joonjoon0425/bake.git
 cd bake
 cargo run --release --example qlearning
 cargo run --release --example ppo
+uv sync
+# activate your virtual environment
+source .venv/bin/activate
 cargo run --release --example gym_lunarlander_ppo
 ```
 <details>
@@ -106,35 +109,6 @@ cargo run --release --example gym_lunarlander_ppo
 </details>
 
 Example codes can be found [here](crates/bake/examples/).
-
-<details>
-<summary>Gymnasium environments setting</summary>
-
-For gymnasium environments, follow the instructions below:
-```bash
-git clone https://github.com/joonjoon0425/bake.git
-cd bake
-uv venv --python <3.12 or 3.13>
-uv sync
-```
-
-- Fix the .cargo/config.toml so that PyO3 can see the python 3.12 or 3.13 library
-```toml
-[env]
-PYO3_PYTHON = { value = ".venv/bin/python", relative = true, force = true }
-[build]
-rustflags = [
-  "-C", "link-arg=-Wl,-rpath,<path-to-cpython3.12-or-3.13-lib>",
-]
-```
-- now we can run the example
-```bash
-source .venv/bin/activate
-cargo run --release --example <gymenv-example-name>
-```
-
-- This is required since the Box2D of Gymnasium does not support Python 3.14 and PyO3 uses system's python. For more information, see https://github.com/astral-sh/uv/issues/11006.
-</details>
 
 ## License
 

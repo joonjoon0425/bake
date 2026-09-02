@@ -1,6 +1,2 @@
 [env]
 PYO3_PYTHON = { value = ".venv/bin/python", relative = true, force = true }
-[build]
-rustflags = [
-  "-C", "link-arg=-Wl,-rpath,/home/hyoung-joon-kim/.local/share/uv/python/cpython-3.13.13-linux-x86_64-gnu/lib",
-]

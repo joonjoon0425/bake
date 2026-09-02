@@ -11,3 +11,6 @@ numpy = "0.29"
 burn.workspace = true
 rand.workspace = true
 bake-macros = { path = "../bake-macros" }
+
+[build-dependencies]
+pyo3-build-config = "0.29.2"
