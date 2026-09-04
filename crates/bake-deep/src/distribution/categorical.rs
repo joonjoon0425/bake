@@ -9,7 +9,7 @@ pub struct Categorical {
 }
 
 impl Categorical {
-    /// create a new Categorical distrinution
+    /// create a new Categorical distribution
     pub fn new(params: <Self as Distribution>::Params, constraint: impl DiscreteConstraint) -> Self {
         let logits = constraint.apply(params, -1e9);
         let log_probs = log_softmax(logits.clone(), 1);
