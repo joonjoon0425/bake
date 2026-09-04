@@ -100,6 +100,122 @@ Plotting Script: [script](docs/lunarlander_ppo.py)
 - Boltzmann
 - NoisyNet
 
+## Quick Start
+Bake gives you all the components to run the training loops. What you only have to do is to implement the network structure and training loop.
+```rust
+use bake::deep::prelude::*;
+use bake::deep::algorithm::Dqn;
+use bake::deep::env::{GymnasiumEnv, LunarLanderInfo};
+use bake::deep::approximator::wrapper::{ConstrainedQNet};
+use bake::deep:scheduler::LinerScheduler;
+use burn::prelude::*;
+// your custom network structure
+#[derive(Module, Debug)]
+pub struct MyQNet { /* ... */ }
+
+impl MyQNet { /* ... */ }
+
+impl QNet for MyQNet {
+    type Obs = /* observation type which your QNet can take */
+
+    fn forward(&self, obs: Self::Obs) -> Tensor<2> {
+        /* your forward logic */
+    }
+}
+
+pub fn main() {
+    let env = GymnasiumEnv::<LunarLanderInfo>::new(/* seed */);
+    // your custom network structure is wrapped with libraries wrapper
+    let online = ConstrainedQNet::new(MyQNet::new( /* ... */ ));
+    let target = online.clone();
+    // Experience replay buffer for DQN
+    let buffer = ReplayBuffer::new(/* seed */, /* capacity */);
+    // A helper for training loop. Creates transition for you.
+    let tape = Tape::new(&mut env);
+    // behavior policy for DQN
+    let mut exploration = EpsGreedy::new(/* seed */, 1.0f32);
+    // configuration of the algorithm
+    let config = Dqn::new(0.99, ValueLoss::MseLoss);
+    // hyperparameter schedular
+    let eps_sch = LinearScheduler::new(/* start value*/, /* end value */, /* total steps */);
+    // logger for updates
+    let logger = Logger::new();
+
+    // training loop
+    for count in 0..500000 {
+        let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
+        let transition = tape.step(&mut env, action);
+        buffer.push(transition);
+
+        if /* Warmup, Update frequency */ && let Some(batch) = buffer.sample(batch_size) {
+            // get the loss
+            let loss = Dqn::loss(&config, &online, &target, batch);
+            // record the loss information
+            logger.record(&loss);
+            // update the value
+            online = Dqn::update(online, loss, lr, &mut opt);
+        }
+
+        if /* Sync online and target network */ {
+            let record = online.clone().into_record();
+            target = target.load_record(record);
+        }
+
+        if tape.done() {
+            // reset the environment and tape
+            tape.reset(&mut env);
+        }
+
+        if count % /* logging frequency */ {
+            // get the total mean of recorded logs
+            let mean = logger.mean();
+            // get the log and print it
+            let td_error = mean.get("td_error").unwrap_or(&0f32);
+            print("td error: {td_error}");
+            // reset the logger
+            logger.clear();
+        }
+
+        *exploration.eps_mut() = eps_sch.step();
+    }
+}
+```
+For tabular algorithms, you only have to implement your own training loop.
+
+```rust
+use bake::tabular::agent::*;
+use bake::tabular::env::*;
+use bake_tabular::policy::EpsGreedy;
+use bake_tabular::types::Tape;
+
+fn main() {
+    /* grid world environment */
+    let mut env = GridWorld::new();
+    /* Q-Learning algorithm */
+    let mut agent = QLearningAgent::new(env.n_states(), env.n_actions(), 0.3, 0.99);
+    /* behavior policy */
+    let mut policy = EpsGreedy::new(2,1f32);
+    let mut tape = Tape::new(&mut env);
+
+    for i in 0..=100000 {
+        let mut episode_reward = 0f32;
+        let mut n_steps = 0usize;
+        tape.reset(&mut env);
+        loop {
+            let action = agent.action(&mut policy, tape.obs, tape.mask);
+            let t = tape.step(&mut env, action);
+            agent.update(t.clone());
+            
+            episode_reward += t.reward;
+            n_steps += 1;
+            if t.terminated || t.truncated { break; }
+        }
+        *policy.eps_mut() *= 0.9996;
+        if i % 10000 == 0 { println!("Episode {i}, Steps: {n_steps}, Reward: {}, Eps: {}", episode_reward, policy.eps()) }
+    }
+}
+```
+
 ## Examples
 ```bash
 git clone https://github.com/joonjoon0425/bake.git

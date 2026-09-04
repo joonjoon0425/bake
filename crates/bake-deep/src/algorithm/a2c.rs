@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use burn::{Tensor, config::Config, optim::{GradientsParams, ModuleOptimizer}};
 
-use crate::{algorithm::dqn::ValueLoss, approximator::ActorCritic, distribution::Distribution, network::EncoderType::{Separated, Shared}, types::{Batch, Recordable}, utils::gae};
+use crate::{approximator::ActorCritic, distribution::Distribution, network::EncoderType::{Separated, Shared}, types::{Batch, Recordable, ValueLoss}, utils::{gae}};
 
 #[derive(Debug, Config)]
 pub struct A2C {

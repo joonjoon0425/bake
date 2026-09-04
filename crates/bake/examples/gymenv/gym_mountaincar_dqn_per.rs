@@ -1,7 +1,13 @@
 use std::collections::VecDeque;
 
-use bake_common::LinearScheduler;
-use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::*, buffer::*, env::*, exploration::*, network::MlpQNet, types::{Logger, Tape}};
+use bake::deep::prelude::*;
+use bake::deep::env::{GymnasiumEnv, MountainCarInfo};
+use bake::deep::approximator::wrapper::ConstrainedQNet;
+use bake::deep::algorithm::Dqn;
+use bake::deep::buffer::PrioritizedExperienceReplayBuffer;
+use bake::deep::exploration::{EpsGreedy, Greedy};
+use bake::deep::network::MlpQNet;
+use bake::deep::scheduler::LinearScheduler;
 use burn::{module::Module, nn::{activation::ActivationConfig::Relu}, optim::AdamConfig, tensor::Device};
 
 pub fn main() {

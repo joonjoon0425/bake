@@ -1,6 +1,12 @@
 use std::collections::VecDeque;
 
-use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::ConstrainedQNet, buffer::ReplayBuffer, env::CartPole, exploration::{Exploration, Greedy, NoiseReset}, network::NoisyMlpQNet, types::{Logger, Tape}};
+use bake::deep::prelude::*;
+use bake::deep::env::CartPole;
+use bake::deep::approximator::wrapper::ConstrainedQNet;
+use bake::deep::algorithm::Dqn;
+use bake::deep::buffer::ReplayBuffer;
+use bake::deep::exploration::Greedy;
+use bake::deep::network::NoisyMlpQNet;
 use burn::{module::Module, nn::{activation::ActivationConfig::Relu}, optim::AdamConfig, tensor::Device};
 
 pub fn main() {

@@ -13,6 +13,5 @@ repository = "https://github.com/joonjoon0425/bake"
 bake-tabular = { path = "crates/bake-tabular" }
 bake-deep = { path = "crates/bake-deep" }
 bake-macros = { path = "crates/bake-macros" }
-bake-common = { path = "crates/bake-common" }
 burn = "0.22.0-pre.3"
 rand = "0.10.2"

@@ -5,9 +5,8 @@ use burn::config::Config;
 use burn::optim::{GradientsParams, ModuleOptimizer};
 use burn::{Tensor, tensor::Int};
 
-use crate::algorithm::dqn::ValueLoss;
 use crate::network::EncoderType::{Separated, Shared};
-use crate::types::Recordable;
+use crate::types::{Recordable, ValueLoss};
 use crate::{distribution::Distribution, approximator::ActorCritic, types::{Batch, Batchable}};
 
 #[derive(Debug, Config)]

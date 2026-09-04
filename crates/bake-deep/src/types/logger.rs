@@ -13,6 +13,10 @@ pub trait Recordable {
 }
 
 impl Logger {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn record(&mut self, loss: &impl Recordable) {
         self.logs.push(loss.to_record());
     }

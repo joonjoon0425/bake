@@ -1,6 +1,13 @@
 use std::collections::VecDeque;
 
-use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, env::CartPole, network::{ActorCriticNet, EncoderType::Separated, MlpActorCriticNet}, types::{Logger, Tape}};
+use bake::deep::prelude::*;
+use bake::deep::env::CartPole;
+use bake::deep::approximator::wrapper::CategoricalActorCritic;
+use bake::deep::algorithm::A2C;
+use bake::deep::buffer::RolloutBuffer;
+use bake::deep::network::MlpActorCriticNet;
+use bake::deep::config::{A2CConfig, ActorCriticEncoderConfig};
+use bake_deep::network::EncoderType;
 use burn::{Tensor, config::Config, module::Module, nn::activation::ActivationConfig::Relu, tensor::Device};
 
 
@@ -91,6 +98,6 @@ impl<Ac: ActorCriticNet<Obs = Tensor<2>, Params = Tensor<2>>> ActorCriticNet for
     }
 
     fn encoder_type(&self) -> bake_deep::network::EncoderType {
-        Separated
+        EncoderType::Separated
     }
 }

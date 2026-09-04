@@ -1,6 +1,12 @@
 use std::collections::VecDeque;
 
-use bake_deep::{algorithm::*, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{A2CConfig, ActorCriticEncoderConfig}, distribution::Distribution, env::*, network::MlpActorCriticNet, types::{Logger, Tape}};
+use bake::deep::prelude::*;
+use bake::deep::config::{A2CConfig, ActorCriticEncoderConfig};
+use bake::deep::env::{GymnasiumEnv, AcrobotInfo};
+use bake::deep::approximator::wrapper::CategoricalActorCritic;
+use bake::deep::algorithm::A2C;
+use bake::deep::buffer::RolloutBuffer;
+use bake::deep::network::MlpActorCriticNet;
 use burn::{config::Config, nn::activation::ActivationConfig::*, tensor::Device};
 
 pub fn main() {

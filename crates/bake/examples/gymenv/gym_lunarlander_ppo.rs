@@ -1,7 +1,14 @@
 use std::collections::VecDeque;
 
-use bake_common::LinearScheduler;
-use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::*, network::MlpActorCriticNet, types::{Batchable, Logger, Tape}, utils::gae};
+use bake::deep::prelude::*;
+use bake::deep::env::{GymnasiumEnv, LunarLanderInfo};
+use bake::deep::approximator::wrapper::CategoricalActorCritic;
+use bake::deep::algorithm::{Ppo, PpoExtra};
+use bake::deep::buffer::RolloutBuffer;
+use bake::deep::network::MlpActorCriticNet;
+use bake::deep::scheduler::LinearScheduler;
+use bake::deep::utils::gae;
+use bake::deep::config::{PpoConfig, ActorCriticEncoderConfig};
 use burn::{Tensor, config::Config, nn::activation::ActivationConfig::*, tensor::{Device, Int, TensorData}};
 use rand::{SeedableRng, seq::SliceRandom};
 

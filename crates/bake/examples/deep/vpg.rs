@@ -1,6 +1,12 @@
 use std::collections::VecDeque;
 
-use bake_deep::{algorithm::Vpg, approximator::{CategoricalPolicy, Policy}, buffer::RolloutBuffer, config::VpgConfig, env::CartPole, network::MlpPolicyNet, types::{Logger, Tape}};
+use bake::deep::prelude::*;
+use bake::deep::algorithm::Vpg;
+use bake::deep::env::CartPole;
+use bake::deep::approximator::wrapper::CategoricalPolicy;
+use bake::deep::buffer::RolloutBuffer;
+use bake::deep::config::VpgConfig;
+use bake::deep::network::MlpPolicyNet;
 use burn::{config::Config, nn::activation::ActivationConfig::Relu, tensor::Device};
 
 pub fn main() {

@@ -2,8 +2,8 @@
 
 use std::collections::HashMap;
 
-use burn::{Tensor, config::Config, nn::loss::{HuberLossConfig, MseLoss, Reduction}, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
-use crate::{approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable, Recordable}};
+use burn::{Tensor, config::Config, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
+use crate::{approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable, Recordable, ValueLoss}};
 
 #[derive(Debug, Config)]
 pub struct Dqn {
@@ -52,7 +52,7 @@ impl Dqn {
 
         let td_error = (targets.clone() - qvalues.clone()).detach();
         let qmean = qvalues.clone().detach().mean();
-        let loss = config.value_loss.forward_per(qvalues, targets, batch.extras);
+        let loss = (config.value_loss.forward_no_reduction(qvalues, targets) * batch.extras).mean();
 
         DqnLoss { loss, td_error, qmean, }
     }
@@ -71,41 +71,5 @@ impl Recordable for DqnLoss {
         record.insert("td_error", self.td_error.clone().detach());
         record.insert("qmean", self.qmean.clone().detach());
         record
-    }
-}
-
-#[derive(Debug, Config)]
-pub enum ValueLoss {
-    MseLoss,
-    HuberLoss{ delta: f32 },
-}
-
-impl ValueLoss {
-    pub fn forward<const D: usize>(&self, logits: Tensor<D>, targets: Tensor<D>) -> Tensor<1> {
-        match self {
-            ValueLoss::MseLoss => {
-                MseLoss::new().forward(logits, targets, Reduction::Mean)
-            },
-            ValueLoss::HuberLoss { delta } => {
-                HuberLossConfig::new(*delta).init().forward(logits, targets, Reduction::Mean)
-            }
-        }
-    }
-
-    pub fn forward_per(&self, logits: Tensor<1>, targets: Tensor<1>, is_weights: Tensor<1>) -> Tensor<1> {
-        match self {
-            ValueLoss::MseLoss => {
-                let mse_loss = MseLoss::new();
-                let raw = mse_loss.forward_no_reduction(logits, targets);
-                let raw = raw * is_weights;
-                raw.mean()
-            },
-            ValueLoss::HuberLoss { delta } => {
-                let huber_loss = HuberLossConfig::new(*delta).init();
-                let raw = huber_loss.forward_no_reduction(logits, targets);
-                let raw = raw * is_weights;
-                raw.mean()
-            }
-        }
     }
 }

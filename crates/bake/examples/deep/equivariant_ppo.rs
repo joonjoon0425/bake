@@ -1,6 +1,14 @@
 use std::collections::VecDeque;
 
-use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::CartPole, network::{ActorCriticNet, EncoderType::Separated, MlpActorCriticNet}, types::{Batchable, Logger, Tape}, utils::gae};
+use bake::deep::prelude::*;
+use bake::deep::env::CartPole;
+use bake::deep::approximator::wrapper::CategoricalActorCritic;
+use bake::deep::algorithm::{Ppo, PpoExtra};
+use bake::deep::buffer::RolloutBuffer;
+use bake::deep::network::MlpActorCriticNet;
+use bake::deep::config::{PpoConfig, ActorCriticEncoderConfig};
+use bake::deep::network::EncoderType;
+use bake::deep::utils::gae;
 use burn::{Tensor, config::Config, module::Module, nn::activation::ActivationConfig::Relu, tensor::{Device, Int, TensorData}};
 use rand::{SeedableRng, seq::SliceRandom};
 
@@ -110,6 +118,6 @@ impl<Ac: ActorCriticNet<Obs = Tensor<2>, Params = Tensor<2>>> ActorCriticNet for
     }
 
     fn encoder_type(&self) -> bake_deep::network::EncoderType {
-        Separated
+        EncoderType::Separated
     }
 }

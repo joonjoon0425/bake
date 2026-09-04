@@ -1,7 +1,14 @@
 use std::collections::VecDeque;
 
-use bake_deep::{algorithm::{Ppo, PpoExtra}, approximator::{ActorCritic, CategoricalActorCritic}, buffer::RolloutBuffer, config::{ActorCriticEncoderConfig, PpoConfig}, distribution::Distribution, env::CartPole, network::MlpActorCriticNet, types::{Batchable, Logger, Tape}, utils::gae};
-use burn::{Tensor, config::Config, nn::activation::ActivationConfig::Relu, tensor::{Device, Int, TensorData}};
+use bake::deep::prelude::*;
+use bake::deep::env::CartPole;
+use bake::deep::approximator::wrapper::CategoricalActorCritic;
+use bake::deep::algorithm::{Ppo, PpoExtra};
+use bake::deep::buffer::RolloutBuffer;
+use bake::deep::network::MlpActorCriticNet;
+use bake::deep::config::{PpoConfig, ActorCriticEncoderConfig};
+use bake::deep::utils::gae;
+use burn::{prelude::*, nn::activation::ActivationConfig::Relu};
 use rand::{SeedableRng, seq::SliceRandom};
 
 

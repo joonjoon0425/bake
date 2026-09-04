@@ -1,7 +1,13 @@
 use std::collections::VecDeque;
 
-use bake_common::LinearScheduler;
-use bake_deep::{algorithm::{Dqn, dqn::ValueLoss}, approximator::*, buffer::*, env::*, exploration::*, network::MlpQNet, types::{Logger, Tape}};
+use bake::deep::prelude::*;
+use bake::deep::env::{GymnasiumEnv, LunarLanderInfo};
+use bake::deep::approximator::wrapper::ConstrainedQNet;
+use bake::deep::algorithm::Dqn;
+use bake::deep::buffer::PrioritizedExperienceReplayBuffer;
+use bake::deep::exploration::{EpsGreedy, Greedy};
+use bake::deep::network::MlpQNet;
+use bake::deep::scheduler::LinearScheduler;
 use burn::{module::Module, nn::{activation::ActivationConfig::Relu}, optim::AdamConfig, tensor::Device};
 
 pub fn main() {
@@ -17,7 +23,7 @@ pub fn main() {
 
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
     let beta0 = 0.4;
-    let mut buffer = PrioritizedExperienceReplayBuffer::new(seed, 10000, 0.6, beta0, None);
+    let mut buffer = PrioritizedExperienceReplayBuffer::new(seed, 50000, 0.6, beta0, Some(1.0));
     let mut tape = Tape::new(&mut env);
     let mut logger = Logger::default();
 

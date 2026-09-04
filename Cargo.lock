@@ -315,7 +315,6 @@ dependencies = [
 name = "bake"
 version = "0.2.4"
 dependencies = [
- "bake-common",
  "bake-deep",
  "bake-tabular",
  "burn",
@@ -323,10 +322,6 @@ dependencies = [
  "pyo3-build-config",
  "rand 0.10.2",
 ]
-
-[[package]]
-name = "bake-common"
-version = "0.2.4"
 
 [[package]]
 name = "bake-deep"

@@ -11,3 +11,6 @@ pub use tape::*;
 
 pub mod logger;
 pub use logger::*;
+
+pub mod value_loss;
+pub use value_loss::*;

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use burn::{Tensor, config::Config, optim::{GradientsParams, ModuleOptimizer}, tensor::Int};
 
-use crate::{algorithm::dqn::ValueLoss, approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable, Recordable}};
+use crate::{approximator::QFunction, constraint::DiscreteConstraint, types::{Batch, Batchable, Recordable, ValueLoss}};
 
 #[derive(Debug, Config)]
 pub struct DoubleDqn {
@@ -57,7 +57,7 @@ impl DoubleDqn {
 
         let td_error = (targets.clone() - qvalues.clone()).detach();
         let qmean = qvalues.clone().detach().mean();
-        let loss = config.value_loss.forward_per(qvalues, targets, batch.extras);
+        let loss = (config.value_loss.forward_no_reduction(qvalues, targets) * batch.extras).mean();
 
         DoubleDqnLoss { loss, td_error, qmean }
     }
