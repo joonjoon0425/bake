@@ -319,8 +319,6 @@ dependencies = [
  "bake-gym",
  "bake-tabular",
  "burn",
- "numpy",
- "pyo3",
  "rand 0.10.2",
 ]
 

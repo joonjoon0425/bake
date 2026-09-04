@@ -5,5 +5,5 @@ pub mod tabular { pub use bake_tabular::*; }
 pub mod deep { pub use bake_deep::*;}
 
 #[cfg(feature = "deep-gym")]
-pub use deep::*;
-pub use bake_gym::*;
+pub mod gym { pub use bake_gym::*; }
+

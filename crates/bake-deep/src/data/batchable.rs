@@ -3,8 +3,7 @@
 use core::ops::Range;
 
 use burn::{
-    Tensor,
-    tensor::{Bool, Int},
+    Tensor, tensor::{Bool, Int, Shape, Device},
 };
 
 use crate::constraint::{discrete_constraint::DiscreteMask, Unconstrained};
@@ -35,6 +34,12 @@ pub trait Batchable: std::fmt::Debug + Sized + Clone + Send + Sync + 'static {
     fn is_empty(&self) -> bool {
         self.len() == Some(0)
     }
+
+    /// assign in-place the given batch, starting from the given index of batch dimension (dim 0)
+    fn assign_inplace(&mut self, data: Self, index: usize);
+
+    /// make zeros with given capacity, and shape
+    fn zeros_capacity(capacity: usize, shape: Shape, device: &Device) -> Self;
 }
 
 // implementations
@@ -60,6 +65,16 @@ impl<const D: usize> Batchable for Tensor<D> {
     fn detach(self) -> Self {
         self.detach()
     }
+
+    fn assign_inplace(&mut self, data: Self, index: usize) {
+        let len = data.len().unwrap();
+        self.inplace(|a| a.slice_assign(index..index + len, data));
+    }
+
+    fn zeros_capacity(capacity: usize, mut shape: Shape, device: &Device) -> Self {
+        shape.insert(0, capacity);
+        Tensor::zeros(shape, device)
+    }
 }
 
 impl<const D: usize> Batchable for Tensor<D, Int> {
@@ -79,6 +94,16 @@ impl<const D: usize> Batchable for Tensor<D, Int> {
     fn slice(self, range: Range<usize>) -> Self {
         self.narrow(0, range.start, range.len())
     }
+
+    fn assign_inplace(&mut self, data: Self, index: usize) {
+        let len = data.len().unwrap();
+        self.inplace(|a| a.slice_assign(index..index + len, data));
+    }
+
+    fn zeros_capacity(capacity: usize, mut shape: Shape, device: &Device) -> Self {
+        shape.insert(0, capacity);
+        Tensor::zeros(shape, device)
+    }
 }
 
 impl<const D: usize> Batchable for Tensor<D, Bool> {
@@ -97,6 +122,16 @@ impl<const D: usize> Batchable for Tensor<D, Bool> {
 
     fn slice(self, range: Range<usize>) -> Self {
         self.narrow(0, range.start, range.len())
+    }
+
+    fn assign_inplace(&mut self, data: Self, index: usize) {
+        let len = data.len().unwrap();
+        self.inplace(|a| a.slice_assign(index..index + len, data));
+    }
+
+    fn zeros_capacity(capacity: usize, mut shape: Shape, device: &Device) -> Self {
+        shape.insert(0, capacity);
+        Tensor::zeros(shape, device)
     }
 }
 
@@ -118,6 +153,16 @@ impl<const D: usize> Batchable for DiscreteMask<D> {
     fn slice(self, range: Range<usize>) -> Self {
         DiscreteMask(self.0.narrow(0, range.start, range.len()))
     }
+
+    fn assign_inplace(&mut self, data: Self, index: usize) {
+        let len = data.len().unwrap();
+        self.0.inplace(|a| a.slice_assign(index..index + len, data.0));
+    }
+
+    fn zeros_capacity(capacity: usize, mut shape: Shape, device: &Device) -> Self {
+        shape.insert(0, capacity);
+        DiscreteMask(Tensor::zeros(shape, device))
+    }
 }
 
 impl Batchable for Unconstrained {
@@ -137,6 +182,10 @@ impl Batchable for Unconstrained {
     fn slice(self, _: Range<usize>) -> Self {
         Unconstrained
     }
+
+    fn assign_inplace(&mut self, _: Self, _: usize) {}
+
+    fn zeros_capacity(_: usize, _: Shape, _: &Device) -> Self { Unconstrained }
 }
 
 impl Batchable for () {
@@ -151,6 +200,10 @@ impl Batchable for () {
     fn select(self, _: Tensor<1, Int>) -> Self {}
 
     fn slice(self, _: Range<usize>) -> Self {}
+
+    fn assign_inplace(&mut self, _: Self, _: usize) {}
+
+    fn zeros_capacity(_: usize, _: Shape, _: &Device) -> Self {}
 }
 
 impl<T: Batchable> Batchable for Option<T> {
@@ -189,6 +242,8 @@ impl<T: Batchable> Batchable for Option<T> {
     fn detach(self) -> Self {
         self.map(Batchable::detach)
     }
+
+    
 }
 
 #[cfg(test)]

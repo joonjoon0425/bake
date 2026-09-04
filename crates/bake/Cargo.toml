@@ -12,12 +12,10 @@ bake-deep = { workspace = true, optional = true }
 bake-gym = { workspace = true, optional = true }
 burn = { workspace = true, optional = true }
 rand.workspace = true
-pyo3 = { workspace = true, optional = true }
-numpy = { workspace = true, optional = true }
 
 [features]
-default = ["tabular", "deep", "deep-gym", "full"]
+default = ["tabular", "deep"]
 tabular = ["dep:bake-tabular"]
 deep = ["dep:bake-deep", "dep:burn"]
-deep-gym = ["dep:bake-deep", "dep:burn", "dep:bake-gym", "dep:pyo3"]
-full = ["dep:bake-tabular", "dep:bake-deep", "dep:bake-gym", "dep:burn", "dep:pyo3"]
+deep-gym = ["deep", "dep:burn", "dep:bake-gym"]
+full = ["tabular", "deep-gym"]

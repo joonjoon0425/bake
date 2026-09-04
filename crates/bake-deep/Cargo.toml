@@ -9,4 +9,4 @@ repository.workspace = true
 [dependencies]
 burn.workspace = true
 rand.workspace = true
-bake-macros = { path = "../bake-macros" }
+bake-macros.workspace = true
