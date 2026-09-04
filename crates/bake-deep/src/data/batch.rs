@@ -2,7 +2,7 @@
 //! - contains s, a, r, s' and terminated, truncated, masks, extra
 
 use bake_macros::Batchable;
-use burn::{Tensor, tensor::Int};
+use burn::prelude::*;
 use crate::data::batchable::Batchable;
 /// A Batched transition struct
 #[derive(Debug, Clone, Batchable)]

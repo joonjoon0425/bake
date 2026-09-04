@@ -6,6 +6,7 @@
 /// All environments should return the obs with batch dimension, and receive action with batch dimension.
 /// The first principle of this framework is that everything owns a batch dimension.
 /// This is due to the fixed rank of burn's `Tensor`.
+/// Also, environments must produce the non-autodiff tensors.
 pub trait Environment {
     /// The observation type which environment produces
     type Obs;

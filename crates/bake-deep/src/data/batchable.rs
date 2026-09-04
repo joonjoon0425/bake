@@ -1,9 +1,10 @@
 //! A Batchable trait
 
 use core::ops::Range;
+use std::ops::IndexMut;
 
 use burn::{
-    Tensor, tensor::{Bool, Int, Shape, Device},
+    Tensor, tensor::{Bool, Int, Device},
 };
 
 use crate::constraint::{discrete_constraint::DiscreteMask, Unconstrained};
@@ -39,7 +40,10 @@ pub trait Batchable: std::fmt::Debug + Sized + Clone + Send + Sync + 'static {
     fn assign_inplace(&mut self, data: Self, index: usize);
 
     /// make zeros with given capacity, and shape
-    fn zeros_capacity(capacity: usize, shape: Shape, device: &Device) -> Self;
+    fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self;
+
+    /// move all data to given device
+    fn to_device(self, device: &Device) -> Self;
 }
 
 // implementations
@@ -71,9 +75,14 @@ impl<const D: usize> Batchable for Tensor<D> {
         self.inplace(|a| a.slice_assign(index..index + len, data));
     }
 
-    fn zeros_capacity(capacity: usize, mut shape: Shape, device: &Device) -> Self {
-        shape.insert(0, capacity);
+    fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self {
+        let mut shape = data.shape();
+        *shape.index_mut(0) = capacity;
         Tensor::zeros(shape, device)
+    }
+
+    fn to_device(self, device: &Device) -> Self {
+        self.to_device(device)
     }
 }
 
@@ -100,9 +109,14 @@ impl<const D: usize> Batchable for Tensor<D, Int> {
         self.inplace(|a| a.slice_assign(index..index + len, data));
     }
 
-    fn zeros_capacity(capacity: usize, mut shape: Shape, device: &Device) -> Self {
-        shape.insert(0, capacity);
+    fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self {
+        let mut shape = data.shape();
+        *shape.index_mut(0) = capacity;
         Tensor::zeros(shape, device)
+    }
+
+    fn to_device(self, device: &Device) -> Self {
+        self.to_device(device)
     }
 }
 
@@ -129,9 +143,14 @@ impl<const D: usize> Batchable for Tensor<D, Bool> {
         self.inplace(|a| a.slice_assign(index..index + len, data));
     }
 
-    fn zeros_capacity(capacity: usize, mut shape: Shape, device: &Device) -> Self {
-        shape.insert(0, capacity);
+    fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self {
+        let mut shape = data.shape();
+        *shape.index_mut(0) = capacity;
         Tensor::zeros(shape, device)
+    }
+
+    fn to_device(self, device: &Device) -> Self {
+        self.to_device(device)
     }
 }
 
@@ -159,9 +178,14 @@ impl<const D: usize> Batchable for DiscreteMask<D> {
         self.0.inplace(|a| a.slice_assign(index..index + len, data.0));
     }
 
-    fn zeros_capacity(capacity: usize, mut shape: Shape, device: &Device) -> Self {
-        shape.insert(0, capacity);
+    fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self {
+        let mut shape = data.0.shape();
+        *shape.index_mut(0) = capacity;
         DiscreteMask(Tensor::zeros(shape, device))
+    }
+
+    fn to_device(self, device: &Device) -> Self {
+        DiscreteMask(self.0.to_device(device))
     }
 }
 
@@ -185,7 +209,9 @@ impl Batchable for Unconstrained {
 
     fn assign_inplace(&mut self, _: Self, _: usize) {}
 
-    fn zeros_capacity(_: usize, _: Shape, _: &Device) -> Self { Unconstrained }
+    fn zeros_like(_: usize, _: &Self, _: &Device) -> Self { Unconstrained }
+
+    fn to_device(self, _: &Device) -> Self { Unconstrained }
 }
 
 impl Batchable for () {
@@ -203,7 +229,9 @@ impl Batchable for () {
 
     fn assign_inplace(&mut self, _: Self, _: usize) {}
 
-    fn zeros_capacity(_: usize, _: Shape, _: &Device) -> Self {}
+    fn zeros_like(_: usize, _: &Self, _: &Device) -> Self {}
+
+    fn to_device(self, _: &Device) -> Self {}
 }
 
 impl<T: Batchable> Batchable for Option<T> {
@@ -243,12 +271,42 @@ impl<T: Batchable> Batchable for Option<T> {
         self.map(Batchable::detach)
     }
 
-    
+    /// The elements must be all `Some` or all `None`. Cannot be mixed up.
+    ///
+    /// # Panics
+    /// mixed values (`Some` and `None`) panics
+    fn assign_inplace(&mut self, data: Self, index: usize) {
+        match (self, data) {
+            (Some(dst), Some(src)) => {
+                dst.assign_inplace(src, index);
+            },
+            (None, None) => {},
+            _ => {
+                panic!("optional self and optional data must be: both Some or both None.");
+            }
+        }
+    }
+
+    fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self {
+        match data {
+            Some(v) => {
+                Some(T::zeros_like(capacity, v, device))
+            },
+            None => {
+                None
+            }
+        }
+    }
+
+    fn to_device(self, device: &Device) -> Self {
+        self.map(|v| v.to_device(device))
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use burn::{Tensor, tensor::{Device, Int}};
+    use bake_macros::Batchable;
+use burn::{Tensor, tensor::{Device, Int, Shape}};
     use crate::data::batchable::Batchable;
 
     #[test]
@@ -279,5 +337,22 @@ mod tests {
         let sliced = Batchable::slice(c, 2..5);
         let sliced_answer = Tensor::<1>::from_floats([2.0, 3.0, 4.0], &device);
         assert!(sliced.equal(sliced_answer).all().into_scalar::<bool>());
+    }
+
+    #[test]
+    fn zero_like_test() {
+        #[derive(Batchable, Clone, Debug)]
+        struct TestStruct {
+            pub t1: Tensor<1>,
+            pub t2: Tensor<2>,
+        }
+        let device = Device::default();
+        let t1 = Tensor::<1>::from_floats([0.0], &device);
+        let t2 = Tensor::<2>::from_floats([[3.0, 4.0]], &device);
+        let st = TestStruct { t1, t2 };
+
+        let st = TestStruct::zeros_like(10, &st, &device);
+        assert!(st.t1.shape() == Shape::new([10]));
+        assert!(st.t2.shape() == Shape::new([10, 2]));
     }
 }

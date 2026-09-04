@@ -1,4 +1,4 @@
-// This code was written by Claude, since I don't have enough knowledge about PROC MACRO
+//! This code was written by Claude, since I don't have enough knowledge about PROC MACRO
 
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
@@ -153,6 +153,34 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
                 Self {
                     #( #batched: Batchable::detach(#batched), )*
                     #( #skipped, )*
+                }
+            }
+
+            fn assign_inplace(&mut self, data: Self, index: usize) {
+                #(
+                    Batchable::assign_inplace(&mut self.#batched, data.#batched, index);
+                )*
+            }
+
+            fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self {
+                Self {
+                    #(
+                        #batched: Batchable::zeros_like(capacity, &data.#batched, device),
+                    )*
+                    #(
+                        #skipped: data.#skipped.clone(),
+                    )*
+                }
+            }
+
+            fn to_device(self, device: &Device) -> Self {
+                Self {
+                    #(
+                        #batched: Batchable::to_device(self.#batched, device),
+                    )*
+                    #(
+                        #skipped
+                    )*
                 }
             }
         }
