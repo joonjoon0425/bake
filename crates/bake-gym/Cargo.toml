@@ -1,0 +1,17 @@
+[package]
+name = "bake-gym"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+pyo3.workspace = true
+numpy.workspace = true
+burn.workspace = true
+rand.workspace = true
+bake-deep = { path = "../bake-deep" }
+
+[build-dependencies]
+pyo3-build-config = "0.29.2"

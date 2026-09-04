@@ -1,0 +1,1 @@
+//! Q-value tables which all algorithms use

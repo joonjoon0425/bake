@@ -1,0 +1,23 @@
+[package]
+name = "bake"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+bake-tabular = { workspace = true, optional = true }
+bake-deep = { workspace = true, optional = true }
+bake-gym = { workspace = true, optional = true }
+burn = { workspace = true, optional = true }
+rand.workspace = true
+pyo3 = { workspace = true, optional = true }
+numpy = { workspace = true, optional = true }
+
+[features]
+default = ["tabular", "deep", "deep-gym", "full"]
+tabular = ["dep:bake-tabular"]
+deep = ["dep:bake-deep", "dep:burn"]
+deep-gym = ["dep:bake-deep", "dep:burn", "dep:bake-gym", "dep:pyo3"]
+full = ["dep:bake-tabular", "dep:bake-deep", "dep:bake-gym", "dep:burn", "dep:pyo3"]
