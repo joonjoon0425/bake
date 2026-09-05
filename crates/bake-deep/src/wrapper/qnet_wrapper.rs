@@ -2,7 +2,7 @@
 //! 
 use burn::prelude::*;
 
-use crate::{constraint::discrete_constraint::DiscreteConstraint, contract::DiscreteQFunction, net::{DiscreteDuelingQNet, DiscreteQNet}};
+use crate::{constraint::discrete_constraint::DiscreteConstraint, contract::DiscreteQFunction, net::{DiscreteDuelingQNet, DiscreteQNet, layer::NoiseReset}};
 /// A wrapper which produces Constrained QNetwork from custom qnet
 #[derive(Module, Debug)]
 pub struct DiscreteQNetWrapper<T: DiscreteQNet> { net: T }
@@ -12,12 +12,6 @@ impl<T: DiscreteQNet> DiscreteQNetWrapper<T> {
     pub fn new(net: T) -> Self { Self { net } }
 }
 
-// impl<T: QNet + NoiseReset> NoiseReset for ConstrainedQNet<T> {
-//     fn reset_noise(&mut self) {
-//         self.net.reset_noise();
-//     }
-// }
-
 impl<T: DiscreteQNet> DiscreteQFunction for DiscreteQNetWrapper<T> {
     type Obs = T::Obs;
 
@@ -25,6 +19,13 @@ impl<T: DiscreteQNet> DiscreteQFunction for DiscreteQNetWrapper<T> {
         constraint.apply(self.net.forward(obs), -1e9)
     }
 }
+
+impl<T: DiscreteQNet + NoiseReset> NoiseReset for DiscreteQNetWrapper<T> {
+    fn reset_noise(&mut self) {
+        self.net.reset_noise();
+    }
+}
+
 
 /// A wrapper which produces DiscreteQFunction from custom dueling qnet
 #[derive(Module, Debug)]
@@ -35,8 +36,6 @@ impl<T: DiscreteDuelingQNet> DiscreteDuelingQNetWrapper<T> {
     pub fn new(net: T) -> Self { Self { net } }
 }
 
-// impl<T: DuelingQNet + NoiseReset> NoiseReset for ConstrainedDuelingQNet<T> { fn reset_noise(&mut self) { self.net.reset_noise(); } }
-
 impl<T: DiscreteDuelingQNet> DiscreteQFunction for DiscreteDuelingQNetWrapper<T> {
     type Obs = T::Obs;
 
@@ -44,5 +43,11 @@ impl<T: DiscreteDuelingQNet> DiscreteQFunction for DiscreteDuelingQNetWrapper<T>
         let (value, advantage) = self.net.forward(obs);
         let mean = constraint.clone().mean_dim(1, advantage.clone());
         constraint.apply(value.unsqueeze_dim(1) + advantage - mean, -1e9)
+    }
+}
+
+impl<T: DiscreteDuelingQNet + NoiseReset> NoiseReset for DiscreteDuelingQNetWrapper<T> {
+    fn reset_noise(&mut self) {
+        self.net.reset_noise();
     }
 }

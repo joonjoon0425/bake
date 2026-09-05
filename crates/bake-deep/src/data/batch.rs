@@ -26,3 +26,26 @@ pub struct Batch<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra
     /// extra item
     pub extras: Extra,
 }
+
+impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> Batch<Obs, Action, Constraint, Extra> {
+    /// returns the device of current Batch from `rewards` member variable. Whole training loop must use one singleton of Device object.
+    pub fn device(&self) -> burn::tensor::Device {
+        self.rewards.device()
+    }
+
+    /// user can modifiy the extra solt using the given mapping function
+    pub fn map_extra<ModifiedExtra: Batchable, F: Fn(Extra) -> ModifiedExtra>(self, f: F) -> Batch<Obs, Action, Constraint, ModifiedExtra> {
+        let modified = f(self.extras);
+        Batch {
+            obss: self.obss,
+            actions: self.actions,
+            rewards: self.rewards,
+            next_obss: self.next_obss,
+            terminated: self.terminated,
+            truncated: self.truncated,
+            constraints: self.constraints,
+            next_constraints: self.next_constraints,
+            extras: modified,
+        }
+    }
+}

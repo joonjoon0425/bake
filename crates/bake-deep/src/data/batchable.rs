@@ -44,6 +44,9 @@ pub trait Batchable: std::fmt::Debug + Sized + Clone + Send + Sync + 'static {
 
     /// move all data to given device
     fn to_device(self, device: &Device) -> Self;
+
+    /// move the data to autodiff device
+    fn into_autodiff(self) -> Self;
 }
 
 // implementations
@@ -84,6 +87,10 @@ impl<const D: usize> Batchable for Tensor<D> {
     fn to_device(self, device: &Device) -> Self {
         self.to_device(device)
     }
+
+    fn into_autodiff(self) -> Self {
+        Self::from_inner(self)
+    }
 }
 
 impl<const D: usize> Batchable for Tensor<D, Int> {
@@ -118,6 +125,10 @@ impl<const D: usize> Batchable for Tensor<D, Int> {
     fn to_device(self, device: &Device) -> Self {
         self.to_device(device)
     }
+
+    fn into_autodiff(self) -> Self {
+        Self::from_inner(self)
+    }
 }
 
 impl<const D: usize> Batchable for Tensor<D, Bool> {
@@ -151,6 +162,10 @@ impl<const D: usize> Batchable for Tensor<D, Bool> {
 
     fn to_device(self, device: &Device) -> Self {
         self.to_device(device)
+    }
+
+    fn into_autodiff(self) -> Self {
+        Self::from_inner(self)
     }
 }
 
@@ -187,6 +202,10 @@ impl<const D: usize> Batchable for DiscreteMask<D> {
     fn to_device(self, device: &Device) -> Self {
         DiscreteMask(self.0.to_device(device))
     }
+
+    fn into_autodiff(self) -> Self {
+        DiscreteMask(Tensor::<D, Bool>::from_inner(self.0))
+    }
 }
 
 impl Batchable for Unconstrained {
@@ -212,6 +231,8 @@ impl Batchable for Unconstrained {
     fn zeros_like(_: usize, _: &Self, _: &Device) -> Self { Unconstrained }
 
     fn to_device(self, _: &Device) -> Self { Unconstrained }
+
+    fn into_autodiff(self) -> Self { Unconstrained }
 }
 
 impl Batchable for () {
@@ -232,6 +253,8 @@ impl Batchable for () {
     fn zeros_like(_: usize, _: &Self, _: &Device) -> Self {}
 
     fn to_device(self, _: &Device) -> Self {}
+
+    fn into_autodiff(self) {}
 }
 
 impl<T: Batchable> Batchable for Option<T> {
@@ -301,6 +324,8 @@ impl<T: Batchable> Batchable for Option<T> {
     fn to_device(self, device: &Device) -> Self {
         self.map(|v| v.to_device(device))
     }
+
+    fn into_autodiff(self) -> Self { self.map(|v| v.into_autodiff()) }
 }
 
 #[cfg(test)]

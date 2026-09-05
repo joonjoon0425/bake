@@ -10,3 +10,5 @@ repository.workspace = true
 burn.workspace = true
 rand.workspace = true
 bake-macros.workspace = true
+serde.workspace = true
+toml.workspace = true

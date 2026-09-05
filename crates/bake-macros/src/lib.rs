@@ -183,6 +183,17 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
                     )*
                 }
             }
+
+            fn into_autodiff(self) -> Self {
+                Self {
+                    #(
+                        #batched: Batchable::into_autodiff(self.#batched),
+                    )*
+                    #(
+                        #skipped
+                    )*
+                }
+            }
         }
     }
     .into()

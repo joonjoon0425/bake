@@ -2,7 +2,7 @@
 //! 
 use std::marker::PhantomData;
 use burn::{Tensor, module::Module};
-use crate::{contract::actor_critic::ActorCritic, distribution::{Distribution, PossibleConstraint}, net::ActorCriticNet};
+use crate::{contract::actor_critic::ActorCritic, distribution::{Distribution, PossibleConstraint}, net::{ActorCriticNet, layer::NoiseReset}};
 
 /// An ActorCriticNet wrapper
 #[derive(Module, Debug)]
@@ -38,4 +38,10 @@ impl<T: ActorCriticNet<Params = Dist::Params>, Dist: Distribution> ActorCritic f
     }
 
     fn encoder_type(&self) -> crate::contract::actor_critic::EncoderType { self.net.encoder_type() }
+}
+
+impl<T: ActorCriticNet<Params = Dist::Params> + NoiseReset, Dist: Distribution> NoiseReset for ActorCriticWrapper<T, Dist> {
+    fn reset_noise(&mut self) {
+        self.net.reset_noise();
+    }
 }
