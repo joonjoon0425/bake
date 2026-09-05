@@ -14,12 +14,17 @@ pub trait Sampler {
         Action: Batchable,
         Constraint: Batchable,
         Extra: Batchable;
+
+    /// when a new element is pushed into buffer. no-op for base
+    fn on_push(&mut self, _index: usize) { }
 }
 
 /// A struct holding the information of samples
 pub struct SampleInfo {
     /// the indices of sample as a member of given buffer
-    pub indices: Vec<usize>
+    pub indices: Vec<usize>,
+    /// importance weights
+    pub is_weights: Option<Tensor<1>>,
 }
 
 /// A basic sampler which treats all elements equally
@@ -47,7 +52,7 @@ impl Sampler for UniformSampler {
 
         let indices_raw: Vec<usize> = (0..n).map(|_| self.rng.random_range(0..len)).collect();
         let indices = Tensor::from_ints(indices_raw.as_slice(), &storage.device());
-        (storage.clone().select(indices), SampleInfo { indices: indices_raw } )
+        (storage.clone().select(indices), SampleInfo { indices: indices_raw , is_weights: None } )
     }
 }
 
@@ -59,16 +64,23 @@ pub struct PrioritizedSampler {
     sum_tree: SumTree,
     min_tree: MinTree,
     priority_clip: Option<f64>,
-    max_priority: f64,
+    /// holds the max_priority value
+    max_priority: Option<(f64, usize)>,
+    max_priority_within_buffer: bool,
+
+    eps: f64,
 }
 
 impl PrioritizedSampler {
-    pub fn new(seed: u64, alpha: f64, beta: f64, capacity: usize, priority_clip: Option<f64>, max_priority: f64) -> Self {
+    /// create a new PrioritizedSampler
+    pub fn new(seed: u64, alpha: f64, beta: f64, capacity: usize, priority_clip: Option<f64>, max_priority_within_buffer: bool) -> Self {
         Self {
             alpha,
             beta,
             priority_clip,
-            max_priority,
+            max_priority: None,
+            max_priority_within_buffer,
+            eps: 1e-6,
             sum_tree: SumTree::new(seed, capacity),
             min_tree: MinTree::new(capacity),
         }
@@ -77,28 +89,26 @@ impl PrioritizedSampler {
 
 /// Configuration for PrioritizedSampler
 pub struct PrioritizedSamplerConfig {
+    /// controls how much the sampler will care about priorities. 0 -> uniform, 1 -> fully prioritized
     pub alpha: f64,
+    /// controls the importance sampling weights. 0 -> no effect, 1 -> full correction
     pub beta: f64,
-    pub seed: u64,
-    pub capacity: usize,
-    /// default None
+    /// clip the maximum priority. default None
     pub priority_clip: Option<f64>,
-    /// default 1e-6
-    pub max_priority: f64,
+    /// if true, compute the maximum priority within current SumTree. default false
+    pub max_priority_within_buffer: bool,
 }
 
 impl PrioritizedSamplerConfig {
     /// create a new PrioritizedSamplerConfig
     /// - `priority_clip` is `None` by default
-    /// - `max_priority` is 1e-6 by default
-    pub fn new(seed: u64, alpha: f64, beta: f64, capacity: usize) -> Self {
+    /// - `max_priority_within_buffer` is false by default
+    pub fn new(alpha: f64, beta: f64) -> Self {
         Self {
-            seed,
             alpha,
             beta,
-            capacity,
             priority_clip: None,
-            max_priority: 1e-6
+            max_priority_within_buffer: false,
         }
     }
 
@@ -108,19 +118,42 @@ impl PrioritizedSamplerConfig {
         self
     }
 
-    /// configure the max priority for newly pushed samples
-    pub fn with_max_priority(mut self, max_priority: f64) -> Self {
-        self.max_priority = max_priority;
+    /// configure if max_priority will be computed from buffer
+    pub fn with_max_priority_within_buffer(mut self, flag: bool) -> Self {
+        self.max_priority_within_buffer = flag;
         self
     }
 
     /// create a new `PrioritizedSampler` from configuration
-    pub fn init(self) -> PrioritizedSampler {
-        PrioritizedSampler::new(self.seed, self.alpha, self.beta, self.capacity, self.priority_clip, self.max_priority)
+    pub fn init(self, seed: u64, capacity: usize) -> PrioritizedSampler {
+        PrioritizedSampler::new(seed, self.alpha, self.beta, capacity, self.priority_clip, self.max_priority_within_buffer)
     }
 }
 
 impl Sampler for PrioritizedSampler {
+    fn on_push(&mut self, index: usize) {
+        if self.max_priority_within_buffer 
+            && let Some((_, max_index)) = self.max_priority && max_index == index {
+            // the previous max value has been wrapped around and deleted
+            self.max_priority = None;
+        }
+
+        // give the default priority to the newly given data
+        let p = match self.max_priority {
+            Some((v, _)) => v,
+            None => {
+                match self.recompute_max_from_tree() {
+                    Some((v, _)) => v,
+                    None => (1.0 + self.eps).powf(self.alpha),
+                }
+            }
+        };
+        self.sum_tree.update(index, p);
+        self.min_tree.update(index, p);
+        // update the index of max_priority
+        self.max_priority = Some((p, index))
+    }
+
     fn sample<Obs, Action, Constraint, Extra>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint, Extra>) -> (Batch<Obs, Action, Constraint, Extra>, SampleInfo)
     where
         Obs: Batchable,
@@ -128,20 +161,56 @@ impl Sampler for PrioritizedSampler {
         Constraint: Batchable,
         Extra: Batchable
     {
-        let len = storage.len().unwrap();
         let device = storage.device();
-        let indices = self.sum_tree.sample_idx(n);
+        let indices_raw = self.sum_tree.sample_idx(n);
+        let indices = Tensor::from_ints(indices_raw.as_slice(), &device);
         let total = self.sum_tree.sum();
         let p_min = self.min_tree.min() / total;
-        let max_w = (p_min * len as f64).powf(-self.beta);
-        let is_weights: Vec<f32> = indices.iter().map(
+        let max_w = (p_min as f64).powf(-self.beta);
+        let is_weights: Vec<f32> = indices_raw.iter().map(
             |&i| {
                 let p = self.sum_tree.get(i) / total;
-                (((p * len as f64).powf(-self.beta)) / max_w) as f32
+                (((p as f64).powf(-self.beta)) / max_w) as f32
             }
         ).collect();
         let is_weights = Tensor::from_floats(is_weights.as_slice(), &device);
-        let selected = 
+        let selected = storage.clone().select(indices);
+        (selected, SampleInfo { indices: indices_raw, is_weights: Some(is_weights) })
+    }
+}
+
+impl PrioritizedSampler {
+    fn recompute_max_from_tree(&self) -> Option<(f64, usize)> {
+        let (val, idx) = self.sum_tree.argmax_naive();
+        if val <= 0.0 { /* no elements have been pushed */ return None; }
+        Some((val, idx))
+    }
+
+    /// update the priority from given indices and priorites
+    pub fn update_priority(&mut self, indices: &[usize], priorities: Tensor<1>) {
+        let e = match self.priority_clip {
+            Some(c) => priorities.abs().clamp_max(c as f32),
+            None => priorities.abs()
+        };
+        let p: Vec<f32> = (e + self.eps).powf_scalar(self.alpha).into_data().try_into_vec().unwrap();
+
+        let prev = self.max_priority;
+        // update the priority
+        for (i, &index) in indices.iter().enumerate() {
+            let v = p[i] as f64;
+            self.sum_tree.update(index, v);
+            self.min_tree.update(index, v);
+            match self.max_priority {
+                Some((val, _)) if val < v => self.max_priority = Some((v, i)),
+                None => self.max_priority = Some((v, i)),
+                _ => {}
+            }
+        }
+
+        // due to the update, the maximum priority may have changed. recompute it
+        if self.max_priority_within_buffer && let Some((_, cur_idx)) = prev && indices.contains(&cur_idx) {
+            self.max_priority = self.recompute_max_from_tree();
+        }
     }
 }
 
@@ -149,6 +218,7 @@ impl Sampler for PrioritizedSampler {
 struct SumTree {
     tree: Vec<f64>,
     rng: SmallRng,
+    capacity: usize,
     n: usize,
 }
 
@@ -157,10 +227,11 @@ impl SumTree {
         let depth = (capacity as f64).log2().ceil();
         let n = depth.exp2() as usize;
         let tree = vec![0f64; 2 * n];
-        Self { tree, n, rng: SmallRng::seed_from_u64(seed) }
+        Self { tree, n, capacity, rng: SmallRng::seed_from_u64(seed) }
     }
 
-    pub fn from_vec(seed: u64, vec: Vec<f64>) -> Self {
+    #[cfg(test)]
+    fn from_vec(seed: u64, vec: Vec<f64>) -> Self {
         let capacity = vec.len();
         let depth = (capacity as f64).log2().ceil();
         let n = depth.exp2() as usize;
@@ -179,7 +250,7 @@ impl SumTree {
             index /= 2;
         }
 
-        Self { tree, n, rng: SmallRng::seed_from_u64(seed) }
+        Self { tree, n, capacity, rng: SmallRng::seed_from_u64(seed) }
     }
 
     pub fn update(&mut self, index: usize, val: f64) {
@@ -221,21 +292,33 @@ impl SumTree {
         vec
     }
 
-    #[cfg(test)]
-    pub fn is_correct(&self) {
-        let mut index = self.n / 2;
-        while index >= 1 {
-            let mut tmp = index;
-            let r = index * 2 - 1;
-            while tmp <= r {
-                if self.tree[tmp] != self.tree[2 * tmp] + self.tree[2 * tmp + 1] {
-                    panic!("Wrong sum on index {tmp}");
-                }
-                tmp += 1;
+    pub fn argmax_naive(&self) -> (f64, usize) {
+        let mut idx = self.n;
+        let mut max = self.tree[idx];
+        for i in self.n..(self.capacity + self.n) {
+            if max < self.tree[i] {
+                max = self.tree[i];
+                idx = i;
             }
-            index /= 2;
         }
+        (max, idx - self.n)
     }
+
+    // #[cfg(test)]
+    // fn is_correct(&self) {
+    //     let mut index = self.n / 2;
+    //     while index >= 1 {
+    //         let mut tmp = index;
+    //         let r = index * 2 - 1;
+    //         while tmp <= r {
+    //             if self.tree[tmp] != self.tree[2 * tmp] + self.tree[2 * tmp + 1] {
+    //                 panic!("Wrong sum on index {tmp}");
+    //             }
+    //             tmp += 1;
+    //         }
+    //         index /= 2;
+    //     }
+    // }
 }
 
 #[derive(Debug, Clone)]

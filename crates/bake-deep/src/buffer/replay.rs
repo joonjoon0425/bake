@@ -1,5 +1,7 @@
 //! Replay buffer struct for off-policy methods
 //! 
+use std::marker::PhantomData;
+
 use burn::tensor::Device;
 
 use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, UniformSampler}, data::{Batch, Batchable}};
@@ -17,41 +19,6 @@ pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constrain
     device: Option<Device>,
 }
 
-impl<Obs, Action, Constraint, Extra> ReplayBuffer<UniformSampler, Obs, Action, Constraint, Extra>
-where
-    Obs: Batchable,
-    Action: Batchable,
-    Constraint: Batchable,
-    Extra: Batchable
-{
-    /// create a new ReplayBuffer with uniform sampler
-    pub fn uniform(seed: u64, capacity: usize) -> Self {
-        Self {
-            head: 0,
-            len: 0,
-            capacity,
-            batch: None,
-            device: None,
-            sampler: UniformSampler::new(seed)
-        }
-    }
-}
-
-impl<Obs, Action, Constraint, Extra> ReplayBuffer<PrioritizedSampler, Obs, Action, Constraint, Extra>
-where
-    Obs: Batchable,
-    Action: Batchable,
-    Constraint: Batchable,
-    Extra: Batchable
-{
-    /// create a new ReplayBuffer with uniform sampler
-    pub fn priority(seed: u64, capacity: usize, alpha: f64, beta: f64) -> PrioritizedSamplerConfig {
-        PrioritizedSamplerConfig {
-            seed,
-        }
-    }
-}
-
 impl<S, Obs, Action, Constraint, Extra> ReplayBuffer<S, Obs, Action, Constraint, Extra>
 where
     S: Sampler,
@@ -60,6 +27,18 @@ where
     Constraint: Batchable,
     Extra: Batchable
 {
+    /// create a new ReplayBuffer (user's won't use this. Users must use the ReplayBufferConfig)
+    pub fn new(capacity: usize, sampler: S) -> Self {
+        Self {
+            batch: None,
+            device: None,
+            head: 0,
+            len: 0,
+            capacity,
+            sampler,
+        }
+    }
+
     /// Push a givn transition into buffer
     pub fn push(&mut self, t: Batch<Obs, Action, Constraint, Extra>) {
         if self.batch.is_none() {
@@ -67,7 +46,7 @@ where
             self.device = Some(t.device().autodiff());
         }
         self.batch.as_mut().unwrap().assign_inplace(t, self.head);
-        
+        self.sampler.on_push(self.head);
         self.head = (self.head + 1) % self.capacity;
 
         if self.len < self.capacity { self.len += 1; }
@@ -86,15 +65,59 @@ where
 
 }
 
+/// A helper struct for creating a ReplayBuffer
+pub struct ReplayBufferConfig<SamplerConfig, Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> {
+    config: SamplerConfig,
+    seed: u64,
+    capacity: usize,
+    _p: PhantomData<(Obs, Action, Constraint, Extra)>,
+}
+
+impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> ReplayBufferConfig<(), Obs, Action, Constraint, Extra> {
+    /// create a new RerplayBuffer with UniformSampler
+    pub fn uniform(seed: u64, capacity: usize) -> ReplayBuffer<UniformSampler, Obs, Action, Constraint, Extra> {
+        ReplayBuffer::new(capacity, UniformSampler::new(seed))
+    }
+}
+
+impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> ReplayBufferConfig<PrioritizedSamplerConfig, Obs, Action, Constraint, Extra> {
+    /// create a new ReplayBufferConfig for PER
+    pub fn prioritized(seed: u64, capacity: usize, alpha: f64, beta: f64) -> Self {
+        Self {
+            config: PrioritizedSamplerConfig::new(alpha, beta),
+            seed,
+            capacity,
+            _p: PhantomData
+        }
+    }
+
+    /// configure the priority clip
+    pub fn with_priority_clip(mut self, priority_clip: f64) -> Self {
+        self.config = self.config.with_priority_clip(priority_clip);
+        self
+    }
+
+    /// compute the maximum priority from current buffer if `true` is given for `flag`. Else, the maximum priority stays same as the highest priority ever sampled.
+    pub fn with_max_priority_within_buffer(mut self, flag: bool) -> Self {
+        self.config = self.config.with_max_priority_within_buffer(flag);
+        self
+    }
+
+    /// create a new ReplayBuffer with PrioritizedSampler
+    pub fn init(self) -> ReplayBuffer<PrioritizedSampler, Obs, Action, Constraint, Extra> {
+        ReplayBuffer::new(self.capacity, self.config.init(self.seed, self.capacity))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use burn::{prelude::*, tensor::Distribution};
-    use crate::{buffer::replay::ReplayBuffer, constraint::Unconstrained, data::{Batch, Batchable}};
+    use crate::{buffer::replay::ReplayBufferConfig, constraint::Unconstrained, data::{Batch, Batchable}};
 
     #[test]
     fn init_test() {
         let device = Device::default();
-        let mut buffer = ReplayBuffer::uniform(11, 1000);
+        let mut buffer = ReplayBufferConfig::uniform(11, 1000);
         let obs = Tensor::<2>::from_floats([[1.0, 2.0, 3.0]], &device);
         let action = Tensor::<1, Int>::from_ints([1], &device);
         let reward = Tensor::<1>::from_floats([1.0], &device);
@@ -119,7 +142,7 @@ mod tests {
     #[test]
     fn sample_test() {
         let device = Device::default();
-        let mut buffer = ReplayBuffer::uniform(11, 1000);
+        let mut buffer = ReplayBufferConfig::uniform(11, 1000);
 
         for _ in 0..100 {
             let obs = Tensor::<2>::random([1, 4], Distribution::Uniform(-3.0, 3.0), &device);
@@ -148,7 +171,7 @@ mod tests {
     #[test]
     fn wrap_around() {
         let device = Device::default();
-        let mut buffer = ReplayBuffer::uniform(11, 10);
+        let mut buffer = ReplayBufferConfig::uniform(11, 10);
 
         for i in 0..11 {
             let obs = Tensor::<2>::full([1, 4], i as f32, &device);
