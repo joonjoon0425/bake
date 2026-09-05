@@ -22,7 +22,7 @@ pub trait Distribution : std::fmt::Debug + Clone + Sync + Send + 'static {
 }
 
 /// A trait which specifies which constraints the distributions can be applied to
-pub trait PossibleConstraint<D: Distribution> {
+pub trait PossibleConstraint<D: Distribution> : Batchable {
     /// create a distribution from constraint and parameters
     fn create_distribution(params: D::Params, constraint: Self) -> D;
 }

@@ -16,6 +16,11 @@ pub struct Tape<E: Environment> {
     pub terminated: bool,
     /// if the environment has truncated, true
     pub truncated: bool,
+
+    /// cummulative episodic reward
+    pub episode_reward: f32,
+    /// cummulative episodic steps
+    pub steps: usize,
 }
 
 impl<E: Environment> Tape<E> {
@@ -30,6 +35,8 @@ impl<E: Environment> Tape<E> {
             reward: 0f32,
             terminated: false,
             truncated: false,
+            episode_reward: 0f32,
+            steps: 0usize,
         }
     }
 
@@ -38,6 +45,12 @@ impl<E: Environment> Tape<E> {
         let (obs, mask) = env.reset();
         self.obs = obs;
         self.constraint = mask;
+
+        self.reward = 0f32;
+        self.terminated = false;
+        self.truncated = false;
+        self.episode_reward = 0f32;
+        self.steps = 0usize;
     }
 
     /// take a step in environment with given action and return the transition object
@@ -61,6 +74,9 @@ impl<E: Environment> Tape<E> {
         self.reward = reward;
         self.terminated = terminated;
         self.truncated = truncated;
+        
+        self.episode_reward += reward;
+        self.steps += 1;
         t
     }
 

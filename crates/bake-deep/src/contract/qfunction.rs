@@ -11,4 +11,15 @@ pub trait DiscreteQFunction : AutodiffModule + Clone + ModuleDisplay {
 
     /// get the q values of given observation with current approximator
     fn forward(&self, obs: Self::Obs, constraint: impl DiscreteConstraint) -> Tensor<2>;
+
+    /// sync with given network. returns the synced network
+    fn sync(self, online: &Self) -> Self {
+        let record = online.clone().into_record();
+        self.load_record(record)
+    }
+
+    // sync with Polyak averaging method. returns the synced network
+    // fn sync(self, online: &Self, tau: f64) -> Self {
+
+    // }
 }

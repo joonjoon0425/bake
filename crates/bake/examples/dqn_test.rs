@@ -35,9 +35,6 @@ pub fn main() {
     let sync_freq = 500;
     let batch_size = 128;
 
-    let mut ep_step = 0;
-    let mut ep_reward = 0.;
-
     let window = 100;
     logger.register("loss", 500);
     logger.register("mean_td_error", 500);
@@ -52,8 +49,6 @@ pub fn main() {
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
         let t = tape.step(&mut env, action);
         buffer.push(t);
-        ep_step += 1;
-        ep_reward += tape.reward;
 
         if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
             let loss = Dqn::loss(&config, &online, &target, batch, batch_info);
@@ -67,11 +62,9 @@ pub fn main() {
         }
 
         if tape.done() {
+            logger.push_single("reward", tape.episode_reward);
+            logger.push_single("step", tape.steps as f32);
             tape.reset(&mut env);
-            logger.push_single("reward", ep_reward);
-            logger.push_single("step", ep_step as f32);
-            ep_step = 0;
-            ep_reward = 0.;
         }
 
         if count % 5000 == 0 {

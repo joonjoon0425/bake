@@ -15,6 +15,6 @@ pub trait Policy: AutodiffModule + Clone + ModuleDisplay {
 
     /// get the current action from given observation and constraint
     fn action<C: PossibleConstraint<Self::Dist>>(&self, obs: Self::Obs, constraint: C) -> <Self::Dist as Distribution>::Sample {
-        self.forward(obs, constraint).sample()
+        self.valid().forward(obs, constraint).sample()
     }
 }

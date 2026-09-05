@@ -20,7 +20,7 @@ pub trait ActorCritic: AutodiffModule + Clone + ModuleDisplay {
 
     /// sample an action from actor
     fn action<C: PossibleConstraint<Self::Dist>>(&self, obs: Self::Obs, constraint: C) -> <Self::Dist as Distribution>::Sample {
-        self.dist(obs, constraint).sample()
+        self.valid().dist(obs, constraint).sample()
     }
 
     /// checks whether this actor-critic shares encoder
