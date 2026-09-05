@@ -12,14 +12,14 @@ use burn::prelude::*;
 use burn::nn::activation::ActivationConfig::Relu;
 
 pub fn main() {
-    println!("count,ep_reward_average,ep_step_average,loss,td_error,qmean,eps");
+    println!("count,ep_reward_average,ep_step_average,entropy, surrogate_loss");
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
     let autodiff_device = device.clone().autodiff();
 
     let mut env = CartPole::new(seed, &device);
-    let state = Reinforce{ gamma: 0.99, c_e: 0.2, baseline: Baseline::Mean };
+    let state = Reinforce{ gamma: 0.99, baseline: Baseline::Normalized };
     let mut policy = PolicyWrapper::new(MlpPolicyNet::new(&[4, 128, 2], Relu, &autodiff_device));
     let mut opt = AdamConfig::new().init();
 
@@ -42,7 +42,7 @@ pub fn main() {
             let rollout = buffer.pop();
             let loss = Reinforce::loss(&state, &policy, rollout);
             logger.push(&loss);
-            policy = Reinforce::update(policy, loss, state.c_e, 1e-3, &mut opt);
+            policy = Reinforce::update(policy, loss, 0.02, 1e-3, &mut opt);
 
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("step", tape.steps as f32);

@@ -10,8 +10,6 @@ use crate::{contract::Policy, data::{Batch, Batchable}, distribution::{Distribut
 pub struct Reinforce {
     /// discount rate
     pub gamma: f32,
-    /// entropy bonus rate
-    pub c_e: f32,
     /// baseline for computing the advantage
     pub baseline: Baseline,
 }
@@ -34,7 +32,7 @@ impl Reinforce {
         let mut returns = Tensor::zeros([len], &device);
         returns.assign_inplace(rollout.rewards.clone().slice(len - 1..len), len - 1);
         for i in (0..(len - 1)).rev() {
-            let r = rollout.rewards.clone().slice(i..i+1) + state.gamma * returns.clone().slice(i+1..i+2);
+            let r = rollout.rewards.clone().slice(i..i + 1) + state.gamma * returns.clone().slice(i + 1..i + 2);
             returns.assign_inplace(r, i);
         }
 
