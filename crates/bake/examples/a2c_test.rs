@@ -27,7 +27,7 @@ pub fn main() {
     logger.register("critic_loss", 100);
     logger.register("entropy", 100);
 
-    for count in 0..=500000 {
+    for count in 0..=600000 {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
         let t = tape.step(&mut env, action);
         buffer.push(t);
