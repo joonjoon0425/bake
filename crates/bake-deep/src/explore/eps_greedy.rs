@@ -31,7 +31,7 @@ impl EpsGreedy {
 impl Exploration for EpsGreedy {
     /// sample an action from given Q values.
     fn sample<Q: DiscreteQFunction>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
-        let qvalues = qfunc.forward(obs, constraint.clone());
+        let qvalues = qfunc.valid().forward(obs, constraint.clone());
         if self.rng.random_range(0.0..1.0) < self.eps {
             let random = Tensor::random_like(&qvalues, Distribution::Default);
             constraint.apply(random, -1f32).argmax(1).squeeze_dim(1)

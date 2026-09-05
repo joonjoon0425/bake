@@ -8,7 +8,7 @@ pub struct Greedy;
 
 impl Exploration for Greedy {
     fn sample<Q: DiscreteQFunction>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
-        let qvalues = qfunc.forward(obs, constraint);
+        let qvalues = qfunc.valid().forward(obs, constraint);
         qvalues.argmax(1).squeeze_dim(1)
     }
 }

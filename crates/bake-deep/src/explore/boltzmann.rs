@@ -26,7 +26,7 @@ impl Boltzmann {
 
 impl Exploration for Boltzmann {
     fn sample<Q: DiscreteQFunction>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
-        let probs = softmax(qfunc.forward(obs, constraint) / self.temp, 1);
+        let probs = softmax(qfunc.valid().forward(obs, constraint) / self.temp, 1);
         let actions = probs.categorical(1).squeeze_dim(1);
         actions
     }

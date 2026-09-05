@@ -1,9 +1,7 @@
 //! Replay buffer struct for off-policy methods
 //! 
 use std::marker::PhantomData;
-
-use burn::tensor::Device;
-
+use burn::prelude::*;
 use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, UniformSampler}, data::{Batch, Batchable}};
 
 /// Replay buffer implementation
@@ -59,10 +57,30 @@ where
     pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Obs, Action, Constraint, Extra>, SampleInfo)> {
         let len = self.len();
         if len < batch_size { return None; }
-        let (sample, info) = self.sampler.sample(batch_size, self.batch.as_ref().unwrap());
+        let (sample, mut info) = self.sampler.sample(batch_size, self.batch.as_ref().unwrap());
+        info.is_weights = info.is_weights.map(|w| w.into_autodiff());
         Some((sample.into_autodiff(), info))
     }
 
+}
+
+impl<Obs, Action, Constraint, Extra> ReplayBuffer<PrioritizedSampler, Obs, Action, Constraint, Extra>
+where
+    Obs: Batchable,
+    Action: Batchable,
+    Constraint: Batchable,
+    Extra: Batchable
+{
+    /// update the priority of elements of given indices to given priorities
+    pub fn update_priority(&mut self, indices: &[usize], priorities: Tensor<1>) {
+        self.sampler.update_priority(indices, priorities);
+    }
+
+    /// return the beta
+    pub fn beta(&self) -> f64 { self.sampler.beta() }
+
+    /// return the mutable reference of beta
+    pub fn beta_mut(&mut self) -> &mut f64 { self.sampler.beta_mut() }
 }
 
 /// A helper struct for creating a ReplayBuffer

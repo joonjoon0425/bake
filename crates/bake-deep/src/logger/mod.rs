@@ -7,7 +7,6 @@ use std::collections::{HashMap, VecDeque};
 struct MovingAvgLog {
     pub sum: f32,
     pub values: VecDeque<f32>,
-    pub cur_len: usize,
     pub window: usize,
 }
 
@@ -26,7 +25,7 @@ impl MovingAvgLogger {
 
     /// register a name and window length for moving average
     pub fn register(&mut self, name: &'static str, window: usize) {
-        self.moving_avg.insert(name, MovingAvgLog { sum: 0.0, values: VecDeque::with_capacity(window), cur_len: 0, window, });
+        self.moving_avg.insert(name, MovingAvgLog { sum: 0.0, values: VecDeque::with_capacity(window), window, });
     }
 
     /// push a new log to slot of given name
@@ -34,13 +33,9 @@ impl MovingAvgLogger {
     /// panics if given name was not registered
     pub fn push_single(&mut self, name: &'static str, value: f32) {
         let moving_avg = self.moving_avg.get_mut(name).expect(format!("given name {name} was not registered").as_str());
-        if moving_avg.cur_len == 0 {
-            moving_avg.sum = value;
-            moving_avg.values.push_back(value);
-            moving_avg.cur_len += 1;
-        } else if moving_avg.cur_len < moving_avg.window {
+        if moving_avg.values.len() < moving_avg.window {
             moving_avg.sum += value;
-            moving_avg.cur_len += 1;
+            moving_avg.values.push_back(value);
         } else {
             moving_avg.sum += value - moving_avg.values.front().unwrap();
             moving_avg.values.pop_front();
@@ -61,7 +56,7 @@ impl MovingAvgLogger {
     /// panics if given name was not registered
     pub fn emit(&self, name: &'static str) -> f32 {
         let moving_avg = self.moving_avg.get(name).expect(format!("given name {name} was not registered").as_str());
-        moving_avg.sum / moving_avg.cur_len as f32
+        moving_avg.sum / moving_avg.values.len() as f32
     }
 }
 
@@ -94,7 +89,10 @@ mod tests {
 
         logger.push_single("log1", 100.0);
         let answer = 14.5f32;
-        assert!(logger.emit("log1") == answer);    
+        assert!(logger.emit("log1") == answer);
+
+        logger.push_single("log1", 200.0);
+        assert!((logger.emit("log1") - 34.4).abs() < 1e-4);
     }
 
     #[test]

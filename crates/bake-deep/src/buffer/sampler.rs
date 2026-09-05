@@ -85,6 +85,11 @@ impl PrioritizedSampler {
             min_tree: MinTree::new(capacity),
         }
     }
+
+    /// return the beta
+    pub fn beta(&self) -> f64 { self.beta }
+    /// return the mutable reference of beta
+    pub fn beta_mut(&mut self) -> &mut f64 { &mut self.beta }
 }
 
 /// Configuration for PrioritizedSampler

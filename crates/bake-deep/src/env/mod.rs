@@ -11,11 +11,11 @@ use burn::tensor::Device;
 /// Also, environments must produce the non-autodiff tensors.
 pub trait Environment {
     /// The observation type which environment produces
-    type Obs;
+    type Obs: Batchable;
     /// The action type which environment receives
-    type Action;
+    type Action: Batchable;
     /// The constraint for actions. If the environment does not provides constraint, set it as `Unconstrained`
-    type Constraint;
+    type Constraint: Batchable;
 
     /// reset the environment
     fn reset(&mut self) -> (Self::Obs, Self::Constraint);
@@ -25,3 +25,11 @@ pub trait Environment {
     /// the devices which the training loop uses must be fixed with one device. Do not use more than two devices.
     fn device(&self) -> Device;
 }
+
+pub mod cartpole;
+pub use cartpole::CartPole;
+
+pub mod tape;
+pub use tape::Tape;
+
+use crate::data::Batchable;
