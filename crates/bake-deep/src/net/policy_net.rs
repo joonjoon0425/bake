@@ -1,9 +1,12 @@
 //! Network trait for Poliy Gradient methods
 //! 
-use burn::module::{AutodiffModule, ModuleDisplay};
+use burn::{module::{AutodiffModule, ModuleDisplay}};
 use crate::data::batchable::Batchable;
 
 /// Policy network trait
+/// - the users must implement this trait to use their own network structure, and wrap it with wrapper.
+/// # Warning
+/// - the user must create the network initialy on autodiff device.
 pub trait PolicyNet : AutodiffModule + Clone + ModuleDisplay {
     /// observation type
     type Obs: Batchable;

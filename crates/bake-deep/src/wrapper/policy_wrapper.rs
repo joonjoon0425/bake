@@ -13,7 +13,12 @@ pub struct PolicyWrapper<T: PolicyNet<Params = Dist::Params>, Dist: Distribution
 
 impl<T: PolicyNet<Params = Dist::Params>, Dist: Distribution> PolicyWrapper<T, Dist> {
     /// create a new policy
-    pub fn new(net: T) -> Self { Self {net, _p: PhantomData} }
+    /// # Warning
+    /// - The given network must be on the autodiff device
+    /// - The network will be translated to inner device here.
+    /// - The network will be automatically moved to autodiff device when the user call the `loss` functions of algorithms
+    /// - The network will be automatically moved to inner device when the user call the `update` functions of algorithms
+    pub fn new(net: T) -> Self { Self {net: net.valid(), _p: PhantomData} }
 }
 
 impl<T: PolicyNet<Params = Dist::Params>, Dist: Distribution> Policy for PolicyWrapper<T, Dist> {

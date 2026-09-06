@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
-use crate::{algorithm::advantage_estimator::AdvantageEstimator, contract::ActorCritic, data::{Batch, extras::*}, distribution::{Distribution, PossibleConstraint}, logger::ToLog, loss::Loss};
+use crate::{algorithm::advantage_estimator::AdvantageEstimator, contract::ActorCritic, data::{Batch, Batchable, extras::*}, distribution::{Distribution, PossibleConstraint}, logger::ToLog, loss::Loss};
 
 /// state struct for PPO
 pub struct Ppo {
@@ -34,7 +34,13 @@ pub struct PpoLoss {
 
 impl Ppo {
     /// compute the loss of PPO
-    pub fn loss<Ac: ActorCritic>(state: &Ppo, actor_critic: &Ac, mut minibatch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>>) -> PpoLoss {
+    /// # Warning
+    /// - Here, the given ActorCritic is moved to autodiff device
+    /// - The ActorCritic will be move to inner device when `update` is called
+    pub fn loss<Ac: ActorCritic>(state: &Ppo, actor_critic: Ac, minibatch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>>) -> (Ac, PpoLoss) {
+        let actor_critic = actor_critic.train();
+        let mut minibatch = minibatch.into_autodiff();
+
         let (dist, values) = actor_critic.forward(minibatch.obss, minibatch.constraints);
         let log_ratio = dist.log_probs(minibatch.actions) - minibatch.extras.remove::<LogProb>().unwrap();
         let ratio = log_ratio.clone().exp();
@@ -49,12 +55,14 @@ impl Ppo {
         let approx_kl = ((log_ratio.clone().exp() - 1f32) - log_ratio.clone()).mean().detach();
         let clip_ratio = (log_ratio.exp() - 1f32).abs().greater_elem(state.eps).float().mean().detach();
 
-        PpoLoss { actor_loss, critic_loss, entropy, approx_kl, clip_ratio }
+        (actor_critic, PpoLoss { actor_loss, critic_loss, entropy, approx_kl, clip_ratio })
     }
 
     /// update the network.
     /// # Warning
-    /// This update is for encoder-separated actor-critics
+    /// - This update is for encoder-separated actor-critics
+    /// - The given ActorCritic must be on autodiff device, which the loss function does it.
+    /// - The given ActorCritic is moved to inner device after the function call
     pub fn update_separated<Ac: ActorCritic>(actor_critic: Ac, loss: PpoLoss, c_e: f32, lr_a: f64, opt_a: &mut ModuleOptimizer, lr_c: f64, opt_c: &mut ModuleOptimizer) -> Ac {
         assert!(actor_critic.encoder_type() == crate::contract::actor_critic::EncoderType::Separated, "The update_separated cannot be called with encoder-sharing actor critic");
         let actor_loss = loss.actor_loss - loss.entropy * c_e;
@@ -65,19 +73,21 @@ impl Ppo {
         let grads = loss.critic_loss.backward();
         let grads = GradientsParams::from_grads(grads, &actor_critic);
 
-        opt_c.step(lr_c, actor_critic, grads)
+        opt_c.step(lr_c, actor_critic, grads).valid()
     }
 
     /// update the network.
     /// # Warning
-    /// This update is for encoder-shared actor-critics
+    /// - This update is for encoder-shared actor-critics
+    /// - The given ActorCritic must be on autodiff device, which the loss function does it.
+    /// - The given ActorCritic is moved to inner device after the function call
     pub fn update_shared<Ac: ActorCritic>(actor_critic: Ac, loss: PpoLoss, c_e: f32, c_c: f32, lr: f64, opt: &mut ModuleOptimizer) -> Ac {
         assert!(actor_critic.encoder_type() == crate::contract::actor_critic::EncoderType::Shared, "The update_shared cannot be called with encoder-separated actor critic");
         let loss = loss.actor_loss - loss.entropy * c_e + loss.critic_loss * c_c;
         let grads = loss.backward();
         let grads = GradientsParams::from_grads(grads, &actor_critic);
         
-        opt.step(lr, actor_critic, grads)
+        opt.step(lr, actor_critic, grads).valid()
     }
 
     /// gives the name of recordable logs. use it to register at the logger

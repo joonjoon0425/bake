@@ -13,9 +13,14 @@ pub struct ActorCriticWrapper<T: ActorCriticNet<Params = Dist::Params>, Dist: Di
 }
 
 impl<T: ActorCriticNet<Params = Dist::Params>, Dist: Distribution> ActorCriticWrapper<T, Dist> {
-    /// create a new actor critic
+    /// create a new actor critic with given custom network
+    /// # Warning
+    /// - The given network must be on the autodiff device
+    /// - The network will be translated to inner device here.
+    /// - The network will be automatically moved to autodiff device when the user call the `loss` functions of algorithms
+    /// - The network will be automatically moved to inner device when the user call the `update` functions of algorithms
     pub fn new(net: T) -> Self {
-        Self { net, _p: PhantomData }
+        Self { net: net.valid(), _p: PhantomData }
     }
 }
 

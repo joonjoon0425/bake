@@ -25,7 +25,7 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> RolloutBuffer<Obs
     /// pop all elements of buffer
     pub fn pop(&mut self) -> Batch<Obs, Action, Constraint> {
         let batch = std::mem::replace(&mut self.batch, vec![]);
-        Batch::cat(batch).into_autodiff()
+        Batch::cat(batch)
     }
 }
 

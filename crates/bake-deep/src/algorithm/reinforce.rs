@@ -25,7 +25,13 @@ pub struct ReinforceLoss {
 
 impl Reinforce {
     /// compute the loss of REINFORCE algorithm
-    pub fn loss<P: Policy>(state: &Reinforce, policy: &P, rollout: Batch<P::Obs, <P::Dist as Distribution>::Sample, impl PossibleConstraint<P::Dist>>) -> ReinforceLoss {
+    /// # Warning
+    /// - Here, the given Policy is moved to autodiff device
+    /// - The Policy will be move to inner device when `update` is called
+    pub fn loss<P: Policy>(state: &Reinforce, policy: P, rollout: Batch<P::Obs, <P::Dist as Distribution>::Sample, impl PossibleConstraint<P::Dist>>) -> (P, ReinforceLoss) {
+        let policy = policy.train();
+        let rollout = rollout.into_autodiff();
+
         let len = rollout.len().unwrap();
         let device = rollout.device();
         let dist = policy.forward(rollout.obss, rollout.constraints);
@@ -41,14 +47,17 @@ impl Reinforce {
         let entropy = dist.entropy().mean();
         let surrogate_loss = -(returns * log_probs).mean();
 
-        ReinforceLoss { surrogate_loss, entropy }
+        (policy, ReinforceLoss { surrogate_loss, entropy })
     }
 
     /// update the policy with given learning rate and optimizer, with entropy bonus
+    /// # Warning
+    /// - The given Policy must be on autodiff device, which the loss function does it.
+    /// - The given Policy is moved to inner device after the function call
     pub fn update<P: Policy>(policy: P, loss: ReinforceLoss, c_e: f32, lr: f64, opt: &mut ModuleOptimizer) -> P {
         let grads = (loss.surrogate_loss - c_e * loss.entropy).backward();
         let grads = GradientsParams::from_grads(grads, &policy);
-        opt.step(lr, policy, grads)
+        opt.step(lr, policy, grads).valid()
     }
 
     /// gives the name of recordable logs. use it to register at the logger

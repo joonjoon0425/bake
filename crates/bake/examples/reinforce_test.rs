@@ -40,9 +40,9 @@ pub fn main() {
 
         if tape.done() {
             let rollout = buffer.pop();
-            let loss = Reinforce::loss(&state, &policy, rollout);
+            let (net, loss) = Reinforce::loss(&state, policy, rollout);
             logger.push(&loss);
-            policy = Reinforce::update(policy, loss, 0.02, 1e-3, &mut opt);
+            policy = Reinforce::update(net, loss, 0.02, 1e-3, &mut opt);
 
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("step", tape.steps as f32);

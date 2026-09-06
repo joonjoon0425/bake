@@ -13,8 +13,6 @@ pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constrain
     batch: Option<Batch<Obs, Action, Constraint>>,
     /// the sampler
     sampler: S,
-    /// autodiff attached device
-    device: Option<Device>,
 }
 
 impl<S, Obs, Action, Constraint> ReplayBuffer<S, Obs, Action, Constraint>
@@ -28,7 +26,6 @@ where
     pub fn new(capacity: usize, sampler: S) -> Self {
         Self {
             batch: None,
-            device: None,
             head: 0,
             len: 0,
             capacity,
@@ -40,7 +37,6 @@ where
     pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) {
         if self.batch.is_none() {
             self.batch = Some(Batch::zeros_like(self.capacity, &t, &t.device()));
-            self.device = Some(t.device().autodiff());
         }
         self.batch.as_mut().unwrap().assign_inplace(t, self.head);
         self.sampler.on_push(self.head);
@@ -52,13 +48,11 @@ where
     /// return the number of data in buffer
     pub fn len(&self) -> usize { return self.len }
 
-    /// sample given amount of batches from buffer. If the buffer's length is shorter than `batch_size`, returns None. When sampling, the autodiff backend is attached.
+    /// sample given amount of batches from buffer. If the buffer's length is shorter than `batch_size`, returns None.
     pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Obs, Action, Constraint>, SampleInfo)> {
         let len = self.len();
         if len < batch_size { return None; }
-        let (sample, mut info) = self.sampler.sample(batch_size, self.batch.as_ref().unwrap());
-        info.is_weights = info.is_weights.map(|w| w.into_autodiff());
-        Some((sample.into_autodiff(), info))
+        Some(self.sampler.sample(batch_size, self.batch.as_ref().unwrap()))
     }
 
 }

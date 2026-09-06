@@ -1,6 +1,6 @@
 use bake_deep::{algorithm::{AdvantageEstimator, Ppo}, buffer::RolloutBuffer, contract::ActorCritic, data::{Batchable, extras::{Advantage, LogProb, Return}}, distribution::{Categorical, Distribution}, env::Tape, logger::MovingAvgLogger, loss::Loss, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper};
 use bake::deep::env::CartPole;
-use burn::{module::AutodiffModule, nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
+use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
 use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};
 
 pub fn main() {
@@ -34,7 +34,7 @@ pub fn main() {
 
     for count in 0..=500000 {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
-        let dist = actor_critic.valid().dist(tape.obs.clone(), tape.constraint.clone());
+        let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
         let mut t = tape.step(&mut env, action.clone());
         t.insert::<LogProb>(dist.log_probs(action));
 
@@ -50,9 +50,9 @@ pub fn main() {
                 perm.shuffle(&mut rng);
                 for chunk in perm.chunks(128) {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &autodiff_device);
-                    let loss = Ppo::loss(&state, &actor_critic, batch.clone().select(idx));
+                    let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
                     logger.push(&loss);
-                    actor_critic = Ppo::update_separated(actor_critic, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                    actor_critic = Ppo::update_separated(net, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c);
                 }
             }
             

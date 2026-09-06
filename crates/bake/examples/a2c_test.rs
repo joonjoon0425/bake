@@ -34,9 +34,9 @@ pub fn main() {
 
         if buffer.len() >= 128 {
             let batch = buffer.pop();
-            let loss = A2C::loss(&state, &actor_critic, batch);
+            let (net, loss) = A2C::loss(&state, actor_critic, batch);
             logger.push(&loss);
-            actor_critic = A2C::update_separated(actor_critic, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c)
+            actor_critic = A2C::update_separated(net, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c)
         }
 
         if tape.done() {

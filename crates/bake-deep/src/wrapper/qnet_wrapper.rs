@@ -9,7 +9,12 @@ pub struct DiscreteQNetWrapper<T: DiscreteQNet> { net: T }
 
 impl<T: DiscreteQNet> DiscreteQNetWrapper<T> {
     /// create a new DiscreteQFuction from given DiscreteQNet
-    pub fn new(net: T) -> Self { Self { net } }
+    /// /// # Warning
+    /// - The given network must be on the autodiff device
+    /// - The network will be translated to inner device here.
+    /// - The network will be automatically moved to autodiff device when the user call the `loss` functions of algorithms
+    /// - The network will be automatically moved to inner device when the user call the `update` functions of algorithms
+    pub fn new(net: T) -> Self { Self { net: net.valid() } }
 }
 
 impl<T: DiscreteQNet> DiscreteQFunction for DiscreteQNetWrapper<T> {

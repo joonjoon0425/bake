@@ -1,9 +1,12 @@
 //! Network trait for Actor Critic methods
 //! 
-use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
+use burn::{module::{AutodiffModule, ModuleDisplay}, prelude::*};
 use crate::{contract::actor_critic::EncoderType, data::batchable::Batchable};
 
 /// Actor critic network for actor-critic methods
+/// - the users must implement this trait to use their own network structure, and wrap it with wrapper.
+/// # Warning
+/// - the user must create the network initialy on autodiff device.
 pub trait ActorCriticNet : AutodiffModule + Clone + ModuleDisplay {
     /// observation
     type Obs: Batchable;

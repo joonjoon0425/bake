@@ -1,9 +1,12 @@
 //! Network trait for value based methods
 //! 
-use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
+use burn::{prelude::*, module::{AutodiffModule, ModuleDisplay}};
 use crate::data::batchable::Batchable;
 
 /// A discrete QNetwork trait
+/// - the users must implement this trait to use their own network structure, and wrap it with wrapper.
+/// # Warning
+/// - the user must create the network initialy on autodiff device.
 pub trait DiscreteQNet : AutodiffModule + Clone + ModuleDisplay {
     /// observation type
     type Obs: Batchable;
@@ -12,6 +15,9 @@ pub trait DiscreteQNet : AutodiffModule + Clone + ModuleDisplay {
 }
 
 /// A discrete Dueling QNetwork trait
+/// - the users must implement this trait to use their own network structure, and wrap it with wrapper.
+/// # Warning
+/// - the user must create the network initialy on autodiff device.
 pub trait DiscreteDuelingQNet : AutodiffModule + Clone + ModuleDisplay {
     /// observation type
     type Obs: Batchable;

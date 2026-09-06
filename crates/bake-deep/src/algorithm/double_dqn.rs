@@ -1,6 +1,6 @@
 //! A Double Deep-QNetwork algorithm implementation
 use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
-use crate::{loss::Loss, buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::DiscreteQFunction, data::Batch, logger::ToLog};
+use crate::{buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::DiscreteQFunction, data::{Batch, Batchable}, logger::ToLog, loss::Loss};
 
 /// state for Double DQN
 #[derive(Debug, Clone)]
@@ -24,11 +24,18 @@ pub struct DoubleDqnLoss {
 
 impl DoubleDqn {
     /// compute the loss for Dqn algorithm. If `is_weight` is not `None` in `batch_info`, the weighted loss is returned,
-    pub fn loss<Q, Constraint>(state: &DoubleDqn, online: &Q, target: &Q, batch: Batch<Q::Obs, Tensor<1, Int>, Constraint>, batch_info: SampleInfo) -> DoubleDqnLoss
+    /// # Warning
+    /// - Here, the given DiscreteQFunction is moved to autodiff device
+    /// - The DiscreteQFunction will be move to inner device when `update` is called
+    pub fn loss<Q, Constraint>(state: &DoubleDqn, online: Q, target: &Q, batch: Batch<Q::Obs, Tensor<1, Int>, Constraint>, batch_info: SampleInfo) -> (Q, DoubleDqnLoss)
     where
         Q: DiscreteQFunction,
         Constraint: DiscreteConstraint
     {
+        let online = online.train();
+        let target = target.clone().train();
+        let batch = batch.into_autodiff();
+
         let qvalues = online.forward(batch.obss, batch.constraints);
         let qvalues = qvalues.gather(1, batch.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
 
@@ -41,23 +48,26 @@ impl DoubleDqn {
         let td_error = (targets.clone() - qvalues.clone()).detach();
         let qmean = qvalues.clone().detach().mean();
 
-        match batch_info.is_weights {
+        match batch_info.is_weights.into_autodiff() {
             Some(is_weights) => {
                 let loss = (state.loss_fn.forward_no_reduction(qvalues, targets) * is_weights).mean();
-                DoubleDqnLoss { loss, td_error, qmean }
+                (online, DoubleDqnLoss { loss, td_error, qmean })
             },
             None => {
                 let loss = state.loss_fn.forward(qvalues, targets);
-                DoubleDqnLoss { loss, td_error, qmean }
+                (online, DoubleDqnLoss { loss, td_error, qmean })
             }
         }
     }
 
     /// update the Q function with given learning rate and optimizer
+    /// # Warning
+    /// - The given QFunction must be on autodiff device, which the loss function does it.
+    /// - The given QFunction is moved to inner device after the function call
     pub fn update<Q: DiscreteQFunction>(online: Q, loss: DoubleDqnLoss, lr: f64, opt: &mut ModuleOptimizer) -> Q {
         let grads = loss.loss.backward();
         let grads = GradientsParams::from_grads(grads, &online);
-        opt.step(lr, online, grads)
+        opt.step(lr, online, grads).valid()
     }
 
     /// gives the name of recordable logs. use it to register at the logger

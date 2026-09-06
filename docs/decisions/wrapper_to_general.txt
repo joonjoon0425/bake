@@ -1,0 +1,2 @@
+기존 wrapper는 새로 만드는 Distribution에 맞춰서 같은 걸 계속 만들어야 했었다. Constraint가 고정되어 있었고, Distribution에 맞는 Contraint가 무엇인지 정해주는 계약이 없었기 때문.
+이것을 PossibleConstraint<Dist: Distribution>으로 해결하였다. 이제 임의의 Distribution이 새로 만들어져도 wrapper는 새로 만들 필요가 없다.
