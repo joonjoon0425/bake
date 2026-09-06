@@ -30,7 +30,7 @@ pub fn main() {
     logger.register("critic_loss", 100);
     logger.register("entropy", 100);
     logger.register("approx_kl", 100);
-    logger.register("clip_ratio", 100);
+    logger.register("clip_fraction", 100);
 
     for count in 0..=500000 {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
@@ -67,8 +67,8 @@ pub fn main() {
             let reward_avg = logger.emit("reward");
             let entropy = logger.emit("entropy");
             let approx_kl = logger.emit("approx_kl");
-            let clip_ratio = logger.emit("clip_ratio");
-            eprintln!("count: {count}, reward_avg: {reward_avg}, entropy: {entropy}, approx KL: {approx_kl}, clip ratio: {clip_ratio}");
+            let clip_fraction = logger.emit("clip_fraction");
+            eprintln!("count: {count}, reward_avg: {reward_avg}, entropy: {entropy}, approx KL: {approx_kl}, clip fraction: {clip_fraction}");
         }
     }
 }

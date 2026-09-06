@@ -1,0 +1,1 @@
+flex의 assign_slice가 항상 텐서를 복사한다. ndarray는 안 그러고. 이는 내가 burn issue (#5575) 로 올려뒀다.

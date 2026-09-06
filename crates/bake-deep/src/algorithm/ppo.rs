@@ -29,7 +29,7 @@ pub struct PpoLoss {
     /// approximate KL divergence
     pub approx_kl: Tensor<1>,
     /// clipped ratio
-    pub clip_ratio: Tensor<1>,
+    pub clip_fraction: Tensor<1>,
 }
 
 impl Ppo {
@@ -55,7 +55,7 @@ impl Ppo {
         let approx_kl = ((log_ratio.clone().exp() - 1f32) - log_ratio.clone()).mean().detach();
         let clip_ratio = (log_ratio.exp() - 1f32).abs().greater_elem(state.eps).float().mean().detach();
 
-        (actor_critic, PpoLoss { actor_loss, critic_loss, entropy, approx_kl, clip_ratio })
+        (actor_critic, PpoLoss { actor_loss, critic_loss, entropy, approx_kl, clip_fraction: clip_ratio })
     }
 
     /// update the network.
@@ -97,7 +97,7 @@ impl Ppo {
             "critic_loss",
             "entropy",
             "approx_kl",
-            "clip_ratio",
+            "clip_fraction",
         ]
     }
 }
@@ -109,7 +109,7 @@ impl ToLog for PpoLoss {
         record.insert("critic_loss", self.critic_loss.clone().into_scalar());
         record.insert("entropy", self.entropy.clone().into_scalar());
         record.insert("approx_kl", self.approx_kl.clone().into_scalar());
-        record.insert("clip_ratio", self.clip_ratio.clone().into_scalar());
+        record.insert("clip_fraction", self.clip_fraction.clone().into_scalar());
         record
     }
 }
