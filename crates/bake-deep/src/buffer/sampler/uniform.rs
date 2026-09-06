@@ -16,12 +16,11 @@ impl UniformSampler {
 impl Sampler for UniformSampler {
     /// # Panic
     /// panics when the length of the storage is smaller than n
-    fn sample<Obs, Action, Constraint, Extra>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint, Extra>) -> (Batch<Obs, Action, Constraint, Extra>, SampleInfo)
+    fn sample<Obs, Action, Constraint>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint>) -> (Batch<Obs, Action, Constraint>, SampleInfo)
     where
         Obs: Batchable,
         Action: Batchable,
         Constraint: Batchable,
-        Extra: Batchable
     {
         let len = storage.len().unwrap();
         if len < n { panic!("Sampler received n bigger than given storage's length") }

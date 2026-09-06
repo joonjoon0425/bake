@@ -2,11 +2,11 @@
 //! 
 use crate::data::{Batch, Batchable};
 /// Rollout buffer implementation. Currently uses AoS (Array of Structures)
-pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable = ()> {
-    batch: Vec<Batch<Obs, Action, Constraint, Extra>>,
+pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Constraint: Batchable> {
+    batch: Vec<Batch<Obs, Action, Constraint>>,
 }
 
-impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> RolloutBuffer<Obs, Action, Constraint, Extra> {
+impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> RolloutBuffer<Obs, Action, Constraint> {
     /// create a new `RolloutBuffer`
     pub fn new() -> Self {
         Self { batch: vec![] }
@@ -18,12 +18,12 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable>
     }
 
     /// push one transition into buffer
-    pub fn push(&mut self, t: Batch<Obs, Action, Constraint, Extra>) {
+    pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) {
         self.batch.push(t);
     }
 
     /// pop all elements of buffer
-    pub fn pop(&mut self) -> Batch<Obs, Action, Constraint, Extra> {
+    pub fn pop(&mut self) -> Batch<Obs, Action, Constraint> {
         let batch = std::mem::replace(&mut self.batch, vec![]);
         Batch::cat(batch).into_autodiff()
     }
@@ -32,7 +32,7 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable>
 #[cfg(test)]
 mod tests {
     use burn::{prelude::*, tensor::Distribution};
-    use crate::{buffer::rollout::RolloutBuffer, constraint::Unconstrained, data::{Batch, Batchable}};
+    use crate::{buffer::rollout::RolloutBuffer, constraint::Unconstrained, data::{Batch, Batchable, extras::ExtraContainer}};
 
     #[test]
     fn init_test() {
@@ -51,7 +51,7 @@ mod tests {
             next_constraints: Unconstrained,
             terminated: reward.clone(),
             truncated: reward.clone(),
-            extras: (),
+            extras: ExtraContainer::new(),
         };
         buffer.push(batch);
     }
@@ -74,7 +74,7 @@ mod tests {
                 next_constraints: Unconstrained,
                 terminated: reward.clone(),
                 truncated: reward.clone(),
-                extras: (),
+                extras: ExtraContainer::new(),
             };
             buffer.push(batch);
         }

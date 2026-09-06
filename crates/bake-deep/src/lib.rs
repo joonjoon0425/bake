@@ -11,6 +11,6 @@ pub mod distribution;
 pub mod env;
 pub mod explore;
 pub mod logger;
-pub mod loss_enum;
+pub mod loss;
 pub mod net;
 pub mod wrapper;

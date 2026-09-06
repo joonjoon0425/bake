@@ -2,28 +2,27 @@
 //! 
 use std::marker::PhantomData;
 use burn::prelude::*;
-use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, SamplerConfig, UniformSampler, uniform::UniformSamplerConfig}, data::{Batch, Batchable}};
+use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, SamplerConfig, uniform::UniformSamplerConfig}, data::{Batch, Batchable}};
 
 /// Replay buffer implementation
-pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable = ()> {
+pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constraint: Batchable> {
     capacity: usize,
     head: usize,
     len: usize,
     /// for lazy initialization, we make it optional
-    batch: Option<Batch<Obs, Action, Constraint, Extra>>,
+    batch: Option<Batch<Obs, Action, Constraint>>,
     /// the sampler
     sampler: S,
     /// autodiff attached device
     device: Option<Device>,
 }
 
-impl<S, Obs, Action, Constraint, Extra> ReplayBuffer<S, Obs, Action, Constraint, Extra>
+impl<S, Obs, Action, Constraint> ReplayBuffer<S, Obs, Action, Constraint>
 where
     S: Sampler,
     Obs: Batchable,
     Action: Batchable,
     Constraint: Batchable,
-    Extra: Batchable
 {
     /// create a new ReplayBuffer (user's won't use this. Users must use the ReplayBufferConfig)
     pub fn new(capacity: usize, sampler: S) -> Self {
@@ -38,7 +37,7 @@ where
     }
 
     /// Push a givn transition into buffer
-    pub fn push(&mut self, t: Batch<Obs, Action, Constraint, Extra>) {
+    pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) {
         if self.batch.is_none() {
             self.batch = Some(Batch::zeros_like(self.capacity, &t, &t.device()));
             self.device = Some(t.device().autodiff());
@@ -54,7 +53,7 @@ where
     pub fn len(&self) -> usize { return self.len }
 
     /// sample given amount of batches from buffer. If the buffer's length is shorter than `batch_size`, returns None. When sampling, the autodiff backend is attached.
-    pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Obs, Action, Constraint, Extra>, SampleInfo)> {
+    pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Obs, Action, Constraint>, SampleInfo)> {
         let len = self.len();
         if len < batch_size { return None; }
         let (sample, mut info) = self.sampler.sample(batch_size, self.batch.as_ref().unwrap());
@@ -64,12 +63,11 @@ where
 
 }
 
-impl<Obs, Action, Constraint, Extra> ReplayBuffer<PrioritizedSampler, Obs, Action, Constraint, Extra>
+impl<Obs, Action, Constraint> ReplayBuffer<PrioritizedSampler, Obs, Action, Constraint>
 where
     Obs: Batchable,
     Action: Batchable,
     Constraint: Batchable,
-    Extra: Batchable
 {
     /// update the priority of elements of given indices to given priorities
     pub fn update_priority(&mut self, indices: &[usize], priorities: Tensor<1>) {
@@ -84,21 +82,21 @@ where
 }
 
 /// A helper struct for creating a ReplayBuffer
-pub struct ReplayBufferConfig<SamplerConf: SamplerConfig, Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> {
+pub struct ReplayBufferConfig<SamplerConf: SamplerConfig, Obs: Batchable, Action: Batchable, Constraint: Batchable> {
     config: SamplerConf,
     seed: u64,
     capacity: usize,
-    _p: PhantomData<(Obs, Action, Constraint, Extra)>,
+    _p: PhantomData<(Obs, Action, Constraint)>,
 }
 
-impl<SamplerConf: SamplerConfig, Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> ReplayBufferConfig<SamplerConf, Obs, Action, Constraint, Extra> {
+impl<SamplerConf: SamplerConfig, Obs: Batchable, Action: Batchable, Constraint: Batchable> ReplayBufferConfig<SamplerConf, Obs, Action, Constraint> {
     /// create a new replay buffer
-    pub fn init(self) -> ReplayBuffer<SamplerConf::SamplerType, Obs, Action, Constraint, Extra> {
+    pub fn init(self) -> ReplayBuffer<SamplerConf::SamplerType, Obs, Action, Constraint> {
         ReplayBuffer::new(self.capacity, self.config.init(self.seed, self.capacity))
     }
 }
 
-impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> ReplayBufferConfig<UniformSamplerConfig, Obs, Action, Constraint, Extra> {
+impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> ReplayBufferConfig<UniformSamplerConfig, Obs, Action, Constraint> {
     /// create a new RerplayBufferConfig with UniformSampler
     pub fn uniform(seed: u64, capacity: usize) -> Self {
         Self {
@@ -110,7 +108,7 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable>
     }
 }
 
-impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable> ReplayBufferConfig<PrioritizedSamplerConfig, Obs, Action, Constraint, Extra> {
+impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> ReplayBufferConfig<PrioritizedSamplerConfig, Obs, Action, Constraint> {
     /// create a new ReplayBufferConfig for PER
     pub fn prioritized(seed: u64, capacity: usize, alpha: f64, beta: f64) -> Self {
         Self {
@@ -137,7 +135,7 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable>
 #[cfg(test)]
 mod tests {
     use burn::{prelude::*, tensor::Distribution};
-    use crate::{buffer::replay::ReplayBufferConfig, constraint::Unconstrained, data::{Batch, Batchable}};
+    use crate::{buffer::replay::ReplayBufferConfig, constraint::Unconstrained, data::{Batch, Batchable, extras::ExtraContainer}};
 
     #[test]
     fn init_test() {
@@ -155,7 +153,7 @@ mod tests {
             next_constraints: Unconstrained,
             terminated: reward.clone(),
             truncated: reward.clone(),
-            extras: (),
+            extras: ExtraContainer::new(),
         };
 
         buffer.push(batch.clone());
@@ -182,7 +180,7 @@ mod tests {
                 next_constraints: Unconstrained,
                 terminated: reward.clone(),
                 truncated: reward.clone(),
-                extras: (),
+                extras: ExtraContainer::new(),
             };
             buffer.push(batch);
         }
@@ -211,7 +209,7 @@ mod tests {
                 next_constraints: Unconstrained,
                 terminated: reward.clone(),
                 truncated: reward.clone(),
-                extras: (),
+                extras: ExtraContainer::new(),
             };
             buffer.push(batch);
         }

@@ -1,6 +1,6 @@
 //! The algorithms of deep rl
 //! 
-pub mod advantage_enum;
+pub mod advantage_estimator;
 
 pub mod dqn;
 pub use dqn::{Dqn, DqnLoss};

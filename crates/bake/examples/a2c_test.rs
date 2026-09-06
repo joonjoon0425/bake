@@ -1,4 +1,4 @@
-use bake_deep::{algorithm::{a2c::A2C, advantage_enum::Advantage}, loss_enum::Loss, buffer::RolloutBuffer, contract::ActorCritic, distribution::Categorical, env::{CartPole, Tape}, logger::MovingAvgLogger, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper};
+use bake_deep::{algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator}, loss::Loss, buffer::RolloutBuffer, contract::ActorCritic, distribution::Categorical, env::{CartPole, Tape}, logger::MovingAvgLogger, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper};
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
 
@@ -8,7 +8,7 @@ pub fn main() {
     device.seed(seed);
     let autodiff_device = device.clone().autodiff();
     
-    let state = A2C { gamma: 0.99, advantage: Advantage::Gae { lambda: 0.95 }, loss_fn: Loss::MseLoss };
+    let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95 }, loss_fn: Loss::MseLoss };
     let mut env = CartPole::new(seed, &device);
     let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &autodiff_device));
 

@@ -6,7 +6,7 @@ use crate::{contract::ActorCritic, data::{Batch, Batchable}, distribution::{Dist
 
 /// Advantage computation enumeration
 #[derive(Debug, Clone)]
-pub enum Advantage {
+pub enum AdvantageEstimator {
     /// 1-step TD residual
     Td0,
     /// Monte Carlo residual
@@ -20,24 +20,24 @@ pub enum Advantage {
     }
 }
 
-impl Advantage {
+impl AdvantageEstimator {
     /// compute the advantage
-    pub fn advantage<Ac: ActorCritic, Extra: Batchable>(
+    pub fn advantage<Ac: ActorCritic>(
         &self,
         actor_critic: &Ac,
-        batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Extra>,
+        batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>>,
         gamma: f32) -> (Tensor<1>, Tensor<1>)
     {
         match self {
-            Advantage::Td0 => Advantage::td0(actor_critic, batch, gamma),
-            Advantage::Td1 => Advantage::td1(actor_critic, batch, gamma),
-            Advantage::Gae { lambda } => Advantage::gae(actor_critic, batch, gamma, *lambda)
+            AdvantageEstimator::Td0 => AdvantageEstimator::td0(actor_critic, batch, gamma),
+            AdvantageEstimator::Td1 => AdvantageEstimator::td1(actor_critic, batch, gamma),
+            AdvantageEstimator::Gae { lambda } => AdvantageEstimator::gae(actor_critic, batch, gamma, *lambda)
         }
     }
 
-    fn td0<Ac: ActorCritic, Extra: Batchable>(
+    fn td0<Ac: ActorCritic>(
         actor_critic: &Ac,
-        batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Extra>,
+        batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>>,
         gamma: f32,
     ) -> (Tensor<1>, Tensor<1>) {
         let values = actor_critic.value(batch.obss);
@@ -48,9 +48,9 @@ impl Advantage {
         (adv.detach(), returns.detach())
     }
 
-    fn td1<Ac: ActorCritic, Extra: Batchable>(
+    fn td1<Ac: ActorCritic>(
         actor_critic: &Ac,
-        batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Extra>,
+        batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>>,
         gamma: f32,
     ) -> (Tensor<1>, Tensor<1>) {
         let n = batch.len().unwrap();
@@ -70,9 +70,9 @@ impl Advantage {
         (adv.detach(), returns.detach())
     }
 
-    fn gae<Ac: ActorCritic, Extra: Batchable>(
+    fn gae<Ac: ActorCritic>(
         actor_critic: &Ac,
-        batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Extra>,
+        batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>>,
         gamma: f32,
         lambda: f32
     ) -> (Tensor<1>, Tensor<1>) {

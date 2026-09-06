@@ -9,7 +9,7 @@ use nn::activation::ActivationConfig::Relu;
 
 use bake::deep::env::{CartPole, Tape};
 use bake::deep::algorithm::dqn::Dqn;
-use bake_deep::loss_enum::Loss;
+use bake_deep::loss::Loss;
 
 pub fn main() {
     println!("count,ep_reward_average,ep_step_average,loss,td_error,qmean,eps");

@@ -63,12 +63,11 @@ impl Sampler for PrioritizedSampler {
         self.max_priority = Some((p, index))
     }
 
-    fn sample<Obs, Action, Constraint, Extra>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint, Extra>) -> (Batch<Obs, Action, Constraint, Extra>, SampleInfo)
+    fn sample<Obs, Action, Constraint>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint>) -> (Batch<Obs, Action, Constraint>, SampleInfo)
     where
         Obs: Batchable,
         Action: Batchable,
         Constraint: Batchable,
-        Extra: Batchable
     {
         let device = storage.device();
         let indices_raw = self.sum_tree.sample_idx(n);

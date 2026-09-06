@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}};
 
-use crate::{algorithm::{advantage_enum::Advantage}, loss_enum::Loss, contract::ActorCritic, data::Batch, distribution::{Distribution, PossibleConstraint}, logger::ToLog};
+use crate::{algorithm::{advantage_estimator::AdvantageEstimator}, loss::Loss, contract::ActorCritic, data::Batch, distribution::{Distribution, PossibleConstraint}, logger::ToLog};
 
 /// state for A2C
 #[derive(Debug, Clone)]
@@ -11,7 +11,7 @@ pub struct A2C {
     /// discount rate
     pub gamma: f32,
     /// for advantage calculation
-    pub advantage: Advantage,
+    pub advantage: AdvantageEstimator,
     /// loss function for critic
     pub loss_fn: Loss,
 }

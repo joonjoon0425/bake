@@ -2,7 +2,7 @@
 //! 
 use burn::Tensor;
 
-use crate::{env::Environment, data::Batch};
+use crate::{data::{Batch, extras::ExtraContainer}, env::Environment};
 
 /// A helper struct which helps creating and taking a step in training loop
 pub struct Tape<E: Environment> {
@@ -69,7 +69,7 @@ impl<E: Environment> Tape<E> {
             truncated: Tensor::from_floats([if truncated { 1f32 } else { 0f32 }], &device),
             constraints,
             next_constraints: self.constraint.clone(),
-            extras: ()
+            extras: ExtraContainer::new(),
         };
         self.reward = reward;
         self.terminated = terminated;
