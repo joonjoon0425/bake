@@ -33,7 +33,7 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable, Extra: Batchable>
         self.rewards.device()
     }
 
-    /// user can modifiy the extra solt using the given mapping function
+    /// user can modifiy the extra slot using the given mapping function
     pub fn map_extra<ModifiedExtra: Batchable, F: Fn(Extra) -> ModifiedExtra>(self, f: F) -> Batch<Obs, Action, Constraint, ModifiedExtra> {
         let modified = f(self.extras);
         Batch {

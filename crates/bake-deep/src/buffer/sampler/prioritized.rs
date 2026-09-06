@@ -1,60 +1,7 @@
-//! A sampler trait and implementations for buffers
-//! 
-
+//! A sampler which uses Priority (PER)
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
-use crate::data::{Batch, Batchable};
-
-/// A `Sampler` trait which all samplers for buffers must implement
-pub trait Sampler {
-    /// sample n elements from given storage (currently only Batch type)
-    fn sample<Obs, Action, Constraint, Extra>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint, Extra>) -> (Batch<Obs, Action, Constraint, Extra>, SampleInfo)
-    where
-        Obs: Batchable,
-        Action: Batchable,
-        Constraint: Batchable,
-        Extra: Batchable;
-
-    /// when a new element is pushed into buffer. no-op for base
-    fn on_push(&mut self, _index: usize) { }
-}
-
-/// A struct holding the information of samples
-pub struct SampleInfo {
-    /// the indices of sample as a member of given buffer
-    pub indices: Vec<usize>,
-    /// importance weights
-    pub is_weights: Option<Tensor<1>>,
-}
-
-/// A basic sampler which treats all elements equally
-pub struct UniformSampler {
-    rng: SmallRng,
-}
-
-impl UniformSampler {
-    /// create a new `UniformSampler`
-    pub fn new(seed: u64) -> Self { Self { rng: SmallRng::seed_from_u64(seed) } }
-}
-
-impl Sampler for UniformSampler {
-    /// # Panic
-    /// panics when the length of the storage is smaller than n
-    fn sample<Obs, Action, Constraint, Extra>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint, Extra>) -> (Batch<Obs, Action, Constraint, Extra>, SampleInfo)
-    where
-        Obs: Batchable,
-        Action: Batchable,
-        Constraint: Batchable,
-        Extra: Batchable
-    {
-        let len = storage.len().unwrap();
-        if len < n { panic!("Sampler received n bigger than given storage's length") }
-
-        let indices_raw: Vec<usize> = (0..n).map(|_| self.rng.random_range(0..len)).collect();
-        let indices = Tensor::from_ints(indices_raw.as_slice(), &storage.device());
-        (storage.clone().select(indices), SampleInfo { indices: indices_raw , is_weights: None } )
-    }
-}
+use crate::{buffer::sampler::{SampleInfo, Sampler, SamplerConfig}, data::{Batch, Batchable}};
 
 /// A sampler which uses Priority (PER)
 pub struct PrioritizedSampler {
@@ -90,49 +37,6 @@ impl PrioritizedSampler {
     pub fn beta(&self) -> f64 { self.beta }
     /// return the mutable reference of beta
     pub fn beta_mut(&mut self) -> &mut f64 { &mut self.beta }
-}
-
-/// Configuration for PrioritizedSampler
-pub struct PrioritizedSamplerConfig {
-    /// controls how much the sampler will care about priorities. 0 -> uniform, 1 -> fully prioritized
-    pub alpha: f64,
-    /// controls the importance sampling weights. 0 -> no effect, 1 -> full correction
-    pub beta: f64,
-    /// clip the maximum priority. default None
-    pub priority_clip: Option<f64>,
-    /// if true, compute the maximum priority within current SumTree. default false
-    pub max_priority_within_buffer: bool,
-}
-
-impl PrioritizedSamplerConfig {
-    /// create a new PrioritizedSamplerConfig
-    /// - `priority_clip` is `None` by default
-    /// - `max_priority_within_buffer` is false by default
-    pub fn new(alpha: f64, beta: f64) -> Self {
-        Self {
-            alpha,
-            beta,
-            priority_clip: None,
-            max_priority_within_buffer: false,
-        }
-    }
-
-    /// configure the priority clip
-    pub fn with_priority_clip(mut self, priority_clip: f64) -> Self {
-        self.priority_clip = Some(priority_clip);
-        self
-    }
-
-    /// configure if max_priority will be computed from buffer
-    pub fn with_max_priority_within_buffer(mut self, flag: bool) -> Self {
-        self.max_priority_within_buffer = flag;
-        self
-    }
-
-    /// create a new `PrioritizedSampler` from configuration
-    pub fn init(self, seed: u64, capacity: usize) -> PrioritizedSampler {
-        PrioritizedSampler::new(seed, self.alpha, self.beta, capacity, self.priority_clip, self.max_priority_within_buffer)
-    }
 }
 
 impl Sampler for PrioritizedSampler {
@@ -216,6 +120,52 @@ impl PrioritizedSampler {
         if self.max_priority_within_buffer && let Some((_, cur_idx)) = prev && indices.contains(&cur_idx) {
             self.max_priority = self.recompute_max_from_tree();
         }
+    }
+}
+
+
+/// Configuration for PrioritizedSampler
+pub struct PrioritizedSamplerConfig {
+    /// controls how much the sampler will care about priorities. 0 -> uniform, 1 -> fully prioritized
+    pub alpha: f64,
+    /// controls the importance sampling weights. 0 -> no effect, 1 -> full correction
+    pub beta: f64,
+    /// clip the maximum priority. default None
+    pub priority_clip: Option<f64>,
+    /// if true, compute the maximum priority within current SumTree. default false
+    pub max_priority_within_buffer: bool,
+}
+
+impl PrioritizedSamplerConfig {
+    /// create a new PrioritizedSamplerConfig
+    /// - `priority_clip` is `None` by default
+    /// - `max_priority_within_buffer` is false by default
+    pub fn new(alpha: f64, beta: f64) -> Self {
+        Self {
+            alpha,
+            beta,
+            priority_clip: None,
+            max_priority_within_buffer: false,
+        }
+    }
+
+    /// configure the priority clip
+    pub fn with_priority_clip(mut self, priority_clip: f64) -> Self {
+        self.priority_clip = Some(priority_clip);
+        self
+    }
+
+    /// configure if max_priority will be computed from buffer
+    pub fn with_max_priority_within_buffer(mut self, flag: bool) -> Self {
+        self.max_priority_within_buffer = flag;
+        self
+    }
+}
+
+impl SamplerConfig for PrioritizedSamplerConfig {
+    type SamplerType = PrioritizedSampler;
+    fn init(self, seed: u64, capacity: usize) -> Self::SamplerType {
+        PrioritizedSampler::new(seed, self.alpha, self.beta, capacity, self.priority_clip, self.max_priority_within_buffer)
     }
 }
 

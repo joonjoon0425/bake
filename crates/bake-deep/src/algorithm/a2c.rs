@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}};
 
-use crate::{algorithm::{advantage_enum::Advantage, loss_enum::Loss}, contract::ActorCritic, data::Batch, distribution::{Distribution, PossibleConstraint}, logger::ToLog};
+use crate::{algorithm::{advantage_enum::Advantage}, loss_enum::Loss, contract::ActorCritic, data::Batch, distribution::{Distribution, PossibleConstraint}, logger::ToLog};
 
 /// state for A2C
 #[derive(Debug, Clone)]

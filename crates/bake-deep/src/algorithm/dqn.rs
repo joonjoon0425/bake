@@ -1,6 +1,6 @@
 //! A Deep-QNetwork algorithm implementation
 use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
-use crate::{algorithm::loss_enum::Loss, buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::DiscreteQFunction, data::Batch, logger::ToLog};
+use crate::{loss_enum::Loss, buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::DiscreteQFunction, data::Batch, logger::ToLog};
 
 /// state for DQN
 #[derive(Debug, Clone)]
