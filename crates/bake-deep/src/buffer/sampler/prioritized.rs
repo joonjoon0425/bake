@@ -109,8 +109,8 @@ impl PrioritizedSampler {
             self.sum_tree.update(index, v);
             self.min_tree.update(index, v);
             match self.max_priority {
-                Some((val, _)) if val < v => self.max_priority = Some((v, i)),
-                None => self.max_priority = Some((v, i)),
+                Some((val, _)) if val < v => self.max_priority = Some((v, index)),
+                None => self.max_priority = Some((v, index)),
                 _ => {}
             }
         }

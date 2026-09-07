@@ -39,11 +39,11 @@ impl DoubleDqn {
         let qvalues = online.forward(batch.obss, batch.constraints);
         let qvalues = qvalues.gather(1, batch.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
 
-        let next_qvalues_online = target.forward(batch.next_obss.clone(), batch.next_constraints.clone()).detach();
+        let next_qvalues_online = online.forward(batch.next_obss.clone(), batch.next_constraints.clone()).detach();
         let argmax = next_qvalues_online.argmax(1);
         let next_qvalues_target = target.forward(batch.next_obss, batch.next_constraints).detach();
         let next_qvalues = next_qvalues_target.gather(1, argmax).squeeze_dim::<1>(1);
-        let targets = ((batch.rewards + state.gamma * next_qvalues.max_dim(1).squeeze_dim(1)) * (1f32 - batch.terminated)).detach();
+        let targets = (batch.rewards + state.gamma * next_qvalues * (1f32 - batch.terminated)).detach();
 
         let td_error = (targets.clone() - qvalues.clone()).detach();
         let qmean = qvalues.clone().detach().mean();

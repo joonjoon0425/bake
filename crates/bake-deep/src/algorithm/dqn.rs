@@ -40,7 +40,7 @@ impl Dqn {
         let qvalues = qvalues.gather(1, batch.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
 
         let next_qvalues = target.forward(batch.next_obss, batch.next_constraints);
-        let targets = ((batch.rewards + state.gamma * next_qvalues.max_dim(1).squeeze_dim(1)) * (1f32 - batch.terminated)).detach();
+        let targets = (batch.rewards + state.gamma * next_qvalues.max_dim(1).squeeze_dim(1) * (1f32 - batch.terminated)).detach();
 
         let td_error = (targets.clone() - qvalues.clone()).detach();
         let qmean = qvalues.clone().detach().mean();
