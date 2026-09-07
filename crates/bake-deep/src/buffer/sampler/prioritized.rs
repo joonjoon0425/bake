@@ -69,7 +69,7 @@ impl Sampler for PrioritizedSampler {
         Action: Batchable,
         Constraint: Batchable,
     {
-        let device = storage.buffer().as_ref().unwrap().device();
+        let device = storage.device();
         let indices_raw = self.sum_tree.sample_idx(sample_size);
         let indices = Tensor::from_ints(indices_raw.as_slice(), &device);
         let total = self.sum_tree.sum();
@@ -82,7 +82,7 @@ impl Sampler for PrioritizedSampler {
             }
         ).collect();
         let is_weights = Tensor::from_floats(is_weights.as_slice(), &device);
-        let selected = storage.buffer().unwrap().clone().select(indices);
+        let selected = storage.select(indices);
         (selected, SampleInfo { indices: indices_raw, is_weights: Some(is_weights) })
     }
 }

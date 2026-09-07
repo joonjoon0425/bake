@@ -6,8 +6,6 @@ use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, Samp
 
 /// Replay buffer implementation
 pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constraint: Batchable> {
-    capacity: usize,
-    head: usize,
     /// Lazy initialization storage
     storage: LazyStorage<Obs, Action, Constraint>,
     /// the sampler
@@ -15,8 +13,10 @@ pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constrain
 }
 
 /// Storage which holds the information of buffer
+#[derive(Debug)]
 pub struct LazyStorage<Obs: Batchable, Action: Batchable, Constraint: Batchable> {
-    /// the data
+    capacity: usize,
+    head: usize,
     /// for lazy initialization, we make it optional
     buffer: Option<Batch<Obs, Action, Constraint>>,
     /// the amount of data
@@ -25,20 +25,34 @@ pub struct LazyStorage<Obs: Batchable, Action: Batchable, Constraint: Batchable>
 
 impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> LazyStorage<Obs, Action, Constraint> {
     /// create a new LazyStorage
-    pub fn new() -> Self { Self { buffer: None, n: 0 } }
+    pub fn new(capacity: usize) -> Self { Self { capacity , head: 0, buffer: None, n: 0 } }
     /// initialize the internal buffer with given buffer
     /// # Panic
-    /// - If you call init more than twice
+    /// - If you call init more than once
     pub fn init(&mut self, buffer: Batch<Obs, Action, Constraint>) {
-        if self.buffer.is_some() { panic!("Cannot call LazyStorage::init more than twice") }
+        if self.buffer.is_some() { panic!("Cannot call LazyStorage::init more than once") }
         self.buffer = Some(buffer);
     }
-    /// return the number of data a lazystorage is holding
+    /// return the number of data a LazyStorage is holding
     pub fn n(&self) -> usize { self.n }
-    /// return the internal buffer as reference
-    pub fn buffer(&self) -> Option<&Batch<Obs, Action, Constraint>> { self.buffer.as_ref() }
-    /// return the internal buffer as mutable reference
-    pub fn buffer_mut(&mut self) -> Option<&mut Batch<Obs, Action, Constraint>> { self.buffer.as_mut() }
+    /// Push a givn transition into buffer and return the pushed index
+    pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) -> usize {
+        if self.buffer.is_none() {
+            self.init(Batch::zeros_like(self.capacity, &t, &t.device()));
+        }
+        let index = self.head;
+        self.buffer.as_mut().unwrap().assign_inplace(t, index);
+        self.head = (self.head + 1) % self.capacity;
+
+        if self.n < self.capacity { self.n += 1; }
+        index
+    }
+    /// return the data of selected indices
+    pub fn select(&self, indices: Tensor<1, Int>) -> Batch<Obs, Action, Constraint> {
+        self.buffer.clone().unwrap().select(indices)
+    }
+    /// return current device of buffer
+    pub fn device(&self) -> Device { self.buffer.as_ref().unwrap().device() }
 }
 
 impl<S, Obs, Action, Constraint> ReplayBuffer<S, Obs, Action, Constraint>
@@ -51,31 +65,22 @@ where
     /// create a new ReplayBuffer (user's won't use this. Users must use the ReplayBufferConfig)
     pub fn new(capacity: usize, sampler: S) -> Self {
         Self {
-            storage: LazyStorage { buffer: None, n: 0 },
-            head: 0,
-            capacity,
+            storage: LazyStorage::new(capacity),
             sampler,
         }
     }
 
     /// Push a givn transition into buffer
     pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) {
-        if self.storage.buffer().is_none() {
-            self.storage.init(Batch::zeros_like(self.capacity, &t, &t.device()));
-        }
-        self.storage.buffer_mut().unwrap().assign_inplace(t, self.head);
-        self.sampler.on_push(self.head);
-        self.head = (self.head + 1) % self.capacity;
-
-        if self.storage.n < self.capacity { self.storage.n += 1; }
+        self.sampler.on_push(self.storage.push(t));
     }
 
     /// return the number of data in buffer
-    pub fn len(&self) -> usize { return self.storage.n }
+    pub fn n(&self) -> usize { return self.storage.n }
 
     /// sample given amount of batches from buffer. If the buffer's length is shorter than `batch_size`, returns None.
     pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Obs, Action, Constraint>, SampleInfo)> {
-        let len = self.len();
+        let len = self.n();
         if len < batch_size { return None; }
         Some(self.sampler.sample(batch_size, &self.storage))
     }
@@ -176,9 +181,9 @@ mod tests {
         };
 
         buffer.push(batch.clone());
-        assert!(buffer.len() == 1);
+        assert!(buffer.n() == 1);
         buffer.push(batch);
-        assert!(buffer.len() == 2);
+        assert!(buffer.n() == 2);
     }
 
     #[test]
@@ -205,7 +210,7 @@ mod tests {
         }
         
         assert!(buffer.sample(1000).is_none());
-        assert!(buffer.len() == 100);
+        assert!(buffer.n() == 100);
         assert!(buffer.sample(64).is_some());
         assert!(buffer.sample(64).unwrap().0.len().unwrap() == 64);
     }
@@ -235,7 +240,7 @@ mod tests {
 
         let inner = buffer.storage.buffer.as_ref().unwrap();
         assert!(!inner.obss.clone().equal_elem(0.0).any().into_scalar::<bool>());
-        println!("head: {}, {}", buffer.head, inner.obss);
+        println!("head: {}, {}", buffer.storage.head, inner.obss);
         println!("{}", buffer.sample(1).unwrap().0.rewards);
     }
 

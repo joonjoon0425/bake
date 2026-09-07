@@ -26,8 +26,8 @@ impl Sampler for UniformSampler {
         if len < sample_size { panic!("Sampler received n bigger than given storage's length") }
 
         let indices_raw: Vec<usize> = (0..sample_size).map(|_| self.rng.random_range(0..len)).collect();
-        let indices = Tensor::from_ints(indices_raw.as_slice(), &storage.buffer().as_ref().unwrap().device());
-        (storage.buffer().unwrap().clone().select(indices), SampleInfo { indices: indices_raw , is_weights: None } )
+        let indices = Tensor::from_ints(indices_raw.as_slice(), &storage.device());
+        (storage.select(indices), SampleInfo { indices: indices_raw , is_weights: None } )
     }
 }
 
