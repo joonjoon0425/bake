@@ -1,7 +1,7 @@
 //! A sampler which uses Priority (PER)
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
-use crate::{buffer::sampler::{SampleInfo, Sampler, SamplerConfig}, data::{Batch, Batchable}};
+use crate::{buffer::{replay::LazyStorage, sampler::{SampleInfo, Sampler, SamplerConfig}}, data::{Batch, Batchable}};
 
 /// A sampler which uses Priority (PER)
 pub struct PrioritizedSampler {
@@ -63,14 +63,14 @@ impl Sampler for PrioritizedSampler {
         self.max_priority = Some((p, index))
     }
 
-    fn sample<Obs, Action, Constraint>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint>) -> (Batch<Obs, Action, Constraint>, SampleInfo)
+    fn sample<Obs, Action, Constraint>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint>) -> (Batch<Obs, Action, Constraint>, SampleInfo)
     where
         Obs: Batchable,
         Action: Batchable,
         Constraint: Batchable,
     {
-        let device = storage.device();
-        let indices_raw = self.sum_tree.sample_idx(n);
+        let device = storage.buffer.as_ref().unwrap().device();
+        let indices_raw = self.sum_tree.sample_idx(sample_size);
         let indices = Tensor::from_ints(indices_raw.as_slice(), &device);
         let total = self.sum_tree.sum();
         let p_min = self.min_tree.min() / total;
@@ -82,7 +82,7 @@ impl Sampler for PrioritizedSampler {
             }
         ).collect();
         let is_weights = Tensor::from_floats(is_weights.as_slice(), &device);
-        let selected = storage.clone().select(indices);
+        let selected = storage.buffer.as_ref().unwrap().clone().select(indices);
         (selected, SampleInfo { indices: indices_raw, is_weights: Some(is_weights) })
     }
 }

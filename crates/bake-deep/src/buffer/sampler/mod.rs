@@ -1,12 +1,12 @@
 //! A sampler trait and implementations for buffers
 //! 
 use burn::prelude::*;
-use crate::data::{Batch, Batchable};
+use crate::{buffer::replay::LazyStorage, data::{Batch, Batchable}};
 
 /// A `Sampler` trait which all samplers for buffers must implement
 pub trait Sampler {
     /// sample n elements from given storage (currently only Batch type)
-    fn sample<Obs, Action, Constraint>(&mut self, n: usize, storage: &Batch<Obs, Action, Constraint>) -> (Batch<Obs, Action, Constraint>, SampleInfo)
+    fn sample<Obs, Action, Constraint>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint>) -> (Batch<Obs, Action, Constraint>, SampleInfo)
     where
         Obs: Batchable,
         Action: Batchable,

@@ -8,11 +8,19 @@ use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, Samp
 pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constraint: Batchable> {
     capacity: usize,
     head: usize,
-    len: usize,
-    /// for lazy initialization, we make it optional
-    batch: Option<Batch<Obs, Action, Constraint>>,
+    /// Lazy initialization storage
+    storage: LazyStorage<Obs, Action, Constraint>,
     /// the sampler
     sampler: S,
+}
+
+/// Storage which holds the information of buffer
+pub struct LazyStorage<Obs: Batchable, Action: Batchable, Constraint: Batchable> {
+    /// the data
+    /// for lazy initialization, we make it optional
+    pub buffer: Option<Batch<Obs, Action, Constraint>>,
+    /// the amount of data
+    pub n: usize,
 }
 
 impl<S, Obs, Action, Constraint> ReplayBuffer<S, Obs, Action, Constraint>
@@ -25,9 +33,8 @@ where
     /// create a new ReplayBuffer (user's won't use this. Users must use the ReplayBufferConfig)
     pub fn new(capacity: usize, sampler: S) -> Self {
         Self {
-            batch: None,
+            storage: LazyStorage { buffer: None, n: 0 },
             head: 0,
-            len: 0,
             capacity,
             sampler,
         }
@@ -35,24 +42,24 @@ where
 
     /// Push a givn transition into buffer
     pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) {
-        if self.batch.is_none() {
-            self.batch = Some(Batch::zeros_like(self.capacity, &t, &t.device()));
+        if self.storage.buffer.is_none() {
+            self.storage.buffer = Some(Batch::zeros_like(self.capacity, &t, &t.device()));
         }
-        self.batch.as_mut().unwrap().assign_inplace(t, self.head);
+        self.storage.buffer.as_mut().unwrap().assign_inplace(t, self.head);
         self.sampler.on_push(self.head);
         self.head = (self.head + 1) % self.capacity;
 
-        if self.len < self.capacity { self.len += 1; }
+        if self.storage.n < self.capacity { self.storage.n += 1; }
     }
 
     /// return the number of data in buffer
-    pub fn len(&self) -> usize { return self.len }
+    pub fn len(&self) -> usize { return self.storage.n }
 
     /// sample given amount of batches from buffer. If the buffer's length is shorter than `batch_size`, returns None.
     pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Obs, Action, Constraint>, SampleInfo)> {
         let len = self.len();
         if len < batch_size { return None; }
-        Some(self.sampler.sample(batch_size, self.batch.as_ref().unwrap()))
+        Some(self.sampler.sample(batch_size, &self.storage))
     }
 
 }
@@ -190,7 +197,7 @@ mod tests {
         let device = Device::default();
         let mut buffer = ReplayBufferConfig::uniform(11, 10).init();
 
-        for i in 0..11 {
+        for i in 0..15 {
             let obs = Tensor::<2>::full([1, 4], i as f32, &device);
             let action = Tensor::<1, Int>::random([1], Distribution::Uniform(0.0, 2.0), &device);
             let reward = Tensor::<1>::from_floats([1.0], &device);
@@ -208,9 +215,39 @@ mod tests {
             buffer.push(batch);
         }
 
-        let inner = buffer.batch.as_ref().unwrap();
+        let inner = buffer.storage.buffer.as_ref().unwrap();
         assert!(!inner.obss.clone().equal_elem(0.0).any().into_scalar::<bool>());
         println!("head: {}, {}", buffer.head, inner.obss);
         println!("{}", buffer.sample(1).unwrap().0.rewards);
+    }
+
+    #[test]
+    fn one_push_same_sample_test() {
+        let device = Device::default();
+        let mut buffer = ReplayBufferConfig::uniform(11, 10).init();
+        let obs = Tensor::<2>::full([1, 4], 5 as f32, &device);
+        let action = Tensor::<1, Int>::random([1], Distribution::Uniform(0.0, 2.0), &device);
+        let reward = Tensor::<1>::from_floats([1.0], &device);
+        let batch = Batch {
+            obss: obs.clone(),
+            actions: action.clone(),
+            rewards: reward.clone(),
+            next_obss: obs.clone(),
+            constraints: Unconstrained,
+            next_constraints: Unconstrained,
+            terminated: reward.clone(),
+            truncated: reward.clone(),
+            extras: ExtraContainer::new(),
+        };
+        buffer.push(batch);
+
+        assert!(buffer.sample(2).is_none());
+        let (sample1, _) = buffer.sample(1).unwrap();
+        let (sample2, _) = buffer.sample(1).unwrap();
+        let (sample3, _) = buffer.sample(1).unwrap();
+
+        assert!(sample1.obss.clone().equal(sample2.obss.clone()).all().into_scalar::<bool>());
+        assert!(sample2.obss.clone().equal(sample3.obss.clone()).all().into_scalar::<bool>());
+        assert!(sample3.obss.clone().equal(sample1.obss.clone()).all().into_scalar::<bool>());
     }
 }
