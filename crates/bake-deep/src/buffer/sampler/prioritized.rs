@@ -40,7 +40,7 @@ impl PrioritizedSampler {
 }
 
 impl Sampler for PrioritizedSampler {
-    fn on_push(&mut self, index: usize) {
+    fn after_push(&mut self, index: usize) {
         if self.max_priority_within_buffer 
             && let Some((_, max_index)) = self.max_priority && max_index == index {
             // the previous max value has been wrapped around and deleted

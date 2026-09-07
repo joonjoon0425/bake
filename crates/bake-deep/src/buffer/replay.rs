@@ -72,7 +72,7 @@ where
 
     /// Push a givn transition into buffer
     pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) {
-        self.sampler.on_push(self.storage.push(t));
+        self.sampler.after_push(self.storage.push(t));
     }
 
     /// return the number of data in buffer
