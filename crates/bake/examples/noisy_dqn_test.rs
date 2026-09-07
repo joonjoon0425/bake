@@ -26,11 +26,11 @@ pub fn main() {
     let mut opt = AdamConfig::new().init();
 
     let mut exploration = Greedy;
-    let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).with_max_priority_within_buffer(true).init();
+    let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
     let mut tape = Tape::new(&mut env);
     let mut logger = MovingAvgLogger::new();
 
-    let total_steps = 1000000;
+    let total_steps = 500000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
@@ -54,8 +54,9 @@ pub fn main() {
         if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
             online.reset_noise();
             target.reset_noise();
-            let (net, loss) = Dqn::loss(&config, online, &target, batch, batch_info);
+            let (net, loss) = Dqn::loss(&config, online, &target, batch, batch_info.clone());
             logger.push(&loss);
+            buffer.update_priority(&batch_info.indices, loss.td_error.clone());
             online = Dqn::update(net, loss, lr, &mut opt);
         }
 

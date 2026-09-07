@@ -26,6 +26,7 @@ pub trait SamplerConfig {
 }
 
 /// A struct holding the information of samples
+#[derive(Debug, Clone)]
 pub struct SampleInfo {
     /// the indices of sample as a member of given buffer
     pub indices: Vec<usize>,

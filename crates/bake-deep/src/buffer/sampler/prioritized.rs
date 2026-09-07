@@ -12,21 +12,19 @@ pub struct PrioritizedSampler {
     min_tree: MinTree,
     priority_clip: Option<f64>,
     /// holds the max_priority value
-    max_priority: Option<(f64, usize)>,
-    max_priority_within_buffer: bool,
+    max_priority: f64,
 
     eps: f64,
 }
 
 impl PrioritizedSampler {
     /// create a new PrioritizedSampler
-    pub fn new(seed: u64, alpha: f64, beta: f64, capacity: usize, priority_clip: Option<f64>, max_priority_within_buffer: bool) -> Self {
+    pub fn new(seed: u64, alpha: f64, beta: f64, capacity: usize, priority_clip: Option<f64>) -> Self {
         Self {
             alpha,
             beta,
             priority_clip,
-            max_priority: None,
-            max_priority_within_buffer,
+            max_priority: 1.,
             eps: 1e-6,
             sum_tree: SumTree::new(seed, capacity),
             min_tree: MinTree::new(capacity),
@@ -41,26 +39,8 @@ impl PrioritizedSampler {
 
 impl Sampler for PrioritizedSampler {
     fn after_push(&mut self, index: usize) {
-        if self.max_priority_within_buffer 
-            && let Some((_, max_index)) = self.max_priority && max_index == index {
-            // the previous max value has been wrapped around and deleted
-            self.max_priority = None;
-        }
-
-        // give the default priority to the newly given data
-        let p = match self.max_priority {
-            Some((v, _)) => v,
-            None => {
-                match self.recompute_max_from_tree() {
-                    Some((v, _)) => v,
-                    None => (1.0 + self.eps).powf(self.alpha),
-                }
-            }
-        };
-        self.sum_tree.update(index, p);
-        self.min_tree.update(index, p);
-        // update the index of max_priority
-        self.max_priority = Some((p, index))
+        self.sum_tree.update(index, self.max_priority);
+        self.min_tree.update(index, self.max_priority);
     }
 
     fn sample<Obs, Action, Constraint>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint>) -> (Batch<Obs, Action, Constraint>, SampleInfo)
@@ -88,12 +68,6 @@ impl Sampler for PrioritizedSampler {
 }
 
 impl PrioritizedSampler {
-    fn recompute_max_from_tree(&self) -> Option<(f64, usize)> {
-        let (val, idx) = self.sum_tree.argmax_naive();
-        if val <= 0.0 { /* no elements have been pushed */ return None; }
-        Some((val, idx))
-    }
-
     /// update the priority from given indices and priorites
     pub fn update_priority(&mut self, indices: &[usize], priorities: Tensor<1>) {
         let e = match self.priority_clip {
@@ -101,23 +75,12 @@ impl PrioritizedSampler {
             None => priorities.abs()
         };
         let p: Vec<f32> = (e + self.eps).powf_scalar(self.alpha).into_data().try_into_vec().unwrap();
-
-        let prev = self.max_priority;
         // update the priority
         for (i, &index) in indices.iter().enumerate() {
             let v = p[i] as f64;
             self.sum_tree.update(index, v);
             self.min_tree.update(index, v);
-            match self.max_priority {
-                Some((val, _)) if val < v => self.max_priority = Some((v, index)),
-                None => self.max_priority = Some((v, index)),
-                _ => {}
-            }
-        }
-
-        // due to the update, the maximum priority may have changed. recompute it
-        if self.max_priority_within_buffer && let Some((_, cur_idx)) = prev && indices.contains(&cur_idx) {
-            self.max_priority = self.recompute_max_from_tree();
+            self.max_priority = self.max_priority.max(v);
         }
     }
 }
@@ -130,21 +93,17 @@ pub struct PrioritizedSamplerConfig {
     /// controls the importance sampling weights. 0 -> no effect, 1 -> full correction
     pub beta: f64,
     /// clip the maximum priority. default None
-    pub priority_clip: Option<f64>,
-    /// if true, compute the maximum priority within current SumTree. default false
-    pub max_priority_within_buffer: bool,
+    pub priority_clip: Option<f64>
 }
 
 impl PrioritizedSamplerConfig {
     /// create a new PrioritizedSamplerConfig
     /// - `priority_clip` is `None` by default
-    /// - `max_priority_within_buffer` is false by default
     pub fn new(alpha: f64, beta: f64) -> Self {
         Self {
             alpha,
             beta,
-            priority_clip: None,
-            max_priority_within_buffer: false,
+            priority_clip: None
         }
     }
 
@@ -153,18 +112,12 @@ impl PrioritizedSamplerConfig {
         self.priority_clip = Some(priority_clip);
         self
     }
-
-    /// configure if max_priority will be computed from buffer
-    pub fn with_max_priority_within_buffer(mut self, flag: bool) -> Self {
-        self.max_priority_within_buffer = flag;
-        self
-    }
 }
 
 impl SamplerConfig for PrioritizedSamplerConfig {
     type SamplerType = PrioritizedSampler;
     fn init(self, seed: u64, capacity: usize) -> Self::SamplerType {
-        PrioritizedSampler::new(seed, self.alpha, self.beta, capacity, self.priority_clip, self.max_priority_within_buffer)
+        PrioritizedSampler::new(seed, self.alpha, self.beta, capacity, self.priority_clip)
     }
 }
 
@@ -172,7 +125,6 @@ impl SamplerConfig for PrioritizedSamplerConfig {
 struct SumTree {
     tree: Vec<f64>,
     rng: SmallRng,
-    capacity: usize,
     n: usize,
 }
 
@@ -181,7 +133,7 @@ impl SumTree {
         let depth = (capacity as f64).log2().ceil();
         let n = depth.exp2() as usize;
         let tree = vec![0f64; 2 * n];
-        Self { tree, n, capacity, rng: SmallRng::seed_from_u64(seed) }
+        Self { tree, n, rng: SmallRng::seed_from_u64(seed) }
     }
 
     #[cfg(test)]
@@ -204,7 +156,7 @@ impl SumTree {
             index /= 2;
         }
 
-        Self { tree, n, capacity, rng: SmallRng::seed_from_u64(seed) }
+        Self { tree, n, rng: SmallRng::seed_from_u64(seed) }
     }
 
     pub fn update(&mut self, index: usize, val: f64) {
@@ -244,18 +196,6 @@ impl SumTree {
         }
 
         vec
-    }
-
-    pub fn argmax_naive(&self) -> (f64, usize) {
-        let mut idx = self.n;
-        let mut max = self.tree[idx];
-        for i in self.n..(self.capacity + self.n) {
-            if max < self.tree[i] {
-                max = self.tree[i];
-                idx = i;
-            }
-        }
-        (max, idx - self.n)
     }
 
     // #[cfg(test)]

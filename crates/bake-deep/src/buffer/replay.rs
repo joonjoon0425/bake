@@ -148,12 +148,6 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> ReplayBufferConfi
         self.config = self.config.with_priority_clip(priority_clip);
         self
     }
-
-    /// compute the maximum priority from current buffer if `true` is given for `flag`. Else, the maximum priority stays same as the highest priority ever sampled.
-    pub fn with_max_priority_within_buffer(mut self, flag: bool) -> Self {
-        self.config = self.config.with_max_priority_within_buffer(flag);
-        self
-    }
 }
 
 #[cfg(test)]
