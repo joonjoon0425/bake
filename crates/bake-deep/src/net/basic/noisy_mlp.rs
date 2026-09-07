@@ -125,6 +125,14 @@ impl DiscreteDuelingQNet for NoisyMlpDiscreteDuelingQNet {
     }
 }
 
+impl NoiseReset for NoisyMlpDiscreteDuelingQNet {
+    fn reset_noise(&mut self) {
+        self.encoder.reset_noise();
+        self.advantage_layer.reset_noise();
+        self.value_layer.reset_noise();
+    }
+}
+
 /// PolicyNet implementation with NoisyMlp
 #[derive(Module, Debug)]
 pub struct NoisyMlpPolicyNet {
@@ -152,6 +160,13 @@ impl PolicyNet for NoisyMlpPolicyNet {
 
     fn forward(&self, obs: Self::Obs) -> Tensor<2> {
         self.head.forward(self.encoder.forward(obs))
+    }
+}
+
+impl NoiseReset for NoisyMlpPolicyNet {
+    fn reset_noise(&mut self) {
+        self.encoder.reset_noise();
+        self.head.reset_noise();
     }
 }
 
@@ -200,6 +215,15 @@ impl ActorCriticNet for NoisyMlpSeparatedActorCriticNet {
     }
 }
 
+impl NoiseReset for NoisyMlpSeparatedActorCriticNet {
+    fn reset_noise(&mut self) {
+        self.actor_encoder.reset_noise();
+        self.critic_encoder.reset_noise();
+        self.actor_head.reset_noise();
+        self.critic_head.reset_noise();
+    }
+}
+
 /// Shared ActorCritic implementation with NoisyMlp
 #[derive(Module, Debug)]
 pub struct NoisyMlpSharedActorCriticNet {
@@ -244,5 +268,13 @@ impl ActorCriticNet for NoisyMlpSharedActorCriticNet {
 
     fn encoder_type(&self) -> crate::contract::actor_critic::EncoderType {
         crate::contract::actor_critic::EncoderType::Shared
+    }
+}
+
+impl NoiseReset for NoisyMlpSharedActorCriticNet {
+    fn reset_noise(&mut self) {
+        self.encoder.reset_noise();
+        self.actor_head.reset_noise();
+        self.critic_head.reset_noise();
     }
 }

@@ -13,5 +13,10 @@ pub use mlp::{
 
 pub mod noisy_mlp;
 pub use noisy_mlp::{
-    NoisyMlp
+    NoisyMlp,
+    NoisyMlpDiscreteDuelingQNet,
+    NoisyMlpDiscreteQNet,
+    NoisyMlpPolicyNet,
+    NoisyMlpSeparatedActorCriticNet,
+    NoisyMlpSharedActorCriticNet,
 };
