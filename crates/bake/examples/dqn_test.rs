@@ -25,7 +25,7 @@ pub fn main() {
     let mut opt = AdamConfig::new().init();
 
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
-    let mut buffer = ReplayBufferConfig::prioritized(seed, 10000, 0.6, 0.4).with_priority_clip(1.0).with_max_priority_within_buffer(true).init();
+    let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).with_max_priority_within_buffer(true).init();
     let mut tape = Tape::new(&mut env);
     let mut logger = MovingAvgLogger::new();
 

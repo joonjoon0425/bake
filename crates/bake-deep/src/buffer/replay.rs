@@ -18,9 +18,27 @@ pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constrain
 pub struct LazyStorage<Obs: Batchable, Action: Batchable, Constraint: Batchable> {
     /// the data
     /// for lazy initialization, we make it optional
-    pub buffer: Option<Batch<Obs, Action, Constraint>>,
+    buffer: Option<Batch<Obs, Action, Constraint>>,
     /// the amount of data
-    pub n: usize,
+    n: usize,
+}
+
+impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> LazyStorage<Obs, Action, Constraint> {
+    /// create a new LazyStorage
+    pub fn new() -> Self { Self { buffer: None, n: 0 } }
+    /// initialize the internal buffer with given buffer
+    /// # Panic
+    /// - If you call init more than twice
+    pub fn init(&mut self, buffer: Batch<Obs, Action, Constraint>) {
+        if self.buffer.is_some() { panic!("Cannot call LazyStorage::init more than twice") }
+        self.buffer = Some(buffer);
+    }
+    /// return the number of data a lazystorage is holding
+    pub fn n(&self) -> usize { self.n }
+    /// return the internal buffer as reference
+    pub fn buffer(&self) -> Option<&Batch<Obs, Action, Constraint>> { self.buffer.as_ref() }
+    /// return the internal buffer as mutable reference
+    pub fn buffer_mut(&mut self) -> Option<&mut Batch<Obs, Action, Constraint>> { self.buffer.as_mut() }
 }
 
 impl<S, Obs, Action, Constraint> ReplayBuffer<S, Obs, Action, Constraint>
@@ -42,10 +60,10 @@ where
 
     /// Push a givn transition into buffer
     pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) {
-        if self.storage.buffer.is_none() {
-            self.storage.buffer = Some(Batch::zeros_like(self.capacity, &t, &t.device()));
+        if self.storage.buffer().is_none() {
+            self.storage.init(Batch::zeros_like(self.capacity, &t, &t.device()));
         }
-        self.storage.buffer.as_mut().unwrap().assign_inplace(t, self.head);
+        self.storage.buffer_mut().unwrap().assign_inplace(t, self.head);
         self.sampler.on_push(self.head);
         self.head = (self.head + 1) % self.capacity;
 
