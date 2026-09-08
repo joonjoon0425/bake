@@ -23,7 +23,7 @@ pub fn main() {
     let mut rng = SmallRng::seed_from_u64(seed);
     
     let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95 }, loss_fn: Loss::MseLoss };
-    let mut env = CartPole::new(seed, &device);
+    let env = CartPole::new(seed, &device);
     let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &autodiff_device));
 
     let lr_a = 1e-4;
@@ -32,7 +32,7 @@ pub fn main() {
     let mut opt_c = RmsPropConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = Tape::new(&mut env);
+    let mut tape = Tape::new(env);
 
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
@@ -44,9 +44,9 @@ pub fn main() {
     logger.register("clip_fraction", 100);
 
     for count in 0..=500000 {
-        let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
         let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
-        let mut t = tape.step(&mut env, action.clone());
+        let action = dist.sample();
+        let mut t = tape.step(action.clone());
         t.insert::<LogProb>(dist.log_probs(action));
 
         buffer.push(t);
@@ -57,7 +57,7 @@ pub fn main() {
             let adv = (adv.clone() - adv.clone().mean()) / (adv.var(0) + 1e-9).sqrt();
             batch.insert::<Advantage>(adv); batch.insert::<Return>(ret);
             for _ in 0..4 {
-                let mut perm: Vec<i64> = (0..batch.len().unwrap() as i64).collect();
+                let mut perm: Vec<i64> = (0..batch.batch_size().unwrap() as i64).collect();
                 perm.shuffle(&mut rng);
                 for chunk in perm.chunks(128) {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &autodiff_device);
@@ -71,7 +71,7 @@ pub fn main() {
         if tape.done() {
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("step", tape.steps as f32);
-            tape.reset(&mut env);
+            tape.reset();
         }
         
         if count % 5000 == 0 {

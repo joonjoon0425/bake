@@ -37,7 +37,7 @@ impl Reinforce {
         let policy = policy.train();
         let rollout = rollout.into_autodiff();
 
-        let len = rollout.len().unwrap();
+        let len = rollout.batch_size().unwrap();
         let device = rollout.device();
         let dist = policy.forward(rollout.obss, rollout.constraints);
         let mut returns = Tensor::zeros([len], &device);

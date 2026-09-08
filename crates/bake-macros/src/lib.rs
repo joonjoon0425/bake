@@ -106,9 +106,9 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
 
     quote! {
         impl #impl_generics Batchable for #name #ty_generics #where_clause {
-            fn len(&self) -> ::core::option::Option<usize> {
+            fn batch_size(&self) -> ::core::option::Option<usize> {
                 ::core::option::Option::None
-                #( .or_else(|| Batchable::len(&self.#batched)) )*
+                #( .or_else(|| Batchable::batch_size(&self.#batched)) )*
             }
 
             fn cat(items: ::std::vec::Vec<Self>) -> Self {

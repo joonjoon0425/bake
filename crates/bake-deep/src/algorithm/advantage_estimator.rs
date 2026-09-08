@@ -53,7 +53,7 @@ impl AdvantageEstimator {
         batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>>,
         gamma: f32,
     ) -> (Tensor<1>, Tensor<1>) {
-        let n = batch.len().unwrap();
+        let n = batch.batch_size().unwrap();
         let device = batch.device();
         let values = actor_critic.value(batch.obss);
         let next_values = actor_critic.value(batch.next_obss);
@@ -76,7 +76,7 @@ impl AdvantageEstimator {
         gamma: f32,
         lambda: f32
     ) -> (Tensor<1>, Tensor<1>) {
-        let n = batch.len().unwrap();
+        let n = batch.batch_size().unwrap();
         let device = batch.device();
         let values = actor_critic.value(batch.obss);
         let next_values = actor_critic.value(batch.next_obss);

@@ -6,6 +6,8 @@ use crate::{data::{Batch, extras::ExtraContainer}, env::Environment};
 
 /// A helper struct which helps creating and taking a step in training loop
 pub struct Tape<E: Environment> {
+    /// environment
+    env: E,
     /// current observation
     pub obs: E::Obs,
     /// current constraint
@@ -27,9 +29,10 @@ impl<E: Environment> Tape<E> {
     /// create a new tape struct
     /// # Warning
     /// calls `reset` on given environment
-    pub fn new(env: &mut E) -> Self {
+    pub fn new(mut env: E) -> Self {
         let (obs, constraint) = env.reset();
         Self {
+            env,
             obs,
             constraint,
             reward: 0f32,
@@ -41,8 +44,8 @@ impl<E: Environment> Tape<E> {
     }
 
     /// reset the environment and itself
-    pub fn reset(&mut self, env: &mut E) {
-        let (obs, mask) = env.reset();
+    pub fn reset(&mut self) {
+        let (obs, mask) = self.env.reset();
         self.obs = obs;
         self.constraint = mask;
 
@@ -55,10 +58,11 @@ impl<E: Environment> Tape<E> {
 
     /// take a step in environment with given action and return the transition object
     /// after the step, `Tape` updates reward, terminated, and truncated
-    pub fn step(&mut self, env: &mut E, actions: E::Action) -> Batch<E::Obs, E::Action, E::Constraint> {
-        let ((next_obs, next_mask), reward, terminated, truncated) = env.step(actions.clone());
+    pub fn step(&mut self, actions: E::Action) -> Batch<E::Obs, E::Action, E::Constraint> {
+        let device = self.env.device();
+
+        let ((next_obs, next_mask), reward, terminated, truncated) = self.env.step(actions.clone());
         let obss = std::mem::replace(&mut self.obs, next_obs);
-        let device = env.device();
         let constraints = std::mem::replace(&mut self.constraint, next_mask);
         let t = Batch {
             obss,
@@ -80,6 +84,6 @@ impl<E: Environment> Tape<E> {
         t
     }
 
-    /// returns true if the environment must call `reset`
+    /// returns true if the environment has terminated or truncated
     pub fn done(&self) -> bool { self.terminated || self.truncated }
 }

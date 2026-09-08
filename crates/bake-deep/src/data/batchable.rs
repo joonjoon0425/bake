@@ -12,7 +12,7 @@ use crate::constraint::{discrete_constraint::DiscreteMask, Unconstrained};
 /// Can create into batch along the batch dimension
 pub trait Batchable: std::fmt::Debug + Sized + Clone + Send + Sync + 'static {
     /// returns the length of the batch. returns `None` if there are no information of length (`Unconstrained` or `()`).
-    fn len(&self) -> Option<usize>;
+    fn batch_size(&self) -> Option<usize>;
 
     /// concatanate along batch dimension (dim 0)
     ///
@@ -33,7 +33,7 @@ pub trait Batchable: std::fmt::Debug + Sized + Clone + Send + Sync + 'static {
 
     /// checks if the batch is empty. If the batch has no length information (`Unconstraind` or `()`), it returns false
     fn is_empty(&self) -> bool {
-        self.len() == Some(0)
+        self.batch_size() == Some(0)
     }
 
     /// assign in-place the given batch, starting from the given index of batch dimension (dim 0)
@@ -51,7 +51,7 @@ pub trait Batchable: std::fmt::Debug + Sized + Clone + Send + Sync + 'static {
 
 // implementations
 impl<const D: usize> Batchable for Tensor<D> {
-    fn len(&self) -> Option<usize> {
+    fn batch_size(&self) -> Option<usize> {
         Some(self.shape()[0])
     }
 
@@ -74,7 +74,7 @@ impl<const D: usize> Batchable for Tensor<D> {
     }
 
     fn assign_inplace(&mut self, data: Self, index: usize) {
-        let len = data.len().unwrap();
+        let len = data.batch_size().unwrap();
         self.inplace(|a| a.slice_assign(index..index + len, data));
     }
 
@@ -94,7 +94,7 @@ impl<const D: usize> Batchable for Tensor<D> {
 }
 
 impl<const D: usize> Batchable for Tensor<D, Int> {
-    fn len(&self) -> Option<usize> {
+    fn batch_size(&self) -> Option<usize> {
         Some(self.shape()[0])
     }
 
@@ -112,7 +112,7 @@ impl<const D: usize> Batchable for Tensor<D, Int> {
     }
 
     fn assign_inplace(&mut self, data: Self, index: usize) {
-        let len = data.len().unwrap();
+        let len = data.batch_size().unwrap();
         self.inplace(|a| a.slice_assign(index..index + len, data));
     }
 
@@ -132,7 +132,7 @@ impl<const D: usize> Batchable for Tensor<D, Int> {
 }
 
 impl<const D: usize> Batchable for Tensor<D, Bool> {
-    fn len(&self) -> Option<usize> {
+    fn batch_size(&self) -> Option<usize> {
         Some(self.shape()[0])
     }
 
@@ -150,7 +150,7 @@ impl<const D: usize> Batchable for Tensor<D, Bool> {
     }
 
     fn assign_inplace(&mut self, data: Self, index: usize) {
-        let len = data.len().unwrap();
+        let len = data.batch_size().unwrap();
         self.inplace(|a| a.slice_assign(index..index + len, data));
     }
 
@@ -170,7 +170,7 @@ impl<const D: usize> Batchable for Tensor<D, Bool> {
 }
 
 impl<const D: usize> Batchable for DiscreteMask<D> {
-    fn len(&self) -> Option<usize> {
+    fn batch_size(&self) -> Option<usize> {
         Some(self.0.shape()[0])
     }
 
@@ -189,7 +189,7 @@ impl<const D: usize> Batchable for DiscreteMask<D> {
     }
 
     fn assign_inplace(&mut self, data: Self, index: usize) {
-        let len = data.len().unwrap();
+        let len = data.batch_size().unwrap();
         self.0.inplace(|a| a.slice_assign(index..index + len, data.0));
     }
 
@@ -209,7 +209,7 @@ impl<const D: usize> Batchable for DiscreteMask<D> {
 }
 
 impl Batchable for Unconstrained {
-    fn len(&self) -> Option<usize> {
+    fn batch_size(&self) -> Option<usize> {
         None
     }
 
@@ -236,7 +236,7 @@ impl Batchable for Unconstrained {
 }
 
 impl Batchable for () {
-    fn len(&self) -> Option<usize> {
+    fn batch_size(&self) -> Option<usize> {
         None
     }
 
@@ -258,8 +258,8 @@ impl Batchable for () {
 }
 
 impl<T: Batchable> Batchable for Option<T> {
-    fn len(&self) -> Option<usize> {
-        self.as_ref().and_then(Batchable::len)
+    fn batch_size(&self) -> Option<usize> {
+        self.as_ref().and_then(Batchable::batch_size)
     }
 
     /// The elements must be all `Some` or all `None`. Cannot be mixed up.

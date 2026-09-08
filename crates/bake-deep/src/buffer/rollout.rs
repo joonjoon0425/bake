@@ -80,6 +80,6 @@ mod tests {
         }
 
         let rollout = buffer.pop();
-        assert!(rollout.len().unwrap() == 11);
+        assert!(rollout.batch_size().unwrap() == 11);
     }
 }

@@ -1,7 +1,7 @@
 //! Action constraints for tabular rl
 
 /// Basic constraint trait
-pub trait Constraint: Clone {
+pub trait Constraint: Clone + Copy {
     /// return the number of possible actions
     fn n_possible_actions(&self) -> usize;
     /// apply the mask to given values
@@ -9,7 +9,7 @@ pub trait Constraint: Clone {
 }
 
 /// Discrete constraint
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct DiscreteMask<const D: usize>([bool; D]);
 
 impl<const D: usize> DiscreteMask<D> {

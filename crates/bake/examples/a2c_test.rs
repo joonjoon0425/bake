@@ -19,7 +19,7 @@ pub fn main() {
     let autodiff_device = device.clone().autodiff();
     
     let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95 }, loss_fn: Loss::MseLoss };
-    let mut env = CartPole::new(seed, &device);
+    let env = CartPole::new(seed, &device);
     let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &autodiff_device));
 
     let lr_a = 1e-4;
@@ -28,7 +28,7 @@ pub fn main() {
     let mut opt_c = RmsPropConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = Tape::new(&mut env);
+    let mut tape = Tape::new(env);
 
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
@@ -39,7 +39,7 @@ pub fn main() {
 
     for count in 0..=600000 {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
-        let t = tape.step(&mut env, action);
+        let t = tape.step(action);
         buffer.push(t);
 
         if buffer.len() >= 128 {
@@ -52,7 +52,7 @@ pub fn main() {
         if tape.done() {
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("step", tape.steps as f32);
-            tape.reset(&mut env);
+            tape.reset();
         }
 
         if count % 5000 == 0 {

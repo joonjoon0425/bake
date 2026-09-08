@@ -3,7 +3,7 @@
 
 use crate::constraint::Constraint;
 /// Basic trait for tabular environments
-pub trait Env {
+pub trait Environment {
     /// The type of a mask the environment provides  
     /// If the environment does not provide masks, use NoMask<ACTION_NUM>
     type Constraint: Constraint;
@@ -11,6 +11,9 @@ pub trait Env {
     /// reset the environment
     fn reset(&mut self) -> (usize, Self::Constraint);
     /// take one step of environment with given action
-    /// and returns a step result, which is: next_obs, reward, terminated, truncated, mask
-    fn step(&mut self, action: usize) -> (usize, f32, bool, bool, Self::Constraint);
+    /// and returns a step result, which is: (next_obs, mask), reward, terminated, truncated
+    fn step(&mut self, action: usize) -> ((usize, Self::Constraint), f32, bool, bool);
 }
+
+pub mod tape;
+pub use tape::Tape;

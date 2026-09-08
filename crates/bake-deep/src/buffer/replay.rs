@@ -206,7 +206,7 @@ mod tests {
         assert!(buffer.sample(1000).is_none());
         assert!(buffer.n() == 100);
         assert!(buffer.sample(64).is_some());
-        assert!(buffer.sample(64).unwrap().0.len().unwrap() == 64);
+        assert!(buffer.sample(64).unwrap().0.batch_size().unwrap() == 64);
     }
 
     #[test]

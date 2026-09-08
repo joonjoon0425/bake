@@ -20,7 +20,7 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     let autodiff_device = device.clone().autodiff();
-    let mut env = CartPole::new(seed, &device);
+    let env = CartPole::new(seed, &device);
     let config = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
     let mut online = DiscreteQNetWrapper::new(NoisyMlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &autodiff_device));
     let mut target = online.clone();
@@ -29,7 +29,7 @@ pub fn main() {
 
     let mut exploration = Greedy;
     let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
-    let mut tape = Tape::new(&mut env);
+    let mut tape = Tape::new(env);
     let mut logger = MovingAvgLogger::new();
 
     let total_steps = 500000;
@@ -50,7 +50,7 @@ pub fn main() {
     for count in 0..=total_steps {
         online.reset_noise();
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
-        let t = tape.step(&mut env, action);
+        let t = tape.step(action);
         buffer.push(t);
 
         if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
@@ -70,7 +70,7 @@ pub fn main() {
         if tape.done() {
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("step", tape.steps as f32);
-            tape.reset(&mut env);
+            tape.reset();
         }
 
         if count % 5000 == 0 {

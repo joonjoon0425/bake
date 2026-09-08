@@ -18,13 +18,13 @@ pub fn main() {
     device.seed(seed);
     let autodiff_device = device.clone().autodiff();
 
-    let mut env = CartPole::new(seed, &device);
+    let env = CartPole::new(seed, &device);
     let state = Reinforce{ gamma: 0.99, baseline: Baseline::Normalized };
     let mut policy = PolicyWrapper::new(MlpPolicyNet::new(&[4, 128, 2], Relu, &autodiff_device));
     let mut opt = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = Tape::new(&mut env);
+    let mut tape = Tape::new(env);
 
     let total_steps = 500000;
     let mut logger = MovingAvgLogger::new();
@@ -35,7 +35,7 @@ pub fn main() {
 
     for count in 0..=total_steps {
         let action = policy.action(tape.obs.clone(), tape.constraint.clone());
-        let t = tape.step(&mut env, action);
+        let t = tape.step(action);
         buffer.push(t);
 
         if tape.done() {
@@ -46,7 +46,7 @@ pub fn main() {
 
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("step", tape.steps as f32);
-            tape.reset(&mut env);
+            tape.reset();
         }
 
         if count % 5000 == 0 {

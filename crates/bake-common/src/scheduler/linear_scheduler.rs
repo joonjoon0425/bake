@@ -17,7 +17,7 @@ impl LinearScheduler {
     /// - `steps`: total steps of the outer loop
     /// - `fraction`: the scheduler will schedule from `start` to `end` for `steps` * `fraction` steps
     /// ```
-    /// use bake_common::scheduler::LinearScheduler;
+    /// use bake_common::scheduler::{Scheduler, LinearScheduler};
     /// let mut sch = LinearScheduler::new(1.0, 0.05, 100, 0.5);
     /// let mut v = 1.0f64;
     /// for _ in 0..50 { v = sch.step(); }

@@ -50,7 +50,7 @@ impl BatchOpsVTable {
 }
 
 fn len_impl<T: Batchable>(v: &Erased) -> Option<usize> {
-    v.downcast_ref::<T>().expect("ExtraContainer type mismatch in len").len()
+    v.downcast_ref::<T>().expect("ExtraContainer type mismatch in len").batch_size()
 }
 
 fn cat_impl<T: Batchable>(v: Vec<Erased>) -> Erased {
@@ -69,10 +69,6 @@ fn slice_impl<T: Batchable>(v: Erased, range: Range<usize>) -> Erased {
 fn detach_impl<T: Batchable>(v: Erased) -> Erased {
     Box::new(v.downcast::<T>().expect("ExtraContainer type mismatch in detach").detach())
 }
-
-// fn is_empty_impl<T: Batchable>(v: &Erased) -> bool {
-//     v.downcast_ref::<T>().expect("ExtraContainer type mismatch in is_empty").is_empty()
-// }
 
 fn assign_inplace_impl<T: Batchable>(v: &mut Erased, data: Erased, index: usize) {
     let v = v.downcast_mut::<T>().expect("ExtraContainer type mismatch in assign_inplace: v");
@@ -121,8 +117,13 @@ impl ExtraContainer {
     }
 
     /// push a new key-value pair
-    pub fn insert<K: Key>(&mut self, value: K::Value) {
-        self.container.insert(TypeId::of::<K>(), ExtraContainerLeaf{ value: Box::new(value), vtable: BatchOpsVTable::new::<K::Value>(), type_name: K::NAME });
+    /// 
+    /// If the map did not have this key present, None is returned.
+    /// 
+    /// If the map did have this key present, the value is updated, and the old value is returned. The key is not updated, though; this matters for types that can be == without being identical. See the module-level documentation for more.
+    pub fn insert<K: Key>(&mut self, value: K::Value) -> Option<K::Value> {
+        let ret = self.container.insert(TypeId::of::<K>(), ExtraContainerLeaf{ value: Box::new(value), vtable: BatchOpsVTable::new::<K::Value>(), type_name: K::NAME });
+        if ret.is_some() { Some(*ret.unwrap().value.downcast().unwrap()) } else { None }
     }
 
     /// get a value of given key-type
@@ -142,7 +143,7 @@ impl ExtraContainer {
 }
 
 impl Batchable for ExtraContainer {
-    fn len(&self) -> Option<usize> {
+    fn batch_size(&self) -> Option<usize> {
         self.container.iter().find_map(|(_, v)| (v.vtable.len)(&v.value))
     }
 
