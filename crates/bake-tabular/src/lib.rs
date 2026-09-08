@@ -8,5 +8,4 @@ pub mod constraint;
 pub mod data;
 pub mod env;
 pub mod explore;
-pub mod metric;
 pub mod qtable;

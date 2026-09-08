@@ -50,26 +50,6 @@ pub trait QValues {
     fn argmaxes(&self) -> Vec<usize>;
 }
 
-impl QValues for [f32] {
-    fn max(&self) -> f32 {
-        let mut max = self[0];
-        for (_, &v) in self.iter().enumerate() {
-            if max < v { max = v; }
-        }
-        max
-    }
-
-    fn argmaxes(&self) -> Vec<usize> {
-        let mut max = self[0];
-        let mut indices = vec![0usize];
-        for (i, &v) in self.iter().enumerate() {
-            if max < v { max = v; indices.clear(); indices.push(i) }
-            else if (max - v).abs() < 1e-6 { indices.push(i) }
-        }
-        indices
-    }
-}
-
 impl QValues for Vec<f32> {
     fn max(&self) -> f32 {
         let mut max = self[0];
@@ -82,7 +62,7 @@ impl QValues for Vec<f32> {
     fn argmaxes(&self) -> Vec<usize> {
         let mut max = self[0];
         let mut indices = vec![0usize];
-        for (i, &v) in self.iter().enumerate() {
+        for (i, &v) in self.iter().enumerate().skip(1) {
             if max < v { max = v; indices.clear(); indices.push(i) }
             else if (max - v).abs() < 1e-6 { indices.push(i) }
         }

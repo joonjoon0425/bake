@@ -25,10 +25,10 @@ impl LinearScheduler {
     /// ```
     pub fn new(start: f64, end: f64, steps: usize, fraction: f64) -> Self {
         assert!(0.0 < fraction && fraction <= 1.0);
-        let steps = steps as f64 * fraction;
+        let steps = (steps as f64 * fraction) as usize;
         Self {
             start,
-            steps: steps as usize,
+            steps,
             cur_step: 0,
             slope: (end - start) / steps as f64
         }

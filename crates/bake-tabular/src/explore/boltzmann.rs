@@ -18,7 +18,7 @@ pub struct Boltzmann {
 impl Boltzmann {
     /// create a new boltzmann policy
     pub fn new(seed: u64, temp: f32) -> Self {
-        if temp < 0.0 { panic!("the temp must be bigger than 0.0. Current temp is {}", temp) } 
+        if temp <= 0.0 { panic!("the temp must be bigger than 0.0. Current temp is {}", temp) } 
         Self { temp, rng: SmallRng::seed_from_u64(seed) }
     }
 
@@ -33,7 +33,7 @@ impl Exploration for Boltzmann {
     fn sample<C: Constraint>(&mut self, qtable: &QTable, obs: usize, constraint: C) -> usize {
         let mut values = qtable.qvalues_as_vec(obs);
         constraint.apply(&mut values);
-        for v in values.iter_mut() { *v = v.exp() / self.temp }
+        for v in values.iter_mut() { *v = (*v / self.temp).exp()  }
         let weighted_index = WeightedIndex::new(values).unwrap();
         weighted_index.sample(&mut self.rng)
     }
@@ -41,7 +41,7 @@ impl Exploration for Boltzmann {
     fn prob<C: Constraint>(&self, qtable: &QTable, obs: usize, action: usize, constraint: C) -> f32 {
         let mut values = qtable.qvalues_as_vec(obs);
         constraint.apply(&mut values);
-        for v in values.iter_mut() { *v = v.exp() / self.temp }
+        for v in values.iter_mut() { *v = (*v / self.temp).exp() }
         let sum = values.iter().sum::<f32>();
         values[action] / sum
     }

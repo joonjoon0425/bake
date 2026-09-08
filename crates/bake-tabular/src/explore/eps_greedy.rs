@@ -45,7 +45,7 @@ impl Exploration for EpsGreedy {
         let mut qvalues = qtable.qvalues_as_vec(obs);
         constraint.apply(&mut qvalues);
         let indices = qvalues.argmaxes();
-        if indices.contains(&action) { 1. - self.eps / indices.len() as f32 } else { self.eps / indices.len() as f32 }
+        if indices.contains(&action) { (1. - self.eps) / indices.len() as f32 + self.eps / constraint.n_possible_actions() as f32 } else { self.eps / constraint.n_possible_actions() as f32 }
     }
 }
 
