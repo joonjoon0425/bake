@@ -1,6 +1,13 @@
 //! A Deep-QNetwork algorithm implementation
+use bake_common::logger::ToLog;
 use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
-use crate::{buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::DiscreteQFunction, data::{Batch, Batchable}, logger::ToLog, loss::Loss};
+use crate::{
+    buffer::sampler::SampleInfo,
+    constraint::discrete_constraint::DiscreteConstraint,
+    contract::DiscreteQFunction,
+    data::{Batch, Batchable},
+    loss::Loss
+};
 
 /// state for DQN
 #[derive(Debug, Clone)]

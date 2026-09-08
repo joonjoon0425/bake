@@ -315,6 +315,7 @@ dependencies = [
 name = "bake"
 version = "0.3.0"
 dependencies = [
+ "bake-common",
  "bake-deep",
  "bake-gym",
  "bake-tabular",
@@ -323,9 +324,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bake-common"
+version = "0.3.0"
+
+[[package]]
 name = "bake-deep"
 version = "0.3.0"
 dependencies = [
+ "bake-common",
  "bake-macros",
  "burn",
  "rand 0.10.2",
@@ -358,7 +364,10 @@ dependencies = [
 name = "bake-tabular"
 version = "0.3.0"
 dependencies = [
+ "bake-common",
  "rand 0.10.2",
+ "serde",
+ "toml 0.9.12+spec-1.1.0",
 ]
 
 [[package]]

@@ -1,6 +1,7 @@
+use bake::scheduler::{LinearScheduler, Scheduler};
 use bake_deep::buffer::replay::ReplayBufferConfig;
 use bake_deep::explore::{EpsGreedy, Exploration};
-use bake_deep::logger::MovingAvgLogger;
+use bake::logger::MovingAvgLogger;
 use bake_deep::net::basic::MlpDiscreteQNet;
 use bake_deep::wrapper::DiscreteQNetWrapper;
 use burn::optim::AdamConfig;
@@ -42,8 +43,8 @@ pub fn main() {
     logger.register("reward", window);
     logger.register("step", window);
 
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps / 4);
-    let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..=total_steps {
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
@@ -79,37 +80,5 @@ pub fn main() {
 
         *exploration.eps_mut() = eps_sch.step() as f32;
         *buffer.beta_mut() = beta_sch.step();
-    }
-
-    
-}
-
-
-pub struct LinearScheduler {
-    start: f64,
-    steps: usize,
-
-    cur_step: usize,
-    slope: f64,
-}
-
-impl LinearScheduler {
-    pub fn new(start: f64, end: f64, steps: usize) -> Self {
-        Self {
-            start,
-            steps,
-            cur_step: 0,
-            slope: (end - start) / steps as f64
-        }
-    }
-
-    pub fn step(&mut self) -> f64 {
-        if self.cur_step < self.steps { self.cur_step += 1; }
-        let ret = self.slope * self.cur_step as f64 + self.start;
-        ret
-    }
-
-    pub fn reset(&mut self) {
-        self.cur_step = 0;
-    }
+    }   
 }

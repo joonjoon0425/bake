@@ -1,4 +1,15 @@
-use bake_deep::{algorithm::{AdvantageEstimator, Ppo}, buffer::RolloutBuffer, contract::ActorCritic, data::{Batchable, extras::{Advantage, LogProb, Return}}, distribution::{Categorical, Distribution}, env::Tape, logger::MovingAvgLogger, loss::Loss, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper};
+use bake::logger::MovingAvgLogger;
+use bake::deep::{
+    algorithm::{AdvantageEstimator, Ppo},
+    buffer::RolloutBuffer,
+    contract::ActorCritic,
+    data::{Batchable, extras::{ Advantage, LogProb, Return } },
+    distribution::{Categorical, Distribution},
+    env::Tape,
+    loss::Loss,
+    net::basic::MlpSeparatedActorCriticNet,
+    wrapper::ActorCriticWrapper
+};
 use bake::deep::env::CartPole;
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
 use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};

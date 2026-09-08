@@ -1,3 +1,6 @@
+pub mod logger { pub use bake_common::logger::*; }
+pub mod scheduler { pub use bake_common::scheduler::*; }
+
 #[cfg(feature = "tabular")]
 pub mod tabular { pub use bake_tabular::*; }
 

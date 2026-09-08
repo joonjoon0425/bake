@@ -1,5 +1,5 @@
 [package]
-name = "bake-tabular"
+name = "bake-common"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -7,7 +7,3 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-bake-common.workspace = true
-rand.workspace = true
-serde.workspace = true
-toml.workspace = true

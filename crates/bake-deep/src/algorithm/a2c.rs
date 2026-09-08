@@ -1,9 +1,10 @@
 //! An Advantage Actor-Critic algorithm implementation
 use std::collections::HashMap;
 
+use bake_common::logger::ToLog;
 use burn::{Tensor, optim::{GradientsParams, ModuleOptimizer}};
 
-use crate::{algorithm::advantage_estimator::AdvantageEstimator, contract::ActorCritic, data::{Batch, Batchable}, distribution::{Distribution, PossibleConstraint}, logger::ToLog, loss::Loss};
+use crate::{algorithm::advantage_estimator::AdvantageEstimator, contract::ActorCritic, data::{Batch, Batchable}, distribution::{Distribution, PossibleConstraint}, loss::Loss};
 
 /// state for A2C
 #[derive(Debug, Clone)]

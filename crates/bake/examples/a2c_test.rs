@@ -1,4 +1,14 @@
-use bake_deep::{algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator}, loss::Loss, buffer::RolloutBuffer, contract::ActorCritic, distribution::Categorical, env::{CartPole, Tape}, logger::MovingAvgLogger, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper};
+use bake::logger::MovingAvgLogger;
+use bake::deep::{
+    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator},
+    loss::Loss,
+    buffer::RolloutBuffer,
+    contract::ActorCritic,
+    distribution::Categorical,
+    env::{CartPole, Tape},
+    net::basic::MlpSeparatedActorCriticNet,
+    wrapper::ActorCriticWrapper
+};
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
 

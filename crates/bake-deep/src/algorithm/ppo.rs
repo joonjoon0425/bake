@@ -2,8 +2,15 @@
 //! 
 use std::collections::HashMap;
 
+use bake_common::logger::ToLog;
 use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
-use crate::{algorithm::advantage_estimator::AdvantageEstimator, contract::ActorCritic, data::{Batch, Batchable, extras::*}, distribution::{Distribution, PossibleConstraint}, logger::ToLog, loss::Loss};
+use crate::{
+    algorithm::advantage_estimator::AdvantageEstimator,
+    contract::ActorCritic,
+    data::{Batch, Batchable, extras::*},
+    distribution::{Distribution, PossibleConstraint}, 
+    loss::Loss
+};
 
 /// state struct for PPO
 pub struct Ppo {

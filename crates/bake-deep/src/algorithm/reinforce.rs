@@ -1,9 +1,14 @@
 //! A REINFORCE algorithm implementation
 //! 
 
+use bake_common::logger::ToLog;
 use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
 
-use crate::{contract::Policy, data::{Batch, Batchable}, distribution::{Distribution, PossibleConstraint}, logger::ToLog};
+use crate::{
+    contract::Policy,
+    data::{Batch, Batchable},
+    distribution::{Distribution, PossibleConstraint}
+};
 
 /// A state of REINFORCE algorithm
 #[derive(Debug, Clone)]

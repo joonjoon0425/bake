@@ -10,6 +10,7 @@ license = "MIT"
 repository = "https://github.com/joonjoon0425/bake"
 
 [workspace.dependencies]
+bake-common = { path = "crates/bake-common" }
 bake-deep = { path = "crates/bake-deep" }
 bake-tabular = { path = "crates/bake-tabular" }
 bake-macros = { path = "crates/bake-macros" }
