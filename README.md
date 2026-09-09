@@ -5,6 +5,8 @@ BAKE is a reinforcement learning framework written from scratch in Rust, using [
 It was created to study reinforcement learning algorithms and their
 implementation details.
 
+[Currently re-writing on branch rewrite]
+
 ## Training Sanity Checks
 The following experiments verify that the implemented algorithms learn reliably.
 #### DQN variants on CartPole-v1
