@@ -60,7 +60,7 @@ pub fn main() {
                 let mut perm: Vec<i64> = (0..batch.batch_size().unwrap() as i64).collect();
                 perm.shuffle(&mut rng);
                 for chunk in perm.chunks(128) {
-                    let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &autodiff_device);
+                    let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
                     logger.push(&loss);
                     actor_critic = Ppo::update_separated(net, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c);
