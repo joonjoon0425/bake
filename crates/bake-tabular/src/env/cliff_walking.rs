@@ -51,7 +51,7 @@ impl Environment for CliffWalking {
         let mut reward = -1f32;
         let mut terminated = false;
         
-        if next_pos.0 < 0 || next_pos.0 > 12 || next_pos.1 < 0 || next_pos.1 > 4 {
+        if next_pos.0 < 0 || next_pos.0 > 11 || next_pos.1 < 0 || next_pos.1 > 3 {
             // the agent is out of boundary
             next_pos = (0, 0)
         } else if next_pos.1 == 0 && (0 < next_pos.0 && next_pos.0 < 11) {

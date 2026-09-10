@@ -18,17 +18,15 @@ impl Greedy {
 
 impl Exploration for Greedy {
     fn sample<C: Constraint>(&mut self, qtable: &QTable, obs: usize, constraint: C) -> usize {
-        let mut qvalues = qtable.qvalues_as_vec(obs);
-        constraint.apply(&mut qvalues);
-        let indices = qvalues.argmaxes();
+        let qvalues = qtable.qvalues(obs);
+        let indices = qvalues.argmaxes(constraint);
         let random = self.rng.random_range(0..indices.len());
         indices[random]
     }
 
     fn prob<C: Constraint>(&self, qtable: &QTable, obs: usize, action: usize, constraint: C) -> f32 {
-        let mut qvalues = qtable.qvalues_as_vec(obs);
-        constraint.apply(&mut qvalues);
-        let indices = qvalues.argmaxes();
+        let qvalues = qtable.qvalues(obs);
+        let indices = qvalues.argmaxes(constraint);
         if indices.contains(&action) { 1.0 / indices.len() as f32 } else { 0.0 }
     }
 }

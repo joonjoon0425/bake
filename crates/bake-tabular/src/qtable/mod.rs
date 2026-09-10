@@ -1,6 +1,8 @@
 //! Q-value tables which all tabular algorithms use
 //! 
 
+use crate::constraint::Constraint;
+
 /// The Q(s,a) table for tabular algorithms
 #[derive(Debug)]
 pub struct QTable {
@@ -45,26 +47,32 @@ impl QTable {
 /// traits for argmax and max of qvalues
 pub trait QValues {
     /// returns maximum value and the index of it
-    fn max(&self) -> f32;
+    fn max<C: Constraint>(&self, constraint: C) -> f32;
     /// returns the indices with max values
-    fn argmaxes(&self) -> Vec<usize>;
+    fn argmaxes<C: Constraint>(&self, constraint: C) -> Vec<usize>;
 }
 
 impl QValues for [f32] {
-    fn max(&self) -> f32 {
+    fn max<C: Constraint>(&self, constraint: C) -> f32 {
         let mut max = self[0];
-        for (_, &v) in self.iter().enumerate() {
-            if max < v { max = v; }
+        for (i, &p) in constraint.iter() {
+            if p {
+                let v = self[i];
+                if max < v { max = v; }
+            }
         }
         max
     }
 
-    fn argmaxes(&self) -> Vec<usize> {
+    fn argmaxes<C: Constraint>(&self, constraint: C) -> Vec<usize> {
         let mut max = self[0];
         let mut indices = vec![0usize];
-        for (i, &v) in self.iter().enumerate().skip(1) {
-            if max < v { max = v; indices.clear(); indices.push(i) }
-            else if (max - v).abs() < 1e-6 { indices.push(i) }
+        for (i, &p) in constraint.iter().skip(1) {
+            if p {
+                let v = self[i];
+                if max < v { max = v; indices.clear(); indices.push(i) }
+                else if (max - v).abs() < 1e-6 { indices.push(i) }
+            }
         }
         indices
     }

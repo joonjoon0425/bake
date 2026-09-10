@@ -29,22 +29,21 @@ impl EpsGreedy {
 
 impl Exploration for EpsGreedy {
     fn sample<C: Constraint>(&mut self, qtable: &QTable, obs: usize, constraint: C) -> usize {
-        let mut values = vec![0f32; qtable.n_actions()];
-        if self.rng.random_range(0.0..1.0) < self.eps {    
-            for a in &mut values { *a = self.rng.random_range(0.0..1.0); }
+        if self.rng.random_range(0.0..1.0) < self.eps {
+            let n = constraint.n_possible_actions();
+            let k = self.rng.random_range(0..n);
+            constraint.iter().filter_map(|(a, p)| if *p { Some(a) } else { None }).nth(k).unwrap()
         } else {
-            values.copy_from_slice(qtable.qvalues(obs));
+            let values = qtable.qvalues(obs);
+            let indices = values.argmaxes(constraint);
+            let random = self.rng.random_range(0..indices.len());
+            indices[random]
         }
-        constraint.apply(&mut values);
-        let indices = values.argmaxes();
-        let random = self.rng.random_range(0..indices.len());
-        indices[random]
     }
 
     fn prob<C: Constraint>(&self, qtable: &QTable, obs: usize, action: usize, constraint: C) -> f32 {
-        let mut qvalues = qtable.qvalues_as_vec(obs);
-        constraint.apply(&mut qvalues);
-        let indices = qvalues.argmaxes();
+        let qvalues = qtable.qvalues(obs);
+        let indices = qvalues.argmaxes(constraint);
         if indices.contains(&action) { (1. - self.eps) / indices.len() as f32 + self.eps / constraint.n_possible_actions() as f32 } else { self.eps / constraint.n_possible_actions() as f32 }
     }
 }

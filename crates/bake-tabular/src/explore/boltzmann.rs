@@ -32,20 +32,29 @@ impl Boltzmann {
 impl Exploration for Boltzmann {
     fn sample<C: Constraint>(&mut self, qtable: &QTable, obs: usize, constraint: C) -> usize {
         let mut values = qtable.qvalues_as_vec(obs);
-        let vmax = values.max();
-        constraint.apply(&mut values);
-        for v in values.iter_mut() { *v = ((*v - vmax) / self.temp).exp()  }
+        let vmax = values.max(constraint);
+        for (a, &p) in constraint.iter() {
+            if p {
+                values[a] = ((values[a] - vmax) / self.temp).exp();
+            } else {
+                values[a] = 0f32;
+            }
+        }
         let weighted_index = WeightedIndex::new(values).unwrap();
         weighted_index.sample(&mut self.rng)
     }
 
     fn prob<C: Constraint>(&self, qtable: &QTable, obs: usize, action: usize, constraint: C) -> f32 {
-        let mut values = qtable.qvalues_as_vec(obs);
-        let vmax = values.max();
-        constraint.apply(&mut values);
-        for v in values.iter_mut() { *v = ((*v - vmax) / self.temp).exp() }
-        let sum = values.iter().sum::<f32>();
-        values[action] / sum
+        let values = qtable.qvalues(obs);
+        let vmax = values.max(constraint);
+        let numerator = ((values[action] - vmax) / self.temp).exp();
+        let mut denominator = 0f32;
+        for (a, &p) in constraint.iter() {
+            if p {
+                denominator += ((values[a] - vmax) / self.temp).exp();
+            }
+        }
+        numerator / denominator
     }
 }
 

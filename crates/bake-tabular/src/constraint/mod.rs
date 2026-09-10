@@ -5,8 +5,8 @@ pub trait Constraint: Clone + Copy {
     /// return the number of possible actions
     fn n_possible_actions(&self) -> usize;
     
-    /// returns the iterator of possible actions
-    fn possible_actions(&self) -> impl Iterator<Item = usize> + '_;
+    /// returns the iterator of pair of mask and action as tuple (usize, &bool)
+    fn iter(&self) -> impl Iterator<Item = (usize, &bool)> + '_;
 
     /// return true if given action is possible; else return false
     fn is_possible(&self, action: usize) -> bool;
@@ -40,12 +40,12 @@ impl<const D: usize> Constraint for DiscreteMask<D> {
         self.0.iter().filter(|&&a| a).count()
     }
 
-    fn possible_actions(&self) -> impl Iterator<Item = usize> + '_ {
-        self.0.iter().enumerate().filter(|(_, p)| **p).map(|(a, _)| a)
+    fn iter(&self) -> impl Iterator<Item = (usize, &bool)> + '_ {
+        self.0.iter().enumerate()
     }
 
     fn is_possible(&self, action: usize) -> bool {
-        assert!(0 <= action && action < D);
+        assert!(action < D);
         self.0[action]
     }
 }
@@ -55,7 +55,7 @@ impl<const D: usize> Constraint for DiscreteMask<D> {
 pub struct Unconstrained<const D: usize>;
 impl<const D: usize> Constraint for Unconstrained<D> {
     fn n_possible_actions(&self) -> usize { D }
-    fn possible_actions(&self) -> impl Iterator<Item = usize> + '_ { 0..D }
+    fn iter(&self) -> impl Iterator<Item = (usize, &bool)> + '_ { [true;D].iter().enumerate() }
     fn is_possible(&self, _: usize) -> bool { true }
 }
 
@@ -72,8 +72,8 @@ mod tests {
     #[test]
     fn possible_actions_test() {
         let c = DiscreteMask::from_bool([true, true, false, true, false, true]);
-        for a in c.possible_actions() {
-            assert!(a != 2 && a != 4)
+        for (a, p) in c.iter() {
+            if *p { assert!(a != 2 && a != 4) }
         }
     }
 
