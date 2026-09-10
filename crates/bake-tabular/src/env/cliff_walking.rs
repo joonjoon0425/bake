@@ -53,7 +53,7 @@ impl Environment for CliffWalking {
         
         if next_pos.0 < 0 || next_pos.0 > 11 || next_pos.1 < 0 || next_pos.1 > 3 {
             // the agent is out of boundary
-            next_pos = (0, 0)
+            next_pos = (self.pos.0 as isize, self.pos.1 as isize);
         } else if next_pos.1 == 0 && (0 < next_pos.0 && next_pos.0 < 11) {
             // the agent met a cliff
             next_pos = (0, 0);

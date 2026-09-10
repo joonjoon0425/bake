@@ -34,7 +34,7 @@ impl Environment for MaskedCliffWalking {
 
     fn step(&mut self, action: usize) -> ((usize, Self::Constraint), f32, bool, bool) {
         assert!(action == 0 || action == 1 || action == 2 || action == 3);
-        let mut next_pos: (usize, usize) = self.pos;
+        let mut next_pos = (self.pos.0 as isize, self.pos.1 as isize);
 
         // assumes that the correct actions were given; the environment won't check if the given action was the masked action or not
         match action {
@@ -48,19 +48,6 @@ impl Environment for MaskedCliffWalking {
         let mut terminated = false;
         let mut mask = DiscreteMask::new(true);
         
-        // masking
-        if next_pos.0 == 0 {
-            mask.disable(2);
-        } else if next_pos.0 == 11 {
-            mask.disable(3);
-        }
-
-        if next_pos.1 == 0 {
-            mask.disable(0);
-        } else if next_pos.1 == 3 {
-            mask.disable(1);
-        }
-        
         if next_pos.1 == 0 && (0 < next_pos.0 && next_pos.0 < 11) {
             // the agent met a cliff
             next_pos = (0, 0);
@@ -69,6 +56,19 @@ impl Environment for MaskedCliffWalking {
             // the agent met a goal
             reward = 100f32;
             terminated = true
+        }
+
+        // masking
+        if next_pos.0 <= 0 {
+            mask.disable(2);
+        } else if next_pos.0 >= 11 {
+            mask.disable(3);
+        }
+
+        if next_pos.1 <= 0 {
+            mask.disable(0);
+        } else if next_pos.1 >= 3 {
+            mask.disable(1);
         }
 
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);

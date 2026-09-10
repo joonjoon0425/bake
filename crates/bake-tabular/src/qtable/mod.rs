@@ -54,7 +54,7 @@ pub trait QValues {
 
 impl QValues for [f32] {
     fn max<C: Constraint>(&self, constraint: C) -> f32 {
-        let mut max = self[0];
+        let mut max = f32::MIN;
         for (i, &p) in constraint.iter() {
             if p {
                 let v = self[i];
@@ -65,15 +65,7 @@ impl QValues for [f32] {
     }
 
     fn argmaxes<C: Constraint>(&self, constraint: C) -> Vec<usize> {
-        let mut max = self[0];
-        let mut indices = vec![0usize];
-        for (i, &p) in constraint.iter().skip(1) {
-            if p {
-                let v = self[i];
-                if max < v { max = v; indices.clear(); indices.push(i) }
-                else if (max - v).abs() < 1e-6 { indices.push(i) }
-            }
-        }
-        indices
+        let max = self.max(constraint);
+        constraint.iter().filter(|(a, p)| **p && (self[*a] - max).abs() < 1e-6).map(|(a, _)| a).collect()
     }
 }
