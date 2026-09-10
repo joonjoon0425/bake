@@ -4,8 +4,12 @@
 pub trait Constraint: Clone + Copy {
     /// return the number of possible actions
     fn n_possible_actions(&self) -> usize;
-    /// apply the mask to given values
-    fn apply(&self, values: &mut [f32]);
+    
+    /// returns the iterator of possible actions
+    fn possible_actions(&self) -> impl Iterator<Item = usize> + '_;
+
+    /// return true if given action is possible; else return false
+    fn is_possible(&self, action: usize) -> bool;
 }
 
 /// Discrete constraint
@@ -36,11 +40,13 @@ impl<const D: usize> Constraint for DiscreteMask<D> {
         self.0.iter().filter(|&&a| a).count()
     }
 
-    fn apply(&self, values: &mut [f32]) {
-        if values.len() != D { panic!("The expected length of given values as {}, recieved {}.", D, values.len()) }
-        for (i, &p) in self.0.iter().enumerate() {
-            if !p { values[i] = -1e9 }
-        }
+    fn possible_actions(&self) -> impl Iterator<Item = usize> + '_ {
+        self.0.iter().enumerate().filter(|(_, p)| **p).map(|(a, _)| a)
+    }
+
+    fn is_possible(&self, action: usize) -> bool {
+        assert!(0 <= action && action < D);
+        self.0[action]
     }
 }
 
@@ -49,7 +55,8 @@ impl<const D: usize> Constraint for DiscreteMask<D> {
 pub struct Unconstrained<const D: usize>;
 impl<const D: usize> Constraint for Unconstrained<D> {
     fn n_possible_actions(&self) -> usize { D }
-    fn apply(&self, _: &mut [f32]) { }
+    fn possible_actions(&self) -> impl Iterator<Item = usize> + '_ { 0..D }
+    fn is_possible(&self, _: usize) -> bool { true }
 }
 
 #[cfg(test)]
@@ -63,23 +70,17 @@ mod tests {
     }
 
     #[test]
-    fn apply_test() {
-        let mut values = [1.0, 2.0, 31.0, -1.0, -33.0, 15.0];
+    fn possible_actions_test() {
         let c = DiscreteMask::from_bool([true, true, false, true, false, true]);
-        c.apply(&mut values);
-        assert!(values[0] == 1.0);
-        assert!(values[1] == 2.0);
-        assert!(values[2] == -1e9);
-        assert!(values[3] == -1.0);
-        assert!(values[4] == -1e9);
-        assert!(values[5] == 15.0);
+        for a in c.possible_actions() {
+            assert!(a != 2 && a != 4)
+        }
     }
 
     #[test]
     #[should_panic]
-    fn action_num_mismatch_test() {
+    fn invalid_action_test() {
         let c = DiscreteMask::from_bool([true, true, false, false, true]);
-        let mut values = [0.1, 0.2, 0.3];
-        c.apply(&mut values);
+        c.is_possible(5);
     }
 }
