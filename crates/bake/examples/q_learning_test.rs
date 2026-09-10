@@ -1,0 +1,42 @@
+use bake::tabular::algorithm::QLearning;
+use bake::tabular::env::CliffWalking;
+use bake::tabular::qtable::QTable;
+use bake::tabular::explore::EpsGreedy;
+
+use bake::logger::MovingAvgLogger;
+use bake::scheduler::{LinearScheduler, Scheduler};
+use bake_tabular::env::Tape;
+use bake_tabular::explore::Exploration;
+
+pub fn main() {
+    let state = QLearning { gamma: 0.99, alpha: 0.4 };
+    let env = CliffWalking::new();
+    let mut qtable = QTable::new(CliffWalking::n_states(), CliffWalking::n_actions());
+    let mut exploration = EpsGreedy::new(12, 1.0);
+    
+    let total_steps = 10000;
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 1.0);
+    let mut tape = Tape::new(env);
+
+    let mut logger = MovingAvgLogger::new();
+    logger.register("reward", 20);
+    logger.register("steps", 20);
+
+    for count in 0..total_steps {
+        let action = exploration.sample(&qtable, tape.obs, tape.constraint);
+        let t = tape.step(action);
+        QLearning::update(&state, &mut qtable, t);
+
+        if tape.done() {
+            logger.push_single("reward", tape.episode_reward);
+            logger.push_single("steps", tape.steps as f32);
+            tape.reset();
+        }
+
+        if count % 100 == 0 {
+            println!("count: {count}, reward: {}, steps: {}", logger.emit("reward"), logger.emit("steps"));
+        }
+
+        *exploration.eps_mut() = eps_sch.step() as f32;
+    }
+}

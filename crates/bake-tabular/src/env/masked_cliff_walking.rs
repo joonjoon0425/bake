@@ -13,6 +13,12 @@ impl MaskedCliffWalking {
     /// create a new `MaskedCliffWalking` environment with start position (0, 0)
     pub fn new() -> Self { Self { pos: (0, 0) } }
 
+    /// return the number of states
+    pub fn n_states() -> usize { 48 }
+
+    /// return the number of actions
+    pub fn n_actions() -> usize { 4 }
+
     fn pos2usize(&self) -> usize {
         self.pos.1 * 12 + self.pos.0
     }

@@ -50,7 +50,7 @@ pub trait QValues {
     fn argmaxes(&self) -> Vec<usize>;
 }
 
-impl QValues for Vec<f32> {
+impl QValues for [f32] {
     fn max(&self) -> f32 {
         let mut max = self[0];
         for (_, &v) in self.iter().enumerate() {

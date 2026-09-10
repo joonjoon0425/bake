@@ -21,6 +21,12 @@ impl CliffWalking {
     fn pos2usize(&self) -> usize {
         self.pos.1 * 12 + self.pos.0
     }
+
+    /// return the number of states
+    pub fn n_states() -> usize { 48 }
+
+    /// return the number of actions
+    pub fn n_actions() -> usize { 4 }
 }
 
 impl Environment for CliffWalking {
