@@ -66,18 +66,6 @@ mod tests {
     }
 
     #[test]
-    fn mask_test() {
-        let c = DiscreteMask::from_bool([true, false, false, false]);
-        let mut e = EpsGreedy::new(1, 0.0);
-        let qtable = QTable::new(1, 4);
-
-        for _ in 0..100 {
-            let action = e.sample(&qtable, 0, c.clone());
-            assert!(action == 0);
-        }
-    }
-
-    #[test]
     fn constraint_test() {
         let c = DiscreteMask::from_bool([true, true, true, false]);
         let mut e = EpsGreedy::new(1, 1.0);

@@ -5,7 +5,7 @@ use crate::constraint::Constraint;
 /// Basic trait for tabular environments
 pub trait Environment {
     /// The type of a mask the environment provides  
-    /// If the environment does not provide masks, use NoMask<ACTION_NUM>
+    /// If the environment does not provide masks, use Unconstrained<ACTION_NUM>
     type Constraint: Constraint;
     
     /// reset the environment
@@ -17,3 +17,9 @@ pub trait Environment {
 
 pub mod tape;
 pub use tape::Tape;
+
+pub mod cliff_walking;
+pub use cliff_walking::CliffWalking;
+
+pub mod masked_cliff_walking;
+pub use masked_cliff_walking::MaskedCliffWalking;

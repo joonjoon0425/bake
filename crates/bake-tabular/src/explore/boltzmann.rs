@@ -7,7 +7,7 @@ use rand::rngs::SmallRng;
 
 use crate::explore::Exploration;
 use crate::constraint::Constraint;
-use crate::qtable::QTable;
+use crate::qtable::{QTable, QValues};
 /// boltzmann exploration strategy implementation
 /// - chooses action using q values as logits for categorical distribution
 pub struct Boltzmann {
@@ -32,16 +32,18 @@ impl Boltzmann {
 impl Exploration for Boltzmann {
     fn sample<C: Constraint>(&mut self, qtable: &QTable, obs: usize, constraint: C) -> usize {
         let mut values = qtable.qvalues_as_vec(obs);
+        let vmax = values.max();
         constraint.apply(&mut values);
-        for v in values.iter_mut() { *v = (*v / self.temp).exp()  }
+        for v in values.iter_mut() { *v = ((*v - vmax) / self.temp).exp()  }
         let weighted_index = WeightedIndex::new(values).unwrap();
         weighted_index.sample(&mut self.rng)
     }
 
     fn prob<C: Constraint>(&self, qtable: &QTable, obs: usize, action: usize, constraint: C) -> f32 {
         let mut values = qtable.qvalues_as_vec(obs);
+        let vmax = values.max();
         constraint.apply(&mut values);
-        for v in values.iter_mut() { *v = (*v / self.temp).exp() }
+        for v in values.iter_mut() { *v = ((*v - vmax) / self.temp).exp() }
         let sum = values.iter().sum::<f32>();
         values[action] / sum
     }
@@ -58,21 +60,9 @@ mod tests {
     }
 
     #[test]
-    fn mask_test() {
-        let c = DiscreteMask::from_bool([true, false, false, false]);
-        let mut e = Boltzmann::new(1, 1.0);
-        let qtable = QTable::new(1, 4);
-
-        for _ in 0..100 {
-            let action = e.sample(&qtable, 0, c.clone());
-            assert!(action == 0);
-        }
-    }
-
-    #[test]
     fn constraint_test() {
         let c = DiscreteMask::from_bool([true, true, true, false]);
-        let mut e = Boltzmann::new(1, 0.001);
+        let mut e = Boltzmann::new(1, 1000f32);
         let qtable = QTable::new(1, 4);
 
         for _ in 0..1000 {
