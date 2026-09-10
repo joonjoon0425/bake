@@ -1,0 +1,54 @@
+use bake::tabular::algorithm::Sarsa;
+use bake::tabular::env::CliffWalking;
+use bake::tabular::qtable::QTable;
+use bake::tabular::explore::EpsGreedy;
+
+use bake::logger::MovingAvgLogger;
+use bake::scheduler::{LinearScheduler, Scheduler};
+use bake_tabular::buffer::AtomicNStepBuffer;
+use bake_tabular::env::{MaskedCliffWalking, Tape};
+use bake_tabular::explore::Exploration;
+
+pub fn main() {
+    let state = Sarsa { gamma: 0.99, alpha: 0.4 };
+    let env = MaskedCliffWalking::new();
+    let mut qtable = QTable::new(CliffWalking::n_states(), CliffWalking::n_actions());
+    let mut exploration = EpsGreedy::new(12, 1.0);
+    
+    let total_steps = 100000;
+    let mut eps_sch = LinearScheduler::new(1.0, 0.005, total_steps, 0.4);
+    let mut tape = Tape::new(env);
+    let mut buffer = AtomicNStepBuffer::new(1, state.gamma);
+
+    let mut logger = MovingAvgLogger::new();
+    logger.register("reward", 20);
+    logger.register("steps", 20);
+    
+    let mut action = exploration.sample(&qtable, tape.obs, tape.constraint);
+    for count in 0..=total_steps {
+        let mut t = tape.step(action);
+        action = exploration.sample(&qtable, tape.obs, tape.constraint);
+        t.insert("next_action", action as f32);
+        buffer.push(t);
+
+        if buffer.is_ready() {
+            Sarsa::update(&state, &mut qtable, buffer.pop());
+        }
+        
+        if tape.done() {
+            for t in buffer.drain() {
+                Sarsa::update(&state, &mut qtable, t);
+            }
+            logger.push_single("reward", tape.episode_reward);
+            logger.push_single("steps", tape.steps as f32);
+            tape.reset();
+            action = exploration.sample(&qtable, tape.obs, tape.constraint);
+        }
+
+        if count % 10000 == 0 {
+            println!("count: {count}, reward: {}, steps: {}, eps: {}", logger.emit("reward"), logger.emit("steps"), exploration.eps());
+        }
+
+        *exploration.eps_mut() = eps_sch.step() as f32;
+    }
+}
