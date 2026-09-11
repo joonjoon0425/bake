@@ -1,4 +1,4 @@
-use bake::tabular::algorithm::NStepSarsa;
+use bake::tabular::algorithm::NStepQLearning;
 use bake::tabular::env::CliffWalking;
 use bake::tabular::qtable::QTable;
 use bake::tabular::explore::EpsGreedy;
@@ -10,37 +10,34 @@ use bake_tabular::env::{MaskedCliffWalking, Tape};
 use bake_tabular::explore::Exploration;
 
 pub fn main() {
-    let state = NStepSarsa { n: 1, gamma: 0.99, alpha: 0.4 };
+    let state = NStepQLearning { n: 3, gamma: 0.99, alpha: 0.01 };
     let env = MaskedCliffWalking::new();
     let mut qtable = QTable::new(CliffWalking::n_states(), CliffWalking::n_actions());
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;
-    let mut eps_sch = LinearScheduler::new(1.0, 0.005, total_steps, 0.4);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.0, total_steps, 0.6);
     let mut tape = Tape::new(env);
     let mut window = WindowBuffer::new();
 
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 20);
     logger.register("steps", 20);
-    
-    let mut action = exploration.sample(&qtable, tape.obs, tape.constraint);
+
     for count in 0..=total_steps {
-        let mut t = tape.step(action);
-        action = exploration.sample(&qtable, tape.obs, tape.constraint);
-        t.insert("next_action", action as f32);
+        let action = exploration.sample(&qtable, tape.obs, tape.constraint);
+        let t = tape.step(action);
         window.push(t);
+
         if window.len() >= state.n {
-            let sample = window.sample();
-            NStepSarsa::update(&state, &mut qtable, &exploration, sample);
+            let t = window.sample();
+            NStepQLearning::update_is(&state, &mut qtable, &exploration, t);
         }
-        
+
         if tape.done() {
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("steps", tape.steps as f32);
             tape.reset();
-            window.clear();
-            action = exploration.sample(&qtable, tape.obs, tape.constraint);
         }
 
         if count % 10000 == 0 {

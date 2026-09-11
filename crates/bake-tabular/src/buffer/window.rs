@@ -28,6 +28,7 @@ impl<C: Constraint> WindowBuffer<C> {
         for t in &self.data {
             vec.push(t.clone());
         }
+        self.data.pop_front();
         vec
     }
     /// clear the buffer
