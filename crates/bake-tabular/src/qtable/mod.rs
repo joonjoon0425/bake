@@ -1,7 +1,7 @@
 //! Q-value tables which all tabular algorithms use
 //! 
 
-use crate::constraint::Constraint;
+use crate::{constraint::Constraint, explore::Exploration};
 
 /// The Q(s,a) table for tabular algorithms
 #[derive(Debug)]
@@ -36,7 +36,17 @@ impl QTable {
         let mut qvalues = vec![0f32; self.n_actions];
         qvalues.copy_from_slice(self.qvalues(obs));
         qvalues
-    } 
+    }
+
+    /// returns an expectation of q values, according to a given policy
+    pub fn expectation<C: Constraint, E: Exploration>(&self, exploration: &E, obs: usize, constraint: C) -> f32 {
+        let mut expected = 0f32;
+        let qvalues = self.qvalues(obs);
+        for action in constraint.iter().filter_map(|(a, p)| if *p { Some(a) } else { None }) {
+            expected += exploration.prob(self, obs, action, constraint) * qvalues[action];
+        }
+        expected
+    }
     
     /// return the number of states
     pub fn n_states(&self) -> usize { self.n_states }
