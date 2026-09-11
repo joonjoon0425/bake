@@ -32,7 +32,7 @@ pub fn main() {
         window.push(t);
         if window.len() >= state.n {
             let sample = window.sample();
-            NStepSarsa::update(&state, &mut qtable, &exploration, sample);
+            NStepSarsa::update(&state, &mut qtable, sample);
         }
         
         if tape.done() {

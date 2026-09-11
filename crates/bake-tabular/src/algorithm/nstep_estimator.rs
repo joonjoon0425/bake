@@ -1,34 +1,11 @@
 //! computes the n-step results for n-step methods
 //! 
 
-use crate::{constraint::Constraint, data::Transition, explore::Exploration, qtable::{QTable, QValues}};
-/// decides which bootstrap method to use
-#[derive(Debug, Clone, Copy)]
-pub enum Bootstrap {
-    /// bootstrap with maximum q value
-    Max,
-    /// boostrap with next action
-    NextAction,
-    /// bootstrap with expectation
-    Expectation,
-}
-
-impl Bootstrap {
-    /// return the bootstrap value
-    pub fn bootstrap<C: Constraint>(&self, qtable: &QTable, exploration: &impl Exploration, t: Transition<C>) -> f32 {
-        match self {
-            Bootstrap::Max => { qtable.qvalues(t.next_obs).max(t.next_constraint) },
-            Bootstrap::NextAction => { qtable.qvalues(t.next_obs)[t.get("next_action").unwrap() as usize] },
-            Bootstrap::Expectation => { qtable.expectation(exploration, t.next_obs, t.next_constraint) }
-        }
-    }
-}
+use crate::{constraint::Constraint, data::Transition, explore::Exploration, qtable::QTable};
 
 /// compute the n-step return estimator
-pub fn base<C: Constraint, E: Exploration>(qtable: &QTable, exploration: &E, gamma: f32, bootstrap: Bootstrap, t: Vec<Transition<C>>) -> f32 {
+pub fn base<C: Constraint>(gamma: f32, bootstrap: f32, t: Vec<Transition<C>>) -> f32 {
     let last = t.last().unwrap();
-    let bootstrap = bootstrap.bootstrap(qtable, exploration, last.clone());
-    
     let mut target = if last.terminated { 0f32 } else { bootstrap };
 
     for transition in t.iter().rev() {

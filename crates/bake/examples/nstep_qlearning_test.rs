@@ -26,12 +26,14 @@ pub fn main() {
 
     for count in 0..=total_steps {
         let action = exploration.sample(&qtable, tape.obs, tape.constraint);
-        let t = tape.step(action);
+        let b_log_prob = exploration.prob(&qtable, tape.obs, action, tape.constraint).ln();
+        let mut t = tape.step(action);
+        t.insert("b_log_prob", b_log_prob);
         window.push(t);
 
         if window.len() >= state.n {
             let t = window.sample();
-            NStepQLearning::update_is(&state, &mut qtable, &exploration, t);
+            NStepQLearning::update_is(&state, &mut qtable, t);
         }
 
         if tape.done() {

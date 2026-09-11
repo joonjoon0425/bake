@@ -1,6 +1,6 @@
 //! An implementation of tabular n-step Q-learning algorithm
 //! 
-use crate::{algorithm::nstep_estimator::{self, Bootstrap}, constraint::Constraint, data::Transition, explore::{Exploration, Greedy}, qtable::QTable};
+use crate::{algorithm::nstep_estimator, constraint::Constraint, data::Transition, explore::{Exploration, Greedy}, qtable::{QTable, QValues}};
 
 /// A state for QLearning
 #[derive(Debug, Clone)]
@@ -15,8 +15,9 @@ pub struct NStepQLearning {
 
 impl NStepQLearning {
     /// update the qtable with given state, using n-step Q-learning algorithm with importance weight sampling
-    pub fn update_is<C: Constraint>(state: &NStepQLearning, qtable: &mut QTable, exploration: &impl Exploration, t: Vec<Transition<C>>) {
-        let target = nstep_estimator::base(qtable, exploration, state.gamma, Bootstrap::Max, t.clone());
+    pub fn update_is<C: Constraint>(state: &NStepQLearning, qtable: &mut QTable, t: Vec<Transition<C>>) {
+        let bootstrap = qtable.qvalues(t.last().unwrap().next_obs).max(t.last().unwrap().next_constraint);
+        let target = nstep_estimator::base(state.gamma, bootstrap, t.clone());
         let first = t.first().unwrap();
         let qvalue = qtable.qvalues(first.obs)[first.action];
         // compute the importance sampling weight
@@ -26,7 +27,7 @@ impl NStepQLearning {
         let greedy = Greedy::new(0);
         let mut prob_0 = false;
         for transition in t.iter().skip(1) {
-            b_log_prob += exploration.prob(qtable, transition.obs, transition.action, transition.constraint).ln();
+            b_log_prob += transition.get("b_log_prob").expect("the update_is of NStepQLearning requires the log probability of behaviour policy (or exploration)");
             let pi_prob = greedy.prob(qtable, transition.obs, transition.action, transition.constraint);
             if pi_prob == 0f32 { prob_0 = true; break; }
             pi_log_prob += pi_prob.ln();   

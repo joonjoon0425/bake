@@ -1,6 +1,6 @@
 //! An implementation of tabular Sarsa algorithm
 //! 
-use crate::{algorithm::nstep_estimator::{self, Bootstrap}, constraint::Constraint, data::Transition, explore::Exploration, qtable::QTable};
+use crate::{algorithm::nstep_estimator, constraint::Constraint, data::Transition, qtable::QTable};
 
 /// A state for Sarsa
 #[derive(Debug, Clone)]
@@ -15,8 +15,9 @@ pub struct NStepSarsa {
 
 impl NStepSarsa {
     /// update the qtable with given state, using SARSA algorithm
-    pub fn update<C: Constraint>(state: &NStepSarsa, qtable: &mut QTable, exploration: &impl Exploration, t: Vec<Transition<C>>) {
-        let target = nstep_estimator::base(qtable, exploration, state.gamma, Bootstrap::NextAction, t.clone());
+    pub fn update<C: Constraint>(state: &NStepSarsa, qtable: &mut QTable, t: Vec<Transition<C>>) {
+        let bootstrap = qtable.qvalues(t.last().unwrap().next_obs)[t.last().unwrap().get("next_action").expect("NStepSarsa requires the next_action attribute") as usize];
+        let target = nstep_estimator::base(state.gamma, bootstrap, t.clone());
         let first = t.first().unwrap();
         let qvalue = qtable.qvalues(first.obs)[first.action];
         qtable.qvalues_mut(first.obs)[first.action] += state.alpha * (target - qvalue);
