@@ -1,17 +1,16 @@
 use bake::tabular::algorithm::Sarsa;
-use bake::tabular::env::CliffWalking;
 use bake::tabular::qtable::QTable;
 use bake::tabular::explore::EpsGreedy;
 
 use bake::logger::MovingAvgLogger;
 use bake::scheduler::{LinearScheduler, Scheduler};
-use bake_tabular::env::{MaskedCliffWalking, Tape};
+use bake_tabular::env::{CliffWalking, Tape};
 use bake_tabular::explore::Exploration;
 
 pub fn main() {
     let state = Sarsa { gamma: 0.99, alpha: 0.4 };
-    let env = MaskedCliffWalking::new();
-    let mut qtable = QTable::new(CliffWalking::n_states(), CliffWalking::n_actions());
+    let env = CliffWalking::new();
+    let mut qtable = QTable::new(env.n_states(), env.n_actions());
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;

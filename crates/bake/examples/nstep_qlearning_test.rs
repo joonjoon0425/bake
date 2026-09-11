@@ -6,13 +6,13 @@ use bake::tabular::explore::EpsGreedy;
 use bake::logger::MovingAvgLogger;
 use bake::scheduler::{LinearScheduler, Scheduler};
 use bake_tabular::buffer::window::WindowBuffer;
-use bake_tabular::env::{MaskedCliffWalking, Tape};
+use bake_tabular::env::Tape;
 use bake_tabular::explore::Exploration;
 
 pub fn main() {
-    let state = NStepQLearning { n: 3, gamma: 0.99, alpha: 0.01 };
-    let env = MaskedCliffWalking::new();
-    let mut qtable = QTable::new(CliffWalking::n_states(), CliffWalking::n_actions());
+    let state = NStepQLearning { n: 3, gamma: 0.99, alpha: 0.02 };
+    let env = CliffWalking::new();
+    let mut qtable = QTable::new(env.n_states(), env.n_actions());
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;
@@ -40,6 +40,10 @@ pub fn main() {
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("steps", tape.steps as f32);
             tape.reset();
+            // drain the window buffer
+            for t in window.drain() {
+                NStepQLearning::update_is(&state, &mut qtable, t);
+            }
         }
 
         if count % 10000 == 0 {

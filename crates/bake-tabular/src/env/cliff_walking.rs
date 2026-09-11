@@ -23,10 +23,10 @@ impl CliffWalking {
     }
 
     /// return the number of states
-    pub fn n_states() -> usize { 48 }
+    pub fn n_states(&self) -> usize { 48 }
 
     /// return the number of actions
-    pub fn n_actions() -> usize { 4 }
+    pub fn n_actions(&self) -> usize { 4 }
 }
 
 impl Environment for CliffWalking {

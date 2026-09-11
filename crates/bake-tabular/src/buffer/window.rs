@@ -33,4 +33,13 @@ impl<C: Constraint> WindowBuffer<C> {
     }
     /// clear the buffer
     pub fn clear(&mut self) { self.data.clear(); }
+
+    /// return the leftover set of transitions as iterator
+    pub fn drain(&mut self) -> impl Iterator<Item = Vec<Transition<C>>> + '_ {
+        let mut vec = vec![];
+        while !self.data.is_empty() {
+            vec.push(self.sample());
+        }
+        vec.into_iter()
+    }
 }

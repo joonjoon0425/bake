@@ -1,5 +1,4 @@
 use bake::tabular::algorithm::NStepSarsa;
-use bake::tabular::env::CliffWalking;
 use bake::tabular::qtable::QTable;
 use bake::tabular::explore::EpsGreedy;
 
@@ -12,7 +11,7 @@ use bake_tabular::explore::Exploration;
 pub fn main() {
     let state = NStepSarsa { n: 1, gamma: 0.99, alpha: 0.4 };
     let env = MaskedCliffWalking::new();
-    let mut qtable = QTable::new(CliffWalking::n_states(), CliffWalking::n_actions());
+    let mut qtable = QTable::new(env.n_states(), env.n_actions());
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;
@@ -40,6 +39,10 @@ pub fn main() {
             logger.push_single("steps", tape.steps as f32);
             tape.reset();
             window.clear();
+            // drain the window buffer
+            for t in window.drain() {
+                NStepSarsa::update(&state, &mut qtable, t);
+            }
             action = exploration.sample(&qtable, tape.obs, tape.constraint);
         }
 
