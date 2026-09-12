@@ -1,5 +1,6 @@
-use bake::logger::MovingAvgLogger;
-use bake::deep::{
+use bake_deep::logger::MovingAvgLogger;
+use bake_deep::scheduler::{LinearScheduler, Scheduler};
+use bake_deep::{
     algorithm::{AdvantageEstimator, Ppo},
     buffer::RolloutBuffer,
     contract::ActorCritic,
@@ -10,7 +11,8 @@ use bake::deep::{
     net::basic::MlpSeparatedActorCriticNet,
     wrapper::ActorCriticWrapper
 };
-use bake::deep::env::CartPole;
+use bake_gym::env::KwArgs;
+use bake_gym::env::GymLunarLander;
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
 use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};
 
@@ -23,9 +25,10 @@ pub fn main() {
     let mut rng = SmallRng::seed_from_u64(seed);
     
     let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95 }, loss_fn: Loss::MseLoss };
-    let env = CartPole::new(seed, &device);
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &autodiff_device));
+    let env = GymLunarLander::new(seed, &device, KwArgs::new());
+    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 64, 64, env.n_actions()], Relu, &autodiff_device));
 
+    let mut c_e = 0.02;
     let lr_a = 1e-4;
     let lr_c = 1e-3;
     let mut opt_a = RmsPropConfig::new().init();
@@ -43,7 +46,10 @@ pub fn main() {
     logger.register("approx_kl", 100);
     logger.register("clip_fraction", 100);
 
-    for count in 0..=500000 {
+    let total_steps = 1000000;
+    let mut c_e_sch = LinearScheduler::new(c_e as f64, 0.002, total_steps, 1.0);
+
+    for count in 0..=total_steps {
         let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
         let action = dist.sample();
         let mut t = tape.step(action.clone());
@@ -51,7 +57,7 @@ pub fn main() {
 
         buffer.push(t);
 
-        if buffer.len() >= 512 {
+        if buffer.len() >= 2048 {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.advantage(&actor_critic, batch.clone(), state.gamma);
             let adv = (adv.clone() - adv.clone().mean()) / (adv.var(0) + 1e-9).sqrt();
@@ -63,7 +69,7 @@ pub fn main() {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
                     logger.push(&loss);
-                    actor_critic = Ppo::update_separated(net, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                    actor_critic = Ppo::update_separated(net, loss, c_e, lr_a, &mut opt_a, lr_c, &mut opt_c);
                 }
             }
             
@@ -80,6 +86,23 @@ pub fn main() {
             let approx_kl = logger.emit("approx_kl");
             let clip_fraction = logger.emit("clip_fraction");
             eprintln!("count: {count}, reward_avg: {reward_avg}, entropy: {entropy}, approx KL: {approx_kl}, clip fraction: {clip_fraction}");
+        }
+
+        c_e = c_e_sch.step() as f32;
+    }
+
+    // evaluation
+    let env = GymLunarLander::new(seed, &device, KwArgs::new().add("render_mode", "human"));
+    let mut tape = Tape::new(env);
+    for _ in 0..5 {
+        tape.reset();
+        loop {
+            let action = actor_critic.dist(tape.obs.clone(), tape.constraint.clone()).mode();
+            tape.step(action);
+
+            if tape.done() {
+                break;
+            }
         }
     }
 }

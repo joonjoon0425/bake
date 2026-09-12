@@ -38,7 +38,7 @@ pub struct DiscreteDuelingQNetWrapper<T: DiscreteDuelingQNet> { net: T }
 
 impl<T: DiscreteDuelingQNet> DiscreteDuelingQNetWrapper<T> {
     /// create a new DiscreteQFunction from given DiscreteDuelingQNet
-    pub fn new(net: T) -> Self { Self { net } }
+    pub fn new(net: T) -> Self { Self { net: net.valid() } }
 }
 
 impl<T: DiscreteDuelingQNet> DiscreteQFunction for DiscreteDuelingQNetWrapper<T> {

@@ -7,4 +7,4 @@ pub mod policy_wrapper;
 pub use policy_wrapper::PolicyWrapper;
 
 pub mod qnet_wrapper;
-pub use qnet_wrapper::DiscreteQNetWrapper;
+pub use qnet_wrapper::{DiscreteQNetWrapper, DiscreteDuelingQNetWrapper};

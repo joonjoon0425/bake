@@ -13,3 +13,13 @@ pub mod explore;
 pub mod loss;
 pub mod net;
 pub mod wrapper;
+
+pub mod logger {
+    //! re-exportation of bake_common::logger
+    pub use bake_common::logger::*;
+}
+
+pub mod scheduler {
+    //! re-exportation of bake_common::scheduler
+    pub use bake_common::scheduler::*;
+}

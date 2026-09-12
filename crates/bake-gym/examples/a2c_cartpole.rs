@@ -1,16 +1,18 @@
-use bake::logger::MovingAvgLogger;
-use bake::deep::{
+use bake_deep::distribution::Distribution;
+use bake_deep::logger::MovingAvgLogger;
+use bake_deep::{
     algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator},
     loss::Loss,
     buffer::RolloutBuffer,
     contract::ActorCritic,
     distribution::Categorical,
-    env::{CartPole, Tape},
+    env::Tape,
     net::basic::MlpSeparatedActorCriticNet,
     wrapper::ActorCriticWrapper
 };
-use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
+use bake_gym::env::{GymCartPole, KwArgs};
 
+use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
@@ -19,8 +21,8 @@ pub fn main() {
     let autodiff_device = device.clone().autodiff();
     
     let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95 }, loss_fn: Loss::MseLoss };
-    let env = CartPole::new(seed, &device);
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &autodiff_device));
+    let env = GymCartPole::new(seed, &device, KwArgs::new());
+    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 128, env.n_actions()], Relu, &autodiff_device));
 
     let lr_a = 1e-4;
     let lr_c = 1e-3;
@@ -61,6 +63,21 @@ pub fn main() {
             let critic_loss = logger.emit("critic_loss");
             let entropy = logger.emit("entropy");
             println!("count: {count}, reward_avg: {ep_reward_average}, actor_loss: {actor_loss}, critic_loss: {critic_loss}, entropy: {entropy}");
+        }
+    }
+
+    // evaluation
+    let env = GymCartPole::new(seed, &device, KwArgs::new().add("render_mode", "human"));
+    let mut tape = Tape::new(env);
+    for _ in 0..5 {
+        tape.reset();
+        loop {
+            let action = actor_critic.dist(tape.obs.clone(), tape.constraint.clone()).mode();
+            tape.step(action);
+
+            if tape.done() {
+                break;
+            }
         }
     }
 }

@@ -9,3 +9,13 @@ pub mod data;
 pub mod env;
 pub mod explore;
 pub mod qtable;
+
+pub mod logger {
+    //! re-exportation of bake_common::logger
+    pub use bake_common::logger::*;
+}
+
+pub mod scheduler {
+    //! re-exportation of bake_common::scheduler
+    pub use bake_common::scheduler::*;
+}

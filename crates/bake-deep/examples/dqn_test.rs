@@ -1,15 +1,15 @@
-use bake::scheduler::{LinearScheduler, Scheduler};
+use bake_common::scheduler::{LinearScheduler, Scheduler};
 use bake_deep::buffer::replay::ReplayBufferConfig;
 use bake_deep::explore::{EpsGreedy, Exploration};
-use bake::logger::MovingAvgLogger;
+use bake_common::logger::MovingAvgLogger;
 use bake_deep::net::basic::MlpDiscreteQNet;
 use bake_deep::wrapper::DiscreteQNetWrapper;
 use burn::optim::AdamConfig;
 use burn::prelude::*;
 use nn::activation::ActivationConfig::Relu;
 
-use bake::deep::env::{CartPole, Tape};
-use bake::deep::algorithm::Dqn;
+use bake_deep::env::{CartPole, Tape};
+use bake_deep::algorithm::Dqn;
 use bake_deep::loss::Loss;
 
 pub fn main() {

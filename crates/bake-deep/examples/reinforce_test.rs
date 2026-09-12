@@ -1,11 +1,11 @@
-use bake::deep::algorithm::Reinforce;
-use bake::deep::env::{CartPole, Tape};
-use bake::deep::buffer::RolloutBuffer;
-use bake::deep::net::basic::MlpPolicyNet;
+use bake_deep::algorithm::Reinforce;
+use bake_deep::env::{CartPole, Tape};
+use bake_deep::buffer::RolloutBuffer;
+use bake_deep::net::basic::MlpPolicyNet;
 use bake_deep::algorithm::reinforce::Baseline;
 use bake_deep::contract::Policy;
 use bake_deep::wrapper::PolicyWrapper;
-use bake::logger::MovingAvgLogger;
+use bake_common::logger::MovingAvgLogger;
 
 use burn::optim::AdamConfig;
 use burn::prelude::*;
