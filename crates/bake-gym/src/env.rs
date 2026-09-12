@@ -181,3 +181,6 @@ pub use mountaincar::GymMountainCar;
 
 pub mod taxi;
 pub use taxi::GymTaxi;
+
+pub mod cliff_walking;
+pub use cliff_walking::GymCliffWalking;
