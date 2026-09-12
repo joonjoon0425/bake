@@ -29,6 +29,12 @@ pub trait Environment {
 pub mod cartpole;
 pub use cartpole::CartPole;
 
+pub mod masked_cliffwalking;
+pub use masked_cliffwalking::MaskedCliffWalking;
+
+pub mod cliffwalking;
+pub use cliffwalking::CliffWalking;
+
 pub mod tape;
 pub use tape::Tape;
 
