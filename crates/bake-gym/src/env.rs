@@ -184,3 +184,6 @@ pub use taxi::GymTaxi;
 
 pub mod cliffwalking;
 pub use cliffwalking::GymCliffWalking;
+
+pub mod frozenlake;
+pub use frozenlake::GymFrozenLake;
