@@ -79,13 +79,13 @@ Gymnasium Binding:
 These are environments which runs python interpreters internally. Binded with PyO3.
 |Environment|Explanation|Implementation|
 |:---:|:---:|:---:|
-|`GymCartPole`|CartPole-v1 of Gymnasium|
-|`GymMountainCar`|MountainCar-v0 of Gymnasium|
-|`GymAcrobot`|Acrobot-v1 of Gymnasium|
-|`GymLunarLander`|LunarLander-v3 of Gymnasium|
-|`GymCliffWalking`|one-hot encoded CliffWalking-v1 of Gymnasium|
-|`GymTaxi`|one-hot encoded Taxi-v4 of Gymnasium|
-|`GymFrozenLake`|one-hot encoded FrozenLake-v1 of Gymnasium|
+|`GymCartPole`|CartPole-v1 of Gymnasium|[cartpole.rs](crates/bake-gym/src/env/cartpole.rs)|
+|`GymMountainCar`|MountainCar-v0 of Gymnasium|[mountaincar.rs](crates/bake-gym/src/env/mountaincar.rs)|
+|`GymAcrobot`|Acrobot-v1 of Gymnasium|[acrobot.rs](crates/bake-gym/src/env/acrobot.rs)|
+|`GymLunarLander`|LunarLander-v3 of Gymnasium|[lunarlander.rs](crates/bake-gym/src/env/lunarlander.rs)|
+|`GymCliffWalking`|one-hot encoded CliffWalking-v1 of Gymnasium|[cliffwalking.rs](crates/bake-gym/src/env/cliffwalking.rs)|
+|`GymTaxi`|one-hot encoded Taxi-v4 of Gymnasium|[taxi.rs](crates/bake-gym/src/env/taxi.rs)|
+|`GymFrozenLake`|one-hot encoded FrozenLake-v1 of Gymnasium|[frozenlake.rs](crates/bake-gym/src/env/frozenlake.rs)|
 
 #### Exploration Strategies
 - greedy
