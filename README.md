@@ -94,6 +94,132 @@ These are environments which runs python interpreters internally. Binded with Py
 - NoisyNet
 
 ## Quick Start
+Bake gives you all the components for making training loops. The user only have to implement the training loop and one's own network structure. (A toml configuration will be implemented later... [issue #32](https://github.com/joonjoon0425/bake/issues/32))
+##### Warining
+When creating a network, the user must create it on the autodiff device.
+
+```rust
+use bake_common::scheduler::{LinearScheduler, Scheduler};
+use bake_deep::buffer::replay::ReplayBufferConfig;
+use bake_deep::explore::{EpsGreedy, Exploration};
+use bake_common::logger::MovingAvgLogger;
+use bake_deep::net::basic::MlpDiscreteQNet;
+use bake_deep::wrapper::DiscreteQNetWrapper;
+use bake_deep::env::{CartPole, Tape};
+use bake_deep::algorithm::Dqn;
+use bake_deep::loss::Loss;
+
+use burn::optim::AdamConfig;
+use burn::prelude::*;
+
+#[derive(Module, Debug)]
+struct MyOwnQNet {
+    /*  */,
+}
+
+impl MyOwnQNet {
+    pub fn new(/* */) -> Self {
+        /* */
+    }
+}
+
+impl DiscreteQNet for MyOwnQNet {
+    type Obs = /*  */;
+    
+    fn forward(&self, obs: Self::Obs) -> Tensor<2> {
+        /* */
+    }
+}
+
+pub fn main() {
+    println!("count,reward_avg,step_avg,loss,td_error,qmean,eps");
+    let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
+    // device settings
+    let device = Device::default();
+    device.seed(seed);
+    let autodiff_device = device.clone().autodiff();
+    // environment setting
+    let env = CartPole::new(seed, &device);
+    // algorithm state setting
+    let state = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
+    // create yout own network on autodiff device
+    // wrap it with DiscreteQNetWrapper
+    let mut online = DiscreteQNetWrapper::new(MyOwnQNet::new(/* */, &autodiff_device));
+    let mut target = online.clone();
+    let lr = 2.5e-4;
+    let mut opt = AdamConfig::new().init();
+
+    // exploration strategy
+    let mut exploration = EpsGreedy::new(seed, 1.0f32);
+    // Prioritized Experience Replay with alpha = 0.6 and bets = 0.4
+    let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
+    // This is the helper struct which creates a Transition for the user
+    let mut tape = Tape::new(env);
+    // Moving average logger
+    let mut logger = MovingAvgLogger::new();
+
+    let total_steps = 500000;
+    let warmup = 10000;
+    let update_freq = 10;
+    let sync_freq = 500;
+    let batch_size = 128;
+
+    let window = 100;
+    logger.register("loss", 500);
+    logger.register("mean_td_error", 500);
+    logger.register("qmean", 500);
+    logger.register("reward", window);
+    logger.register("step", window);
+
+    // scheduler for schedulable values
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
+
+    for count in 0..=total_steps {
+        let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
+        let t = tape.step(action);
+        buffer.push(t);
+
+        if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
+            // get the dqn objective
+            // the given network must be passed to the update function
+            let (net, loss) = Dqn::loss(&state, online, &target, batch, batch_info.clone());
+            // record the loss informations into logger
+            logger.push(&loss);
+            // update the priority of prioritized replay buffer
+            buffer.update_priority(&batch_info.indices, loss.td_error.clone());
+            // update the network
+            online = Dqn::update(net, loss, lr, &mut opt);
+        }
+
+        if count % sync_freq == 0 {
+            let record = online.clone().into_record();
+            target = target.load_record(record);
+        }
+
+        if tape.done() {
+            logger.push_single("reward", tape.episode_reward);
+            logger.push_single("step", tape.steps as f32);
+            tape.reset();
+        }
+
+        if count % 5000 == 0 {
+            let reward = logger.emit("reward");
+            let step = logger.emit("step");
+            let loss = logger.emit("loss");
+            let mean_td_error = logger.emit("mean_td_error");
+            let qmean = logger.emit("qmean");
+            println!("{count},{reward},{step},{loss},{mean_td_error},{qmean},{}", exploration.eps());
+        }
+
+        *exploration.eps_mut() = eps_sch.step() as f32;
+        *buffer.beta_mut() = beta_sch.step();
+    }   
+}
+
+```
+
+## Examples
 To use Gymnasium environments, python virtual environment is required. This project uses [uv](https://docs.astral.sh/uv/).
 ```bash
 git clone https://github.com/joonjoon0425/bake.git

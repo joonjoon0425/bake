@@ -19,7 +19,7 @@ pub fn main() {
     device.seed(seed);
     let autodiff_device = device.clone().autodiff();
     let env = CartPole::new(seed, &device);
-    let config = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
+    let state = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
     let mut online = DiscreteQNetWrapper::new(MlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &autodiff_device));
     let mut target = online.clone();
     let lr = 2.5e-4;
@@ -52,7 +52,7 @@ pub fn main() {
         buffer.push(t);
 
         if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
-            let (net, loss) = Dqn::loss(&config, online, &target, batch, batch_info.clone());
+            let (net, loss) = Dqn::loss(&state, online, &target, batch, batch_info.clone());
             logger.push(&loss);
             buffer.update_priority(&batch_info.indices, loss.td_error.clone());
             online = Dqn::update(net, loss, lr, &mut opt);
