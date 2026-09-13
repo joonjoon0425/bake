@@ -16,7 +16,7 @@ use bake_deep::loss::Loss;
 use bake_gym::env::lunarlander::GymLunarLander;
 
 pub fn main() {
-    println!("count,ep_reward_average,ep_step_average,loss,td_error,qmean,eps");
+    println!("count,reward_avg,step_avg,loss,td_error,qmean,eps");
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);

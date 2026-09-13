@@ -12,7 +12,7 @@ use burn::prelude::*;
 use burn::nn::activation::ActivationConfig::Relu;
 
 pub fn main() {
-    println!("count,ep_reward_average,ep_step_average,entropy, surrogate_loss");
+    println!("count,reward_avg,step_avg,entropy, surrogate_loss");
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);

@@ -15,7 +15,7 @@ use bake_deep::loss::Loss;
 use bake_common::scheduler::{LinearScheduler, Scheduler};
 
 pub fn main() {
-    println!("count,ep_reward_average,ep_step_average,loss,td_error,qmean");
+    println!("count,reward_avg,step_avg,loss,td_error,qmean");
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
