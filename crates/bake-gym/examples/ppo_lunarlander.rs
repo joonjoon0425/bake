@@ -17,6 +17,7 @@ use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude
 use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};
 
 pub fn main() {
+    println!("count,reward_avg,step_avg,entropy,approx_KL,clip_fraction");
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
@@ -82,10 +83,11 @@ pub fn main() {
         
         if count % 5000 == 0 {
             let reward_avg = logger.emit("reward");
+            let step_avg = logger.emit("step");
             let entropy = logger.emit("entropy");
             let approx_kl = logger.emit("approx_kl");
             let clip_fraction = logger.emit("clip_fraction");
-            eprintln!("count: {count}, reward_avg: {reward_avg}, entropy: {entropy}, approx KL: {approx_kl}, clip fraction: {clip_fraction}");
+            println!("{count},{reward_avg},{step_avg},{entropy},{approx_kl},{clip_fraction}");
         }
 
         c_e = c_e_sch.step() as f32;
