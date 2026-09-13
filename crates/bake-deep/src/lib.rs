@@ -1,32 +1,25 @@
-//! # A Deep Reinforcement Learning Framework
-//! Works with burn
-#[warn(missing_docs)]
-pub mod approximator;
+//! # A framework for deep reinforcement learning
+//! 
+#![warn(missing_docs)]
+
 pub mod algorithm;
 pub mod buffer;
-pub mod config;
 pub mod constraint;
+pub mod contract;
+pub mod data;
 pub mod distribution;
 pub mod env;
-pub mod exploration;
-pub mod network;
-pub mod scheduler;
-pub mod types;
-pub mod utils;
+pub mod explore;
+pub mod loss;
+pub mod net;
+pub mod wrapper;
 
-pub mod prelude {
-    pub use crate::network::{QNet, DuelingQNet, PolicyNet, ActorCriticNet};
+pub mod logger {
+    //! re-exportation of bake_common::logger
+    pub use bake_common::logger::*;
+}
 
-    pub use crate::approximator::{QFunction, Policy, ActorCritic};
-
-    pub use crate::exploration::{Exploration, NoiseReset};
-    pub use crate::distribution::Distribution;
-    pub use crate::constraint::DiscreteConstraint;
-    pub use crate::types::{Batchable, Recordable};
-    pub use crate::env::Env;
-
-    pub use crate::types::{Batch, Tape, Logger, ValueLoss};
-    pub use crate::constraint::{DiscreteMask, Unconstrained};
-
-    pub use bake_macros::Batchable;
+pub mod scheduler {
+    //! re-exportation of bake_common::scheduler
+    pub use bake_common::scheduler::*;
 }

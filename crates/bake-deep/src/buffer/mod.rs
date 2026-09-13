@@ -1,15 +1,11 @@
-//! # Buffers for Deep RL
-//! - ReplayBuffer for DQN-like algorithms
-//! - RolloutBuffer for Actor-critic algorithms
-//! - EpisodeBuffer for Monte Carlo algorithms
-//! 
+//! Various buffers for deep rl
 //! 
 
-pub mod replay_buffer;
-pub use replay_buffer::*;
+pub mod replay;
+pub use replay::ReplayBuffer;
 
-pub mod rollout_buffer;
-pub use rollout_buffer::*;
+pub mod rollout;
+pub use rollout::RolloutBuffer;
+// pub mod per;
 
-pub mod per_buffer;
-pub use per_buffer::*;
+pub mod sampler;

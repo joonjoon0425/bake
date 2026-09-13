@@ -1,0 +1,16 @@
+require_grad는 Param의 필드인데, Param::initialized가 텐서에서 파생시킨다
+(burn-core param/base.rs:272). 비-autodiff 백엔드의 is_require_grad는 항상
+false (burn-backend ops/tensor.rs:869). 따라서 인너 모듈에 load_record를
+하면 필드가 false가 되고, 이후 from_inner가 set_require_grad(false)로 올려
+그래디언트가 추출되지 않는다. valid()만이 필드를 명시적으로 복원하지만
+require_grad는 pub(crate)라 외부에서 못 건드린다.
+
+→ 모듈 생성과 load_record는 autodiff 디바이스에서 하고 valid()로 내린다.
+
+사용자가 autodiff에 대해서 최소한으로만 신경쓰게 하는 걸 원하기 때문이다.
+
+
+규칙:
+autodiff는 loss에서 붙고, update에서 떨어진다.
+
+규칙 제거됨: transition들의 autodiff는 buffer에서 붙여서 제공한다. -> PPO 알고리즘의 속도가 말이 안 되게 빨라졌다. commit에는 남아있지 않다. CartPole 학습 50만 스텝이 2분에서 15초로 줄어들었다.

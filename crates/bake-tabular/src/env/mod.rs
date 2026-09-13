@@ -1,24 +1,25 @@
-//! # Environments for tabular algorithms
-use crate::types::*;
+//! A rust native environments for tabular rl
+//! 
 
+use crate::constraint::Constraint;
 /// Basic trait for tabular environments
-pub trait Env {
+pub trait Environment {
     /// The type of a mask the environment provides  
-    /// If the environment does not provide masks, use NoMask<ACTION_NUM>
-    type Mask : Mask;
+    /// If the environment does not provide masks, use Unconstrained<ACTION_NUM>
+    type Constraint: Constraint;
     
     /// reset the environment
-    fn reset(&mut self) -> (usize, Self::Mask);
-    /// go ahead one step with given action
-    /// returns a step result, which is: next_obs, reward, terminated, truncated, mask
-    fn step(&mut self, action: usize) -> (usize, f32, bool, bool, Self::Mask);
+    fn reset(&mut self) -> (usize, Self::Constraint);
+    /// take one step of environment with given action
+    /// and returns a step result, which is: (next_obs, mask), reward, terminated, truncated
+    fn step(&mut self, action: usize) -> ((usize, Self::Constraint), f32, bool, bool);
 }
 
-pub mod grid_world;
-pub use grid_world::*;
+pub mod tape;
+pub use tape::Tape;
 
-pub mod blackjack;
-pub use blackjack::*;
+pub mod cliff_walking;
+pub use cliff_walking::CliffWalking;
 
-pub mod masked_grid_world;
-pub use masked_grid_world::*;
+pub mod masked_cliff_walking;
+pub use masked_cliff_walking::MaskedCliffWalking;

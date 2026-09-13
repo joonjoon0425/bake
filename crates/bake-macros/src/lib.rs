@@ -1,3 +1,5 @@
+//! This code was written by Claude, since I don't have enough knowledge about PROC MACRO
+
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Field, Fields, Ident, parse_macro_input};
@@ -5,11 +7,13 @@ use syn::{Data, DeriveInput, Field, Fields, Ident, parse_macro_input};
 #[derive(Default)]
 struct FieldOpts {
     skip: bool,
-    size: bool,
-    device: bool,
 }
 
-/// `#[batchable(skip)]` / `#[batchable(size)]`
+/// `#[batchable(skip)]`
+///
+/// `size`/`device`는 제거되었다. 둘 다 `()`와 `Unconstrained`가 길이·디바이스를
+/// 답하지 못해 생긴 우회로였는데, `len()`이 `Option<usize>`가 되고 `device()`가
+/// 트레잇에서 빠지면서 필요가 없어졌다.
 fn field_opts(f: &Field) -> syn::Result<FieldOpts> {
     let mut o = FieldOpts::default();
     for attr in &f.attrs {
@@ -21,26 +25,31 @@ fn field_opts(f: &Field) -> syn::Result<FieldOpts> {
                 o.skip = true;
                 Ok(())
             } else if meta.path.is_ident("size") {
-                o.size = true;
-                Ok(())
+                Err(meta.error(
+                    "`size` was removed; `len()` now returns `Option<usize>` and \
+                     derived types take the first `Some` among batched fields",
+                ))
             } else if meta.path.is_ident("device") {
-                o.device = true;
-                Ok(())
-            }
-            else {
-                Err(meta.error("unknown option; expected `skip` or `size`"))
+                Err(meta.error(
+                    "`device` was removed; `Batchable` no longer has `device()`. \
+                     Use the `HasDevice` trait on the field you need it from",
+                ))
+            } else {
+                Err(meta.error("unknown option; expected `skip`"))
             }
         })?;
-    }
-    if o.skip && o.size {
-        return Err(syn::Error::new_spanned(
-            f,
-            "`skip` and `size` are mutually exclusive",
-        ));
     }
     Ok(o)
 }
 
+/// `Batchable`을 파생한다.
+///
+/// 필드는 두 종류다.
+/// - **batched**: `Batchable`로 위임
+/// - **skipped** (`#[batchable(skip)]`): 손대지 않고 통과. `cat`에서는 첫 항목이 이긴다
+///
+/// `len`은 배치 필드 중 첫 `Some`을 취한다. 모든 배치 필드가 길이를 갖지 않으면
+/// (예: 전부 `()`) `None`이 된다.
 #[proc_macro_derive(Batchable, attributes(batchable))]
 pub fn derive_batchable(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
@@ -66,14 +75,8 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
         }
     };
 
-    // Three kinds of field:
-    //   batched  - delegated to Batchable
-    //   skipped  - carried through untouched (first item wins on stack)
-    //   size     - a plain usize holding the batch length; never delegated
-    let mut batched = Vec::new();
-    let mut skipped = Vec::new();
-    let mut size_field: Option<Ident> = None;
-    let mut device_field: Option<Ident> = None;
+    let mut batched: Vec<Ident> = Vec::new();
+    let mut skipped: Vec<Ident> = Vec::new();
 
     for f in fields {
         let ident = f.ident.clone().unwrap();
@@ -82,33 +85,17 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
             Err(e) => return e.to_compile_error().into(),
         };
 
-        if o.size {
-            if size_field.is_some() {
-                return syn::Error::new_spanned(f, "only one field may be marked `size`")
-                    .to_compile_error()
-                    .into();
-            }
-            size_field = Some(ident.clone()); // NOT pushed into batched
-        } else if o.skip {
-            skipped.push(ident.clone());
+        if o.skip {
+            skipped.push(ident);
         } else {
-            batched.push(ident.clone());
-        }
-
-        if o.device {
-            if device_field.is_some() {
-                return syn::Error::new_spanned(f, "only one field may be marked `device`")
-                    .to_compile_error()
-                    .into();
-            }
-            device_field = Some(ident.clone());
+            batched.push(ident);
         }
     }
 
     if batched.is_empty() {
         return syn::Error::new_spanned(
             name,
-            "at least one field must be batched (all fields are `skip`/`size`)",
+            "at least one field must be batched (all fields are `skip`)",
         )
         .to_compile_error()
         .into();
@@ -117,41 +104,22 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
     let bufs: Vec<_> = batched.iter().map(|n| format_ident!("__b_{}", n)).collect();
     let holds: Vec<_> = skipped.iter().map(|n| format_ident!("__s_{}", n)).collect();
 
-    // With an explicit `size` field the length is stored; otherwise ask the
-    // first batched field. `size_init` fills that field in stack/select.
-    let (batch_size_body, size_init_stack, size_init_select) = match &size_field {
-        Some(f) => (
-            quote! {
-                let Self { #f, .. } = self;
-                *#f
-            },
-            quote! { #f: n, },
-            quote! { #f: Batchable::batch_size(&idx), },
-        ),
-        None => {
-            let first = &batched[0];
-            (
-                quote! { Batchable::batch_size(&self.#first) },
-                quote! {},
-                quote! {},
-            )
-        }
-    };
-
-    let device_field = device_field.unwrap_or_else(|| batched[0].clone());
-
     quote! {
         impl #impl_generics Batchable for #name #ty_generics #where_clause {
-            fn concat(items: ::std::vec::Vec<Self>) -> Self {
-                assert!(!items.is_empty(), "Batchable::concat on an empty Vec");
+            fn batch_size(&self) -> ::core::option::Option<usize> {
+                ::core::option::Option::None
+                #( .or_else(|| Batchable::batch_size(&self.#batched)) )*
+            }
+
+            fn cat(items: ::std::vec::Vec<Self>) -> Self {
+                assert!(!items.is_empty(), "Batchable::cat on an empty Vec");
                 let n = items.len();
 
                 #( let mut #bufs = ::std::vec::Vec::with_capacity(n); )*
                 #( let mut #holds = ::core::option::Option::None; )*
 
                 for it in items {
-                    // `..` swallows the size field, if any.
-                    let Self { #(#batched,)* #(#skipped,)* .. } = it;
+                    let Self { #(#batched,)* #(#skipped,)* } = it;
                     #( #bufs.push(#batched); )*
                     #( if #holds.is_none() {
                            #holds = ::core::option::Option::Some(#skipped);
@@ -159,27 +127,72 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
                 }
 
                 Self {
-                    #( #batched: Batchable::concat(#bufs), )*
+                    #( #batched: Batchable::cat(#bufs), )*
                     #( #skipped: #holds.unwrap(), )*
-                    #size_init_stack
                 }
-            }
-
-            fn batch_size(&self) -> usize {
-                #batch_size_body
             }
 
             fn select(self, idx: Tensor<1, Int>) -> Self {
-                let Self { #(#batched,)* #(#skipped,)* .. } = self;
+                let Self { #(#batched,)* #(#skipped,)* } = self;
                 Self {
                     #( #batched: Batchable::select(#batched, idx.clone()), )*
                     #( #skipped, )*
-                    #size_init_select
                 }
             }
 
-            fn device(&self) -> burn::tensor::Device {
-                Batchable::device(&self.#device_field)
+            fn slice(self, range: ::core::ops::Range<usize>) -> Self {
+                let Self { #(#batched,)* #(#skipped,)* } = self;
+                Self {
+                    #( #batched: Batchable::slice(#batched, range.clone()), )*
+                    #( #skipped, )*
+                }
+            }
+
+            fn detach(self) -> Self {
+                let Self { #(#batched,)* #(#skipped,)* } = self;
+                Self {
+                    #( #batched: Batchable::detach(#batched), )*
+                    #( #skipped, )*
+                }
+            }
+
+            fn assign_inplace(&mut self, data: Self, index: usize) {
+                #(
+                    Batchable::assign_inplace(&mut self.#batched, data.#batched, index);
+                )*
+            }
+
+            fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self {
+                Self {
+                    #(
+                        #batched: Batchable::zeros_like(capacity, &data.#batched, device),
+                    )*
+                    #(
+                        #skipped: data.#skipped.clone(),
+                    )*
+                }
+            }
+
+            fn to_device(self, device: &Device) -> Self {
+                Self {
+                    #(
+                        #batched: Batchable::to_device(self.#batched, device),
+                    )*
+                    #(
+                        #skipped
+                    )*
+                }
+            }
+
+            fn into_autodiff(self) -> Self {
+                Self {
+                    #(
+                        #batched: Batchable::into_autodiff(self.#batched),
+                    )*
+                    #(
+                        #skipped
+                    )*
+                }
             }
         }
     }

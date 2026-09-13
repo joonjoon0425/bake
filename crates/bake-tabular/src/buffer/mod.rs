@@ -1,4 +1,4 @@
-//! # Buffers for tabular algorithms
+//! Various buffers for tabular rl
 //! 
-pub mod window_buffer;
-pub use window_buffer::*;
+
+pub mod window;

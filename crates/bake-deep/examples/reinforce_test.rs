@@ -1,0 +1,61 @@
+use bake_deep::algorithm::Reinforce;
+use bake_deep::env::{CartPole, Tape};
+use bake_deep::buffer::RolloutBuffer;
+use bake_deep::net::basic::MlpPolicyNet;
+use bake_deep::algorithm::reinforce::Baseline;
+use bake_deep::contract::Policy;
+use bake_deep::wrapper::PolicyWrapper;
+use bake_common::logger::MovingAvgLogger;
+
+use burn::optim::AdamConfig;
+use burn::prelude::*;
+use burn::nn::activation::ActivationConfig::Relu;
+
+pub fn main() {
+    println!("count,reward_avg,step_avg,entropy, surrogate_loss");
+    let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
+    let device = Device::default();
+    device.seed(seed);
+    let autodiff_device = device.clone().autodiff();
+
+    let env = CartPole::new(seed, &device);
+    let state = Reinforce{ gamma: 0.99, baseline: Baseline::Normalized };
+    let mut policy = PolicyWrapper::new(MlpPolicyNet::new(&[4, 128, 2], Relu, &autodiff_device));
+    let mut opt = AdamConfig::new().init();
+
+    let mut buffer = RolloutBuffer::new();
+    let mut tape = Tape::new(env);
+
+    let total_steps = 500000;
+    let mut logger = MovingAvgLogger::new();
+    logger.register("reward", 100);
+    logger.register("step", 100);
+    logger.register("surrogate_loss", 20);
+    logger.register("entropy", 20);
+
+    for count in 0..=total_steps {
+        let action = policy.action(tape.obs.clone(), tape.constraint.clone());
+        let t = tape.step(action);
+        buffer.push(t);
+
+        if tape.done() {
+            let rollout = buffer.pop();
+            let (net, loss) = Reinforce::loss(&state, policy, rollout);
+            logger.push(&loss);
+            policy = Reinforce::update(net, loss, 0.02, 1e-3, &mut opt);
+
+            logger.push_single("reward", tape.episode_reward);
+            logger.push_single("step", tape.steps as f32);
+            tape.reset();
+        }
+
+        if count % 5000 == 0 {
+            let reward = logger.emit("reward");
+            let step = logger.emit("step");
+            let entropy = logger.emit("entropy");
+            let surrogate_loss = logger.emit("surrogate_loss");
+            println!("count: {count}, reward: {reward}, step: {step} entropy: {entropy}, surrogate loss: {surrogate_loss}");
+        }
+        
+    }
+}

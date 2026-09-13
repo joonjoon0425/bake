@@ -2,131 +2,21 @@
 name = "bake"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
 license.workspace = true
 repository.workspace = true
 
 [dependencies]
+bake-common.workspace = true
 bake-tabular = { workspace = true, optional = true }
 bake-deep = { workspace = true, optional = true }
-pyo3 = { version = "0.29.2", optional = true }
-
-rand.workspace = true
+bake-gym = { workspace = true, optional = true }
 burn = { workspace = true, optional = true }
-
-[build-dependencies]
-pyo3-build-config = "0.29.2"
+rand.workspace = true
 
 [features]
 default = ["tabular", "deep"]
 tabular = ["dep:bake-tabular"]
-deep = ["dep:bake-deep", "dep:pyo3", "dep:burn"]
-
-[[example]]
-name = "sarsa"
-path = "examples/tabular/sarsa.rs"
-required-features = ["tabular"]
-
-[[example]]
-name = "qlearning"
-path = "examples/tabular/qlearning.rs"
-required-features = ["tabular"]
-
-[[example]]
-name = "expected_sarsa"
-path = "examples/tabular/expected_sarsa.rs"
-required-features = ["tabular"]
-
-[[example]]
-name = "nstepsarsa"
-path = "examples/tabular/nstepsarsa.rs"
-required-features = ["tabular"]
-
-[[example]]
-name = "nstepqlearning"
-path = "examples/tabular/nstepqlearning.rs"
-required-features = ["tabular"]
-
-[[example]]
-name = "dqn"
-path = "examples/deep/dqn.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "dueling_dqn"
-path = "examples/deep/dueling_dqn.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "vpg"
-path = "examples/deep/vpg.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "a2c"
-path = "examples/deep/a2c.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "equivariant_a2c"
-path = "examples/deep/equivariant_a2c.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "ddqn"
-path = "examples/deep/ddqn.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "ppo"
-path = "examples/deep/ppo.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "equivariant_ppo"
-path = "examples/deep/equivariant_ppo.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "noisy_dqn"
-path = "examples/deep/noisy_dqn.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "noisy_a2c"
-path = "examples/deep/noisy_a2c.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "dqn_per"
-path = "examples/deep/dqn_per.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "dueling_ddqn_per"
-path = "examples/deep/dueling_ddqn_per.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "gym_cartpole_dqn"
-path = "examples/gymenv/gym_cartpole_dqn.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "gym_lunarlander_ppo"
-path = "examples/gymenv/gym_lunarlander_ppo.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "gym_mountaincar_dqn_per"
-path = "examples/gymenv/gym_mountaincar_dqn_per.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "gym_acrobot_a2c"
-path = "examples/gymenv/gym_acrobot_a2c.rs"
-required-features = ["deep"]
-
-[[example]]
-name = "gym_lunarlander_dqn_per"
-path = "examples/gymenv/gym_lunarlander_dqn_per.rs"
-required-features = ["deep"]
+deep = ["dep:bake-deep", "dep:burn"]
+deep-gym = ["deep", "dep:burn", "dep:bake-gym"]
+full = ["tabular", "deep-gym"]

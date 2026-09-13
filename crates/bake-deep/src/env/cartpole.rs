@@ -9,7 +9,7 @@ use burn::{
     Tensor, tensor::{Device, Int},
 };
 use rand::{RngExt, SeedableRng, rngs::StdRng};
-use crate::{constraint::Unconstrained, env::Env};
+use crate::{constraint::Unconstrained, env::Environment};
  
 const GRAVITY: f32 = 9.8;
 const MASS_CART: f32 = 1.0;
@@ -51,7 +51,7 @@ pub struct CartPole {
     device: Device,
     /// Pre-built all-true mask. Cloning a tensor clones a handle, not the buffer,
     /// so this avoids rebuilding it on every step.
-    mask: <Self as Env>::Constraint,
+    mask: <Self as Environment>::Constraint,
 }
  
 impl CartPole {
@@ -85,7 +85,7 @@ impl CartPole {
     }
 }
  
-impl Env for CartPole {
+impl Environment for CartPole {
     type Obs = Tensor<2>;
     type Action = Tensor<1, Int>;
     type Constraint = Unconstrained;
@@ -135,5 +135,9 @@ impl Env for CartPole {
             terminated,
             truncated,
         )
+    }
+
+    fn device(&self) -> Device {
+        self.device.clone()
     }
 }
