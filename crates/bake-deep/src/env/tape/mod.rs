@@ -87,3 +87,6 @@ impl<E: Environment> Tape<E> {
     /// returns true if the environment has terminated or truncated
     pub fn done(&self) -> bool { self.terminated || self.truncated }
 }
+
+pub mod vec_tape;
+pub use vec_tape::VecTape;

@@ -38,4 +38,6 @@ pub use cliffwalking::CliffWalking;
 pub mod tape;
 pub use tape::Tape;
 
+pub mod vec;
+
 use crate::data::Batchable;
