@@ -12,7 +12,7 @@ pub struct Tape<E: Environment> {
     pub obs: E::Obs,
     /// current constraint
     pub constraint: E::Constraint,
-    /// next reward
+    /// current reward
     pub reward: f32,
     /// if next observation is in terminal state, true
     pub terminated: bool,

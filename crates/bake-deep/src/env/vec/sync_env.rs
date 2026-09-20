@@ -28,6 +28,10 @@ impl<E: Environment> VectorizedEnvironment<E> for SynchronizedEnvironment<E> {
         }
         step_result
     }
+
+    fn device(&self) -> burn::prelude::Device {
+        self.envs[0].device()
+    }
 }
 
 #[cfg(test)]
