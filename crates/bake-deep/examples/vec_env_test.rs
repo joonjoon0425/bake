@@ -65,7 +65,18 @@ pub fn main() {
             }
             
         }
-        
+
+        // logging episodic rewards
+        // the flaw is that this happens every step
+        let done: Vec<f32> = tape.done().try_into_vec_as().unwrap();
+        let r = tape.episode_rewards.clone();
+        let s = tape.steps.clone();
+        for (i, &b) in done.iter().enumerate() {
+            if b == 1f32 {
+                logger.push_single("reward", r.clone().slice([i..i + 1]).into_scalar());
+                logger.push_single("step", s.clone().slice([i..i + 1]).into_scalar());
+            }
+        }
         
         if count % 5000 == 0 {
             let reward_avg = logger.emit("reward");

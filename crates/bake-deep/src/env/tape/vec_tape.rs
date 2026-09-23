@@ -17,14 +17,9 @@ pub struct VecTape<Ve: VectorizedEnvironment> {
     pub truncated: Tensor<1>,
 
     /// cummulative episode reward
-    episode_rewards: Tensor<1>,
+    pub episode_rewards: Tensor<1>,
     /// cummulative episodic steps
-    steps: Tensor<1>,
-
-    // /// latest cummulative episode reward
-    // pub latest_episode_rewards: Tensor<1>,
-    // /// latest cummulative episodic steps
-    // pub latest_steps: Tensor<1>,
+    pub steps: Tensor<1>,
 }
 
 impl<Ve: VectorizedEnvironment> VecTape<Ve> {
@@ -83,5 +78,5 @@ impl<Ve: VectorizedEnvironment> VecTape<Ve> {
     }
 
     /// return the tensor mask of terminated or truncated environments
-    pub fn done(&self) -> Tensor<1> { (1 - self.terminated.clone()) * (1 - self.truncated.clone()) }
+    pub fn done(&self) -> Tensor<1> { 1 - (1 - self.terminated.clone()) * (1 - self.truncated.clone()) }
 }
