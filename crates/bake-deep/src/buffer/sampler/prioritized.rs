@@ -38,9 +38,11 @@ impl PrioritizedSampler {
 }
 
 impl Sampler for PrioritizedSampler {
-    fn after_push(&mut self, index: usize) {
-        self.sum_tree.update(index, self.max_priority);
-        self.min_tree.update(index, self.max_priority);
+    fn after_push(&mut self, index: usize, n: usize) {
+        for i in 0..n {
+            self.sum_tree.update(index + i, self.max_priority);
+            self.min_tree.update(index + i, self.max_priority);
+        }
     }
 
     fn sample<Obs, Action, Constraint>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint>) -> (Batch<Obs, Action, Constraint>, SampleInfo)

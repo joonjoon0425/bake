@@ -35,9 +35,10 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> LazyStorage<Obs, 
     }
     /// return the number of data a LazyStorage is holding
     pub fn n(&self) -> usize { self.n }
-    /// Push a givn transition into buffer and return the pushed index
-    pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) -> usize {
+    /// Push a givn transition into buffer and return the pushed indices
+    pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) -> (usize, usize) {
         if self.buffer.is_none() {
+            assert!(self.capacity % t.batch_size().unwrap() == 0, "the number of environments (or batch size) must divide the capacity of buffer.");
             self.init(Batch::zeros_like(self.capacity, &t, &t.device()));
         }
         let index = self.head;
@@ -45,8 +46,8 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> LazyStorage<Obs, 
         self.buffer.as_mut().unwrap().assign_inplace(t, index);
         self.head = (self.head + batch_size) % self.capacity;
 
-        if self.n < self.capacity { self.n += 1; }
-        index
+        if self.n < self.capacity { self.n += batch_size; }
+        (index, batch_size)
     }
     /// return the data of selected indices
     pub fn select(&self, indices: Tensor<1, Int>) -> Batch<Obs, Action, Constraint> {
@@ -73,7 +74,8 @@ where
 
     /// Push a givn transition into buffer
     pub fn push(&mut self, t: Batch<Obs, Action, Constraint>) {
-        self.sampler.after_push(self.storage.push(t));
+        let (index, n) = self.storage.push(t);
+        self.sampler.after_push(index, n);
     }
 
     /// return the number of data in buffer

@@ -13,7 +13,7 @@ pub trait Sampler {
         Constraint: Batchable;
 
     /// when a new element is pushed into buffer. no-op for base
-    fn after_push(&mut self, _index: usize) { }
+    fn after_push(&mut self, _index: usize, _n: usize) { }
 }
 
 /// A common trait for Sampler configuration
