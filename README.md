@@ -87,6 +87,10 @@ These are environments which runs python interpreters internally. Binded with Py
 |`GymTaxi`|one-hot encoded Taxi-v4 of Gymnasium|[taxi.rs](crates/bake-gym/src/env/taxi.rs)|
 |`GymFrozenLake`|one-hot encoded FrozenLake-v1 of Gymnasium|[frozenlake.rs](crates/bake-gym/src/env/frozenlake.rs)|
 
+Vectorized Environments:
+
+Currently, the wrapper `SynchronizedEnvironment` for non-vector environments are implemented, as a synchronized way.
+
 #### Exploration Strategies
 - greedy
 - epsilon greedy
@@ -250,6 +254,7 @@ cargo run --release --example ppo_lunarlander
 |a2c_test|`CartPole`|[code](crates/bake-deep/examples/a2c_test.rs)|
 |ppo_test|`CartPole`|[code](crates/bake-deep/examples/ppo_test.rs)|
 |tabular_test|`MaskedCliffWalking`|[code](crates/bake-deep/examples/tabular_test.rs)|
+|vec_test|`SynchronizedEnvironment<CartPole>`|[code](crates/bake-deep/examples/vec_env_test.rs)|
 
 #### Deep RL: Gymnasium Environments
 |Example name|Environment|Code|
@@ -260,6 +265,7 @@ cargo run --release --example ppo_lunarlander
 |a2c_cartpole|`GymCartPole`|[code](crates/bake-gym/examples/a2c_cartpole.rs)|
 |dueling_dqn_lunarlander|`GymLunarLander`|[code](crates/bake-gym/examples/dueling_dqn_lunarlander.rs)|
 |ppo_lunarlander|`GymLunarLander`|[code](crates/bake-gym/examples/ppo_lunarlander.rs)|
+|ppo_lunarlander_vec|`SynchronizedEnvironment<GymLunarLander>`|[code](crates/bake-gym/examples/ppo_lunarlander_vec.rs)|
 
 </details>
 
