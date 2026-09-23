@@ -1,5 +1,5 @@
 //! A `Tape` struct for Vectorized Environment
-use crate::env::vec::VectorizedEnvironment;
+use crate::{data::{Batch, extras::ExtraContainer}, env::vec::VectorizedEnvironment};
 use burn::prelude::*;
 /// A `VecTape` struct for vectorized environment
 pub struct VecTape<Ve: VectorizedEnvironment> {
@@ -19,7 +19,7 @@ pub struct VecTape<Ve: VectorizedEnvironment> {
     /// cummulative episode reward
     pub episode_rewards: Tensor<1>,
     /// cummulative episodic steps
-    pub steps: Tensor<1, Int>,
+    pub steps: Tensor<1>,
 }
 
 impl<Ve: VectorizedEnvironment> VecTape<Ve> {
@@ -28,61 +28,52 @@ impl<Ve: VectorizedEnvironment> VecTape<Ve> {
     /// calls 'reset' on given environments
     pub fn new(mut envs: Ve) -> Self {
         let n_envs = envs.n_envs();
-        let mut obss = Vec::with_capacity(n_envs);
-        let mut constraints = Vec::with_capacity(n_envs);
-
-        for i in 0..n_envs {
-            let (obs, constraint) = envs.reset(i);
-            obss.push(obs);
-            constraints.push(constraint);
-        }
-
+        let device = envs.device();
+        let (obss, constraints) = envs.reset_all();
+        let rewards = Tensor::zeros([n_envs], &device);
+        let terminated = Tensor::zeros([n_envs], &device);
+        let truncated = Tensor::zeros([n_envs], &device);
+        let episode_rewards = Tensor::zeros([n_envs], &device);
+        let steps = Tensor::zeros([n_envs], &device);
         Self {
             envs,
             obss,
             constraints,
-            rewards: vec![0f32; n_envs],
-            terminated: vec![false; n_envs],
-            truncated: vec![false; n_envs],
-            episode_rewards: vec![0f32; n_envs],
-            steps: vec![0; n_envs]
+            rewards,
+            terminated,
+            truncated,
+            episode_rewards,
+            steps
         }
-    }
-
-    /// if the environment has terminated or truncated, reset the environment automatically
-    pub fn autoreset(&mut self) {
-        let n_envs = self.envs.n_envs();
-        for i in 0..n_envs {
-            if self.terminated[i] || self.truncated[i] { 
-                let (obs, constraint) = self.envs.reset(i);
-                self.obss[i] = obs;
-                self.constraints[i] = constraint;
-                self.rewards[i]= 0f32;
-                self.terminated[i] = false;
-                self.truncated[i] = false;
-                self.episode_rewards[i] = 0f32;
-                self.steps[i] = 0usize;
-            }
-        }
-    }
-
-    /// reset the environment of given index
-    pub fn reset(&mut self, index: usize) {
-        let (obs, constraint) = self.envs.reset(index);
-        self.obss[index] = obs;
-        self.constraints[index] = constraint;
-        self.rewards[index]= 0f32;
-        self.terminated[index] = false;
-        self.truncated[index] = false;
-        self.episode_rewards[index] = 0f32;
-        self.steps[index] = 0usize;
     }
 
     /// take a step in environment with given action and return the transition object
     /// after the step, `VecTape` updates reward, terminated, and truncated
     pub fn step(&mut self, actions: Ve::Action) -> Batch<Ve::Obs, Ve::Action, Ve::Constraint> {
-        let device = self.envs.device();
-        let n_envs = self.envs.n_envs();
-        for 
+        let done = self.terminated.clone() * self.truncated.clone();
+        self.episode_rewards.inplace(|r| r * done.clone());
+        self.steps.inplace(|r| r * done);
+        let ((next_obss, next_constraints), rewards, terminated, truncated, (final_obss, final_constraints)) = self.envs.step(actions.clone());
+        let obss = std::mem::replace(&mut self.obss, next_obss);
+        let constraints = std::mem::replace(&mut self.constraints, next_constraints);
+
+        let t = Batch {
+            obss,
+            constraints,
+            actions,
+            next_obss: final_obss,
+            next_constraints: final_constraints,
+            rewards: rewards.clone(),
+            terminated: terminated.clone(),
+            truncated: truncated.clone(),
+            extras: ExtraContainer::new(),
+        };
+        self.rewards = rewards.clone();
+        self.terminated = terminated;
+        self.truncated = truncated;
+        
+        self.episode_rewards.inplace(|r| r + rewards);
+        self.steps.inplace(|s| s + Tensor::ones([self.envs.n_envs()], &self.envs.device()));
+        t
     }
 }
