@@ -79,4 +79,21 @@ impl<Ve: VectorizedEnvironment> VecTape<Ve> {
 
     /// return the tensor mask of terminated or truncated environments
     pub fn done(&self) -> Tensor<1> { 1 - (1 - self.terminated.clone()) * (1 - self.truncated.clone()) }
+
+    /// return the episodic rewards and steps of terminated or truncated environments
+    /// - returns (rewards, steps)
+    pub fn finished_reward_steps(&self) -> (Vec<f32>, Vec<f32>) {
+        let done: Vec<f32> = self.done().try_into_vec_as().unwrap();
+        let r = self.episode_rewards.clone();
+        let s = self.steps.clone();
+        let mut r_vec = vec![];
+        let mut s_vec = vec![];
+        for (i, &b) in done.iter().enumerate() {
+            if b == 1f32 {
+                r_vec.push(r.clone().slice([i..i + 1]).into_scalar());
+                s_vec.push(s.clone().slice([i..i + 1]).into_scalar());
+            }
+        }
+        (r_vec, s_vec)
+    }
 }

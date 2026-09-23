@@ -14,7 +14,7 @@ pub fn main() {
     let autodiff_device = device.clone().autodiff();
 
     let mut rng = SmallRng::seed_from_u64(seed);
-    let n_envs = 8;
+    let n_envs = 4;
     let mut seeds = vec![];
     for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
@@ -49,7 +49,7 @@ pub fn main() {
 
         buffer.push(t);
 
-        if buffer.len() >= 1024 {
+        if buffer.len() >= 512 {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.advantage(&actor_critic, batch.clone(), state.gamma);
             let adv = (adv.clone() - adv.clone().mean()) / (adv.var(0) + 1e-9).sqrt();
@@ -67,24 +67,20 @@ pub fn main() {
             
         }
 
-        // logging episodic rewards
-        // the flaw is that this happens every step
-        let done: Vec<f32> = tape.done().try_into_vec_as().unwrap();
-        let r = tape.episode_rewards.clone();
-        let s = tape.steps.clone();
-        for (i, &b) in done.iter().enumerate() {
-            if b == 1f32 {
-                logger.push_single("reward", r.clone().slice([i..i + 1]).into_scalar());
-                logger.push_single("step", s.clone().slice([i..i + 1]).into_scalar());
-            }
+        // logging episodic rewards and steps
+        let (r, s) = tape.finished_reward_steps();
+        for (reward, step) in r.iter().zip(s.iter()) {
+            logger.push_single("reward", *reward);
+            logger.push_single("step", *step);
         }
         
         if count % 5000 == 0 {
             let reward_avg = logger.emit("reward");
+            let step_avg = logger.emit("step");
             let entropy = logger.emit("entropy");
             let approx_kl = logger.emit("approx_kl");
             let clip_fraction = logger.emit("clip_fraction");
-            eprintln!("count: {count}, reward_avg: {reward_avg}, entropy: {entropy}, approx KL: {approx_kl}, clip fraction: {clip_fraction}");
+            println!("{count},{reward_avg},{step_avg},{entropy},{approx_kl},{clip_fraction}");
         }
     }
 

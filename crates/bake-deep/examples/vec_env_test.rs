@@ -13,7 +13,7 @@ pub fn main() {
     let autodiff_device = device.clone().autodiff();
 
     let mut rng = SmallRng::seed_from_u64(seed);
-    let n_envs = 10;
+    let n_envs = 8;
     let mut seeds = vec![];
     for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
@@ -40,7 +40,7 @@ pub fn main() {
     logger.register("approx_kl", 100);
     logger.register("clip_fraction", 100);
 
-    for count in 0..=500000 {
+    for count in 0..=100000 {
         let dist = actor_critic.dist(tape.obss.clone(), tape.constraints.clone());
         let action = dist.sample();
         let mut t = tape.step(action.clone());
@@ -67,15 +67,11 @@ pub fn main() {
         }
 
         // logging episodic rewards
-        // the flaw is that this happens every step
-        let done: Vec<f32> = tape.done().try_into_vec_as().unwrap();
-        let r = tape.episode_rewards.clone();
-        let s = tape.steps.clone();
-        for (i, &b) in done.iter().enumerate() {
-            if b == 1f32 {
-                logger.push_single("reward", r.clone().slice([i..i + 1]).into_scalar());
-                logger.push_single("step", s.clone().slice([i..i + 1]).into_scalar());
-            }
+        // logging episodic rewards and steps
+        let (r, s) = tape.finished_reward_steps();
+        for (reward, step) in r.iter().zip(s.iter()) {
+            logger.push_single("reward", *reward);
+            logger.push_single("step", *step);
         }
         
         if count % 5000 == 0 {
