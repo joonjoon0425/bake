@@ -20,7 +20,7 @@ pub fn main() {
     device.seed(seed);
     let autodiff_device = device.clone().autodiff();
     
-    let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95 }, loss_fn: Loss::MseLoss };
+    let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
     let env = GymCartPole::new(seed, &device, KwArgs::new());
     let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 128, env.n_actions()], Relu, &autodiff_device));
 

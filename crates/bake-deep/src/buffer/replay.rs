@@ -41,8 +41,9 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> LazyStorage<Obs, 
             self.init(Batch::zeros_like(self.capacity, &t, &t.device()));
         }
         let index = self.head;
+        let batch_size = t.batch_size().unwrap();
         self.buffer.as_mut().unwrap().assign_inplace(t, index);
-        self.head = (self.head + 1) % self.capacity;
+        self.head = (self.head + batch_size) % self.capacity;
 
         if self.n < self.capacity { self.n += 1; }
         index

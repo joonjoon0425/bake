@@ -6,9 +6,9 @@ pub struct VecTape<Ve: VectorizedEnvironment> {
     // environments
     envs: Ve,
     /// current observations
-    obss: Ve::Obs,
+    pub obss: Ve::Obs,
     /// current constraints
-    constraints: Ve::Constraint,
+    pub constraints: Ve::Constraint,
     /// current reward
     pub rewards: Tensor<1>,
     /// if next observation is in terminal state, true
@@ -17,9 +17,14 @@ pub struct VecTape<Ve: VectorizedEnvironment> {
     pub truncated: Tensor<1>,
 
     /// cummulative episode reward
-    pub episode_rewards: Tensor<1>,
+    episode_rewards: Tensor<1>,
     /// cummulative episodic steps
-    pub steps: Tensor<1>,
+    steps: Tensor<1>,
+
+    // /// latest cummulative episode reward
+    // pub latest_episode_rewards: Tensor<1>,
+    // /// latest cummulative episodic steps
+    // pub latest_steps: Tensor<1>,
 }
 
 impl<Ve: VectorizedEnvironment> VecTape<Ve> {
@@ -50,9 +55,9 @@ impl<Ve: VectorizedEnvironment> VecTape<Ve> {
     /// take a step in environment with given action and return the transition object
     /// after the step, `VecTape` updates reward, terminated, and truncated
     pub fn step(&mut self, actions: Ve::Action) -> Batch<Ve::Obs, Ve::Action, Ve::Constraint> {
-        let done = self.terminated.clone() * self.truncated.clone();
-        self.episode_rewards.inplace(|r| r * done.clone());
-        self.steps.inplace(|r| r * done);
+        let mask: Tensor<1> = (1 - self.terminated.clone()) * (1 - self.truncated.clone());
+        self.episode_rewards.inplace(|r| r * mask.clone());
+        self.steps.inplace(|r| r * mask);
         let ((next_obss, next_constraints), rewards, terminated, truncated, (final_obss, final_constraints)) = self.envs.step(actions.clone());
         let obss = std::mem::replace(&mut self.obss, next_obss);
         let constraints = std::mem::replace(&mut self.constraints, next_constraints);
@@ -76,4 +81,7 @@ impl<Ve: VectorizedEnvironment> VecTape<Ve> {
         self.steps.inplace(|s| s + Tensor::ones([self.envs.n_envs()], &self.envs.device()));
         t
     }
+
+    /// return the tensor mask of terminated or truncated environments
+    pub fn done(&self) -> Tensor<1> { (1 - self.terminated.clone()) * (1 - self.truncated.clone()) }
 }

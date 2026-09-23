@@ -1,18 +1,11 @@
-use bake_common::logger::MovingAvgLogger;
+use bake_deep::env::Tape;
+use bake_deep::logger::MovingAvgLogger;
 use bake_deep::{
-    algorithm::{AdvantageEstimator, Ppo},
-    buffer::RolloutBuffer,
-    contract::ActorCritic,
-    data::{Batchable, extras::{ Advantage, LogProb, Return } },
-    distribution::{Categorical, Distribution},
-    env::Tape,
-    loss::Loss,
-    net::basic::MlpSeparatedActorCriticNet,
-    wrapper::ActorCriticWrapper
+    algorithm::{AdvantageEstimator, Ppo}, buffer::RolloutBuffer, contract::ActorCritic, data::{Batchable, extras::{ Advantage, LogProb, Return } }, distribution::{Categorical, Distribution}, env::{tape::VecTape, vec::SynchronizedEnvironment}, loss::Loss, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper
 };
-use bake_deep::env::CartPole;
+use bake_gym::env::{GymLunarLander, KwArgs};
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
-use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};
+use rand::{RngExt, SeedableRng, rngs::SmallRng, seq::SliceRandom};
 
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
@@ -21,10 +14,15 @@ pub fn main() {
     let autodiff_device = device.clone().autodiff();
 
     let mut rng = SmallRng::seed_from_u64(seed);
+    let n_envs = 8;
+    let mut seeds = vec![];
+    for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
-    let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
-    let env = CartPole::new(seed, &device);
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &autodiff_device));
+    let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: Loss::MseLoss };
+    let mut envs = vec![];
+    for seed in seeds { envs.push(GymLunarLander::new(seed, &device, KwArgs::new())); }
+    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &autodiff_device));
+    let env = SynchronizedEnvironment::new(envs);
 
     let lr_a = 1e-4;
     let lr_c = 1e-3;
@@ -32,7 +30,7 @@ pub fn main() {
     let mut opt_c = RmsPropConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = Tape::new(env);
+    let mut tape = VecTape::new(env);
 
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
@@ -44,14 +42,14 @@ pub fn main() {
     logger.register("clip_fraction", 100);
 
     for count in 0..=500000 {
-        let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
+        let dist = actor_critic.dist(tape.obss.clone(), tape.constraints.clone());
         let action = dist.sample();
         let mut t = tape.step(action.clone());
         t.insert::<LogProb>(dist.log_probs(action));
 
         buffer.push(t);
 
-        if buffer.len() >= 512 {
+        if buffer.len() >= 1024 {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.advantage(&actor_critic, batch.clone(), state.gamma);
             let adv = (adv.clone() - adv.clone().mean()) / (adv.var(0) + 1e-9).sqrt();
@@ -68,11 +66,6 @@ pub fn main() {
             }
             
         }
-        if tape.done() {
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("step", tape.steps as f32);
-            tape.reset();
-        }
         
         if count % 5000 == 0 {
             let reward_avg = logger.emit("reward");
@@ -80,6 +73,21 @@ pub fn main() {
             let approx_kl = logger.emit("approx_kl");
             let clip_fraction = logger.emit("clip_fraction");
             eprintln!("count: {count}, reward_avg: {reward_avg}, entropy: {entropy}, approx KL: {approx_kl}, clip fraction: {clip_fraction}");
+        }
+    }
+
+    // evaluation
+    let env = GymLunarLander::new(seed, &device, KwArgs::new().add("render_mode", "human"));
+    let mut tape = Tape::new(env);
+    for _ in 0..5 {
+        tape.reset();
+        loop {
+            let action = actor_critic.dist(tape.obs.clone(), tape.constraint.clone()).mode();
+            tape.step(action);
+
+            if tape.done() {
+                break;
+            }
         }
     }
 }

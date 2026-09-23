@@ -25,7 +25,7 @@ pub fn main() {
 
     let mut rng = SmallRng::seed_from_u64(seed);
     
-    let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95 }, loss_fn: Loss::MseLoss };
+    let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
     let env = GymLunarLander::new(seed, &device, KwArgs::new());
     let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 64, 64, env.n_actions()], Relu, &autodiff_device));
 
