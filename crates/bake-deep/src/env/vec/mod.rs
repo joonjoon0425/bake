@@ -1,15 +1,18 @@
 //! Vectorized environment support module
 //! 
-use crate::env::Environment;
+use crate::data::Batchable;
 use burn::prelude::*;
 /// trait for Vectorized Environment
-pub trait VectorizedEnvironment<E: Environment> {
+pub trait VectorizedEnvironment {
+    type Obs: Batchable;
+    type Action: Batchable;
+    type Constraint: Batchable;
     /// the number of environments
     fn n_envs(&self) -> usize;
     /// take a step from given actions
-    fn step(&mut self, actions: E::Action) -> Vec<((E::Obs, E::Constraint), f32, bool, bool)>;
-    /// reset the environment of given index
-    fn reset(&mut self, index: usize) -> (E::Obs, E::Constraint);
+    fn step(&mut self, actions: Self::Action) -> ((Self::Obs, Self::Constraint), Tensor<1>, Tensor<1>, Tensor<1>);
+    /// reset the terminated or truncated environment, which is determined by given indices
+    fn reset(&mut self, indices: Tensor<1>) -> (Self::Obs, Self::Constraint);
     /// return the device
     fn device(&self) -> Device;
 }

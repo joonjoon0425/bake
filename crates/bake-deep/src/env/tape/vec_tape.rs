@@ -1,29 +1,28 @@
 //! A `Tape` struct for Vectorized Environment
-
-use crate::env::Environment;
 use crate::env::vec::VectorizedEnvironment;
-
+use burn::prelude::*;
 /// A `VecTape` struct for vectorized environment
-pub struct VecTape<E: Environment, Ve: VectorizedEnvironment<E>> {
+pub struct VecTape<Ve: VectorizedEnvironment> {
     // environments
     envs: Ve,
-    /// vector of current observations
-    obss: Vec<E::Obs>,
-    constraints: Vec<E::Constraint>,
+    /// current observations
+    obss: Ve::Obs,
+    /// current constraints
+    constraints: Ve::Constraint,
     /// current reward
-    pub rewards: Vec<f32>,
+    pub rewards: Tensor<1>,
     /// if next observation is in terminal state, true
-    pub terminated: Vec<bool>,
+    pub terminated: Tensor<1>,
     /// if the environment has truncated, true
-    pub truncated: Vec<bool>,
+    pub truncated: Tensor<1>,
 
     /// cummulative episode reward
-    pub episode_rewards: Vec<f32>,
+    pub episode_rewards: Tensor<1>,
     /// cummulative episodic steps
-    pub steps: Vec<usize>,
+    pub steps: Tensor<1, Int>,
 }
 
-impl<E: Environment, Ve: VectorizedEnvironment<E>> VecTape<E, Ve> {
+impl<Ve: VectorizedEnvironment> VecTape<Ve> {
     /// create a new `VecTape` struct
     /// # Warning
     /// calls 'reset' on given environments
@@ -81,7 +80,7 @@ impl<E: Environment, Ve: VectorizedEnvironment<E>> VecTape<E, Ve> {
 
     /// take a step in environment with given action and return the transition object
     /// after the step, `VecTape` updates reward, terminated, and truncated
-    pub fn step(&mut self, actions: E::Action) -> Batch<E::Obs, E::Action, E::Constraint> {
+    pub fn step(&mut self, actions: Ve::Action) -> Batch<Ve::Obs, Ve::Action, Ve::Constraint> {
         let device = self.envs.device();
         let n_envs = self.envs.n_envs();
         for 
