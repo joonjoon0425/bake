@@ -1,7 +1,7 @@
 //! Noisy linear layer for NoisyNet-algorithms
 //! 
 
-use burn::{Tensor, module::{Module, Param}, tensor::{Device, Distribution, TensorData, linalg::outer, module::linear}};
+use burn::{Tensor, linalg::outer, module::{Module, Param}, tensor::{Device, Distribution, TensorData, module::linear}};
 
 /// Implementes a Factorised Noisy Linear Layer
 #[derive(Module, Debug)]

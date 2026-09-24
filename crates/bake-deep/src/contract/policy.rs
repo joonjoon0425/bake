@@ -1,10 +1,10 @@
 //! A trait for parametrized policy for policy gradient methods
-use burn::module::{AutodiffModule, ModuleDisplay};
+use burn::module::{Module, ModuleDisplay};
 
 use crate::data::batchable::Batchable;
 use crate::distribution::{Distribution, PossibleConstraint};
 /// a parametrized policy for policy gradient methods
-pub trait Policy: AutodiffModule + Clone + ModuleDisplay {
+pub trait Policy: Module + Clone + ModuleDisplay {
     /// the observation of environment
     type Obs: Batchable;
     /// the distribution which policy produces

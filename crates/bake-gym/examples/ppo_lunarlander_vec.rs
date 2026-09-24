@@ -41,7 +41,7 @@ pub fn main() {
     logger.register("approx_kl", 100);
     logger.register("clip_fraction", 100);
 
-    for count in 0..=500000 {
+    for count in 0..=250000 {
         let dist = actor_critic.dist(tape.obss.clone(), tape.constraints.clone());
         let action = dist.sample();
         let mut t = tape.step(action.clone());

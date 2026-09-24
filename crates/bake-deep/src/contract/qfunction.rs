@@ -1,11 +1,11 @@
 //! QFunction traits for value-based methods
-use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
+use burn::{Tensor, module::{Module, ModuleDisplay}};
 use crate::constraint::discrete_constraint::*;
 use crate::data::batchable::Batchable;
 
 
 /// A QFunction trait for value-based methods, with discrete actions
-pub trait DiscreteQFunction : AutodiffModule + Clone + ModuleDisplay {
+pub trait DiscreteQFunction : Module + Clone + ModuleDisplay {
     /// the observation of environment
     type Obs: Batchable;
 

@@ -1,10 +1,10 @@
 //! A trait for actor critic methods 
 
-use burn::{Tensor, module::{AutodiffModule, ModuleDisplay}};
+use burn::{Tensor, module::{Module, ModuleDisplay}};
 use crate::{data::batchable::Batchable, distribution::{Distribution, PossibleConstraint}};
 
 /// ActorCritic trait which all actor-critic algorithms require
-pub trait ActorCritic: AutodiffModule + Clone + ModuleDisplay {
+pub trait ActorCritic: Module + Clone + ModuleDisplay {
     /// the observation of environment
     type Obs: Batchable;
     /// the distribution which actor produces
