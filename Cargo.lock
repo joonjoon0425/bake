@@ -398,7 +398,7 @@ dependencies = [
 
 [[package]]
 name = "bake"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bake-common",
  "bake-deep",
@@ -410,11 +410,11 @@ dependencies = [
 
 [[package]]
 name = "bake-common"
-version = "0.3.0"
+version = "0.3.1"
 
 [[package]]
 name = "bake-deep"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bake-common",
  "bake-macros",
@@ -426,7 +426,7 @@ dependencies = [
 
 [[package]]
 name = "bake-gym"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bake-deep",
  "burn",
@@ -438,7 +438,7 @@ dependencies = [
 
 [[package]]
 name = "bake-macros"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -447,7 +447,7 @@ dependencies = [
 
 [[package]]
 name = "bake-tabular"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bake-common",
  "rand 0.10.2",
