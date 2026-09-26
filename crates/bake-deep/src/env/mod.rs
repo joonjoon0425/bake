@@ -37,6 +37,7 @@ pub use cliffwalking::CliffWalking;
 
 pub mod tape;
 pub use tape::Tape;
+pub use tape::VecTape;
 
 pub mod vec;
 

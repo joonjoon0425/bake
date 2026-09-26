@@ -60,8 +60,7 @@ pub fn main() {
         }
 
         if count % sync_freq == 0 {
-            let record = online.clone().into_record();
-            target = target.load_record(record);
+            target = online.clone();
         }
 
         if tape.done() {

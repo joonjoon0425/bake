@@ -14,7 +14,7 @@ pub fn main() {
     let autodiff_device = device.clone().autodiff();
 
     let mut rng = SmallRng::seed_from_u64(seed);
-    let n_envs = 4;
+    let n_envs = 8;
     let mut seeds = vec![];
     for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
@@ -49,7 +49,7 @@ pub fn main() {
 
         buffer.push(t);
 
-        if buffer.len() >= 512 {
+        if buffer.len() >= 256 {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.advantage(&actor_critic, batch.clone(), state.gamma);
             let adv = (adv.clone() - adv.clone().mean()) / (adv.var(0) + 1e-9).sqrt();
