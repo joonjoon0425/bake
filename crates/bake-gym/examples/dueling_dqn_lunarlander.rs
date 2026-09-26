@@ -20,10 +20,10 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
-    let autodiff_device = device.clone().autodiff();
+    
     let env = GymLunarLander::new(seed, &device, KwArgs::new());
     let config = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
-    let mut online = DiscreteDuelingQNetWrapper::new(MlpDiscreteDuelingQNet::new(&[env.obs_shape()[1], 128, 84, env.n_actions()], Relu, &autodiff_device));
+    let mut online = DiscreteDuelingQNetWrapper::new(MlpDiscreteDuelingQNet::new(&[env.obs_shape()[1], 128, 84, env.n_actions()], Relu, &device));
     let mut target = online.clone();
     let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();

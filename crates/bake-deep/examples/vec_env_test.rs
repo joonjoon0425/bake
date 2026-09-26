@@ -10,7 +10,6 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
-    let autodiff_device = device.clone().autodiff();
 
     let mut rng = SmallRng::seed_from_u64(seed);
     let n_envs = 8;
@@ -18,7 +17,7 @@ pub fn main() {
     for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
     let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: Loss::MseLoss };
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &autodiff_device));
+    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device));
     let mut envs = vec![];
     for seed in seeds { envs.push(CartPole::new(seed, &device)); }
     let env = SynchronizedEnvironment::new(envs);

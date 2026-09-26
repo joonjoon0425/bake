@@ -11,7 +11,6 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
-    let autodiff_device = device.clone().autodiff();
 
     let mut rng = SmallRng::seed_from_u64(seed);
     let n_envs = 8;
@@ -21,7 +20,7 @@ pub fn main() {
     let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: Loss::MseLoss };
     let mut envs = vec![];
     for seed in seeds { envs.push(GymLunarLander::new(seed, &device, KwArgs::new())); }
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &autodiff_device));
+    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &device));
     let env = SynchronizedEnvironment::new(envs);
 
     let lr_a = 1e-4;

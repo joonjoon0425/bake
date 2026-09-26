@@ -19,10 +19,9 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
-    let autodiff_device = device.clone().autodiff();
     let env = CartPole::new(seed, &device);
     let config = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
-    let mut online = DiscreteQNetWrapper::new(NoisyMlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &autodiff_device));
+    let mut online = DiscreteQNetWrapper::new(NoisyMlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &device));
     let mut target = online.clone();
     let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();

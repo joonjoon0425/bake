@@ -9,6 +9,9 @@ require_grad는 pub(crate)라 외부에서 못 건드린다.
 
 사용자가 autodiff에 대해서 최소한으로만 신경쓰게 하는 걸 원하기 때문이다.
 
+######## 2026/09/26 변경 ########
+이제 일반 device에서 생성해도 된다. burn 0.22-pre.4에서 변경되었다.
+
 
 규칙:
 autodiff는 loss에서 붙고, update에서 떨어진다.

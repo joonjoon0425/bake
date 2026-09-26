@@ -16,11 +16,10 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
-    let autodiff_device = device.clone().autodiff();
 
     let env = CartPole::new(seed, &device);
     let state = Reinforce{ gamma: 0.99, baseline: Baseline::Normalized };
-    let mut policy = PolicyWrapper::new(MlpPolicyNet::new(&[4, 128, 2], Relu, &autodiff_device));
+    let mut policy = PolicyWrapper::new(MlpPolicyNet::new(&[4, 128, 2], Relu, &device));
     let mut opt = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();

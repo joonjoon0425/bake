@@ -18,11 +18,10 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
-    let autodiff_device = device.clone().autodiff();
     
     let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
     let env = GymCartPole::new(seed, &device, KwArgs::new());
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 128, env.n_actions()], Relu, &autodiff_device));
+    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 128, env.n_actions()], Relu, &device));
 
     let lr_a = 1e-4;
     let lr_c = 1e-3;
