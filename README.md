@@ -99,8 +99,6 @@ Currently, the wrapper `SynchronizedEnvironment` for non-vector environments are
 
 ## Quick Start
 Bake gives you all the components for making training loops. The user only have to implement the training loop and one's own network structure. (A toml configuration will be implemented later... [issue #32](https://github.com/joonjoon0425/bake/issues/32))
-##### Warining
-When creating a network, the user must create it on the autodiff device.
 
 ```rust
 use bake_common::scheduler::{LinearScheduler, Scheduler};
