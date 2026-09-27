@@ -2,10 +2,11 @@
 //! 
 
 use proc_macro2::TokenStream;
-use quote::{quote, quote_spanned};
+use quote::quote;
 use syn::{ItemImpl, Result, meta::ParseNestedMeta, spanned::Spanned};
-use crate::utils::*;
+use crate::{discrete_action_value::{dueling, plain}, utils::*};
 
+/// the qnetwork options
 #[derive(Default)]
 pub(crate) struct QNetOptions {
     dueling: bool,
@@ -34,46 +35,19 @@ pub(crate) fn expand(opts: &QNetOptions, item: &ItemImpl) -> Result<TokenStream>
     }
     let self_ty = &item.self_ty;
     let generics = &item.generics;
-    let (impl_generics, _, where_clause) = generics.split_for_impl();
     let f = find_forward(item)?;
     let obs_ty = obs_type(&f.sig)?;
     let out_span = output_span(&f.sig);
 
     // the `Net` implementation
-    let net_impl = net_impl(generics, self_ty, obs_ty);
-
-    let dueling_out = quote_spanned! {
-        out_span =>
-        let __out: (::burn::prelude::Tensor<1>, ::burn::prelude::Tensor<2>) = Self::forward(self, obs);
-    };                                
-                                    
-    let plain_out = quote_spanned! {
-        out_span =>
-        let __out: ::burn::prelude::Tensor<2> = Self::forward(self, obs);
-    };                                
+    let net_impl = net_impl(generics, self_ty, obs_ty);                         
 
     let action_value_impl = if opts.dueling {
-        quote! {
-            impl #impl_generics ::bake_deep::experimental::contract::basic::DiscreteActionValue for #self_ty #where_clause {
-                fn action_values<C: ::bake_deep::constraint::discrete_constraint::DiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::burn::prelude::Tensor<2> {
-                    #dueling_out
-                    let (value, advantage) = __out;
-                    let mean = constraint.clone().mean_dim(1, advantage.clone());
-                    constraint.apply(value.unsqueeze_dim(1) + advantage - mean, -1e9)
-                }
-            }
-        }
+        dueling(generics, self_ty, out_span)
     } else {
-        quote! {
-            impl #impl_generics ::bake_deep::experimental::contract::basic::DiscreteActionValue for #self_ty #where_clause {
-                fn action_values<C: ::bake_deep::constraint::discrete_constraint::DiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::burn::prelude::Tensor<2> {
-                    #plain_out
-                    let action_vales = __out;
-                    constraint.apply(action_vales, -1e9)
-                }
-            }
-        }
+        plain(generics, self_ty, out_span)
     };
+
     let mut item_original = quote! { #item };
     item_original.extend(net_impl);
     item_original.extend(action_value_impl);

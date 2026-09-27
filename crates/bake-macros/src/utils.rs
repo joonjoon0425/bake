@@ -16,7 +16,7 @@ pub(crate) fn find_forward(item: &ItemImpl) -> Result<&ImplItemFn> {
             _ => {}
         }
     }
-    spanned_error(item.span(), "The qnet attribute macro requires function `forward` to be implemented")
+    spanned_error(item.span(), "The attribute macro requires function `forward` to be implemented")
 }
 
 /// always creates an error with given msg and span
@@ -64,11 +64,11 @@ pub(crate) fn output_span(sig: &Signature) -> Span {
     };
 }
 
-/// `Net` trait implementation TokenStream
+/// `Network` trait implementation TokenStream
 pub(crate) fn net_impl(generics: &Generics, self_ty: &Type, obs_ty: &Type) -> proc_macro2::TokenStream {
     let (impl_generics, _, where_clause) = generics.split_for_impl();
     quote! {
-        impl #impl_generics ::bake_deep::experimental::contract::basic::Net for #self_ty #where_clause {
+        impl #impl_generics ::bake_deep::contract::basic::Network for #self_ty #where_clause {
             type Obs = #obs_ty;
         }
     }

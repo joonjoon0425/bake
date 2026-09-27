@@ -5,6 +5,7 @@ use syn::{DeriveInput, ItemImpl, parse_macro_input};
 
 mod batchable;
 mod utils;
+mod discrete_action_value;
 mod qnet;
 /// `Batchable`을 파생한다.
 ///
@@ -23,10 +24,15 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
 }
 
 /// This macro implements following traits;
-/// - `Net`
+/// - `Network`
 /// - `ActionValue`
+/// # Warning
+/// - The user must implement `forward` function in one's network struct
+/// - The `forward` function must have one of the following signatures:
+///     - `pub fn forward(&self, obs: <observation type>) -> Tensor<2>` for plain qnet
+///     - `pub fn forward(&self, obs: <observation type>) -> (Tensor<1>, Tensor<2>)` for dueling qnet
 #[proc_macro_attribute]
-pub fn derive_qnet(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn qnet(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut opts = qnet::QNetOptions::default();
     let qnet_parser = syn::meta::parser(|meta| opts.parse(meta));
     parse_macro_input!(args with qnet_parser);
@@ -36,3 +42,13 @@ pub fn derive_qnet(args: TokenStream, input: TokenStream) -> TokenStream {
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
+
+// #[proc_macro_attribute]
+// pub fn policy(args: TokenStream, input: TokenStream) -> TokenStream {
+    
+// }
+
+// #[proc_macro_attribute]
+// pub fn actor_critic(args: TokenStream, input: TokenStream) -> TokenStream {
+    
+// }
