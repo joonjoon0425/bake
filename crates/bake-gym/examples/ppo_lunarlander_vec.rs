@@ -1,10 +1,11 @@
 use bake_deep::env::Tape;
 use bake_deep::logger::MovingAvgLogger;
+use bake_deep::scheduler::{LinearScheduler, Scheduler};
 use bake_deep::{
     algorithm::{AdvantageEstimator, Ppo}, buffer::RolloutBuffer, contract::ActorCritic, data::{Batchable, extras::{ Advantage, LogProb, Return } }, distribution::{Categorical, Distribution}, env::{tape::VecTape, vec::SynchronizedEnvironment}, loss::Loss, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper
 };
 use bake_gym::env::{GymLunarLander, KwArgs};
-use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
+use burn::{nn::activation::ActivationConfig::Relu, optim::AdamConfig, prelude::*};
 use rand::{RngExt, SeedableRng, rngs::SmallRng, seq::SliceRandom};
 
 pub fn main() {
@@ -13,7 +14,7 @@ pub fn main() {
     device.seed(seed);
 
     let mut rng = SmallRng::seed_from_u64(seed);
-    let n_envs = 8;
+    let n_envs = 16;
     let mut seeds = vec![];
     for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
@@ -23,13 +24,17 @@ pub fn main() {
     let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &device));
     let env = SynchronizedEnvironment::new(envs);
 
-    let lr_a = 1e-4;
-    let lr_c = 1e-3;
-    let mut opt_a = RmsPropConfig::new().init();
-    let mut opt_c = RmsPropConfig::new().init();
+    let mut c_e = 0.02;
+    let lr_a = 1e-3;
+    let lr_c = 2.5e-3;
+    let mut opt_a = AdamConfig::new().init();
+    let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
     let mut tape = VecTape::new(env);
+    
+    let total_steps = 100000;
+    let mut c_e_sch = LinearScheduler::new(c_e as f64, 0.002, total_steps, 1.0);
 
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
@@ -40,7 +45,7 @@ pub fn main() {
     logger.register("approx_kl", 100);
     logger.register("clip_fraction", 100);
 
-    for count in 0..=250000 {
+    for count in 0..=total_steps {
         let dist = actor_critic.dist(tape.obss.clone(), tape.constraints.clone());
         let action = dist.sample();
         let mut t = tape.step(action.clone());
@@ -48,7 +53,7 @@ pub fn main() {
 
         buffer.push(t);
 
-        if buffer.len() >= 256 {
+        if buffer.len() >= 1024 {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.advantage(&actor_critic, batch.clone(), state.gamma);
             let adv = (adv.clone() - adv.clone().mean()) / (adv.var(0) + 1e-9).sqrt();
@@ -60,10 +65,10 @@ pub fn main() {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
                     logger.push(&loss);
-                    actor_critic = Ppo::update_separated(net, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                    actor_critic = Ppo::update_separated(net, loss, c_e, lr_a, &mut opt_a, lr_c, &mut opt_c);
                 }
             }
-            
+            c_e = c_e_sch.step() as f32
         }
 
         // logging episodic rewards and steps

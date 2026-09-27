@@ -1,47 +1,11 @@
-//! This code was written by Claude, since I don't have enough knowledge about PROC MACRO
+//! This code was written by Claude, since I don't have enough knowledge about PROC MACRO. Only the batchable.rs and lib.rs is written by claude in this proc-macro lib.
 
 use proc_macro::TokenStream;
-use quote::{format_ident, quote};
-use syn::{Data, DeriveInput, Field, Fields, Ident, parse_macro_input};
+use syn::{DeriveInput, ItemImpl, parse_macro_input};
 
-#[derive(Default)]
-struct FieldOpts {
-    skip: bool,
-}
-
-/// `#[batchable(skip)]`
-///
-/// `size`/`device`는 제거되었다. 둘 다 `()`와 `Unconstrained`가 길이·디바이스를
-/// 답하지 못해 생긴 우회로였는데, `len()`이 `Option<usize>`가 되고 `device()`가
-/// 트레잇에서 빠지면서 필요가 없어졌다.
-fn field_opts(f: &Field) -> syn::Result<FieldOpts> {
-    let mut o = FieldOpts::default();
-    for attr in &f.attrs {
-        if !attr.path().is_ident("batchable") {
-            continue;
-        }
-        attr.parse_nested_meta(|meta| {
-            if meta.path.is_ident("skip") {
-                o.skip = true;
-                Ok(())
-            } else if meta.path.is_ident("size") {
-                Err(meta.error(
-                    "`size` was removed; `len()` now returns `Option<usize>` and \
-                     derived types take the first `Some` among batched fields",
-                ))
-            } else if meta.path.is_ident("device") {
-                Err(meta.error(
-                    "`device` was removed; `Batchable` no longer has `device()`. \
-                     Use the `HasDevice` trait on the field you need it from",
-                ))
-            } else {
-                Err(meta.error("unknown option; expected `skip`"))
-            }
-        })?;
-    }
-    Ok(o)
-}
-
+mod batchable;
+mod utils;
+mod qnet;
 /// `Batchable`을 파생한다.
 ///
 /// 필드는 두 종류다.
@@ -53,148 +17,22 @@ fn field_opts(f: &Field) -> syn::Result<FieldOpts> {
 #[proc_macro_derive(Batchable, attributes(batchable))]
 pub fn derive_batchable(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
-    let name = &ast.ident;
-    let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
+    batchable::expand(&ast)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
 
-    let fields = match &ast.data {
-        Data::Struct(s) => match &s.fields {
-            Fields::Named(f) => &f.named,
-            _ => {
-                return syn::Error::new_spanned(
-                    name,
-                    "Batchable requires a struct with named fields",
-                )
-                .to_compile_error()
-                .into();
-            }
-        },
-        _ => {
-            return syn::Error::new_spanned(name, "Batchable can only be derived for structs")
-                .to_compile_error()
-                .into();
-        }
-    };
+/// This macro implements following traits;
+/// - `Net`
+/// - `ActionValue`
+#[proc_macro_attribute]
+pub fn derive_qnet(args: TokenStream, input: TokenStream) -> TokenStream {
+    let mut opts = qnet::QNetOptions::default();
+    let qnet_parser = syn::meta::parser(|meta| opts.parse(meta));
+    parse_macro_input!(args with qnet_parser);
 
-    let mut batched: Vec<Ident> = Vec::new();
-    let mut skipped: Vec<Ident> = Vec::new();
-
-    for f in fields {
-        let ident = f.ident.clone().unwrap();
-        let o = match field_opts(f) {
-            Ok(o) => o,
-            Err(e) => return e.to_compile_error().into(),
-        };
-
-        if o.skip {
-            skipped.push(ident);
-        } else {
-            batched.push(ident);
-        }
-    }
-
-    if batched.is_empty() {
-        return syn::Error::new_spanned(
-            name,
-            "at least one field must be batched (all fields are `skip`)",
-        )
-        .to_compile_error()
-        .into();
-    }
-
-    let bufs: Vec<_> = batched.iter().map(|n| format_ident!("__b_{}", n)).collect();
-    let holds: Vec<_> = skipped.iter().map(|n| format_ident!("__s_{}", n)).collect();
-
-    quote! {
-        impl #impl_generics Batchable for #name #ty_generics #where_clause {
-            fn batch_size(&self) -> ::core::option::Option<usize> {
-                ::core::option::Option::None
-                #( .or_else(|| Batchable::batch_size(&self.#batched)) )*
-            }
-
-            fn cat(items: ::std::vec::Vec<Self>) -> Self {
-                assert!(!items.is_empty(), "Batchable::cat on an empty Vec");
-                let n = items.len();
-
-                #( let mut #bufs = ::std::vec::Vec::with_capacity(n); )*
-                #( let mut #holds = ::core::option::Option::None; )*
-
-                for it in items {
-                    let Self { #(#batched,)* #(#skipped,)* } = it;
-                    #( #bufs.push(#batched); )*
-                    #( if #holds.is_none() {
-                           #holds = ::core::option::Option::Some(#skipped);
-                       } )*
-                }
-
-                Self {
-                    #( #batched: Batchable::cat(#bufs), )*
-                    #( #skipped: #holds.unwrap(), )*
-                }
-            }
-
-            fn select(self, idx: Tensor<1, Int>) -> Self {
-                let Self { #(#batched,)* #(#skipped,)* } = self;
-                Self {
-                    #( #batched: Batchable::select(#batched, idx.clone()), )*
-                    #( #skipped, )*
-                }
-            }
-
-            fn slice(self, range: ::core::ops::Range<usize>) -> Self {
-                let Self { #(#batched,)* #(#skipped,)* } = self;
-                Self {
-                    #( #batched: Batchable::slice(#batched, range.clone()), )*
-                    #( #skipped, )*
-                }
-            }
-
-            fn detach(self) -> Self {
-                let Self { #(#batched,)* #(#skipped,)* } = self;
-                Self {
-                    #( #batched: Batchable::detach(#batched), )*
-                    #( #skipped, )*
-                }
-            }
-
-            fn assign_inplace(&mut self, data: Self, index: usize) {
-                #(
-                    Batchable::assign_inplace(&mut self.#batched, data.#batched, index);
-                )*
-            }
-
-            fn zeros_like(capacity: usize, data: &Self, device: &Device) -> Self {
-                Self {
-                    #(
-                        #batched: Batchable::zeros_like(capacity, &data.#batched, device),
-                    )*
-                    #(
-                        #skipped: data.#skipped.clone(),
-                    )*
-                }
-            }
-
-            fn to_device(self, device: &Device) -> Self {
-                Self {
-                    #(
-                        #batched: Batchable::to_device(self.#batched, device),
-                    )*
-                    #(
-                        #skipped
-                    )*
-                }
-            }
-
-            fn into_autodiff(self) -> Self {
-                Self {
-                    #(
-                        #batched: Batchable::into_autodiff(self.#batched),
-                    )*
-                    #(
-                        #skipped
-                    )*
-                }
-            }
-        }
-    }
-    .into()
+    let input = parse_macro_input!(input as ItemImpl);
+    qnet::expand(&opts, &input)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }

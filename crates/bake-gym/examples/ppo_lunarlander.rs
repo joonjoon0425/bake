@@ -13,7 +13,7 @@ use bake_deep::{
 };
 use bake_gym::env::KwArgs;
 use bake_gym::env::GymLunarLander;
-use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
+use burn::{nn::activation::ActivationConfig::Relu, optim::AdamConfig, prelude::*};
 use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};
 
 pub fn main() {
@@ -29,10 +29,10 @@ pub fn main() {
     let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 64, 64, env.n_actions()], Relu, &device));
 
     let mut c_e = 0.02;
-    let lr_a = 1e-4;
-    let lr_c = 1e-3;
-    let mut opt_a = RmsPropConfig::new().init();
-    let mut opt_c = RmsPropConfig::new().init();
+    let lr_a = 1e-3;
+    let lr_c = 2.5e-3;
+    let mut opt_a = AdamConfig::new().init();
+    let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(env);

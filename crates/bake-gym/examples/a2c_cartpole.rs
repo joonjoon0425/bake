@@ -12,7 +12,7 @@ use bake_deep::{
 };
 use bake_gym::env::{GymCartPole, KwArgs};
 
-use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
+use burn::{nn::activation::ActivationConfig::Relu, optim::AdamConfig, tensor::Device};
 
 pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
@@ -23,10 +23,10 @@ pub fn main() {
     let env = GymCartPole::new(seed, &device, KwArgs::new());
     let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 128, env.n_actions()], Relu, &device));
 
-    let lr_a = 1e-4;
-    let lr_c = 1e-3;
-    let mut opt_a = RmsPropConfig::new().init();
-    let mut opt_c = RmsPropConfig::new().init();
+    let lr_a = 1e-3;
+    let lr_c = 2e-3;
+    let mut opt_a = AdamConfig::new().init();
+    let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(env);

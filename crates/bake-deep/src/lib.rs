@@ -14,6 +14,8 @@ pub mod loss;
 pub mod net;
 pub mod wrapper;
 
+pub mod experimental;
+
 pub mod logger {
     //! re-exportation of bake_common::logger
     pub use bake_common::logger::*;
