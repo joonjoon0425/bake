@@ -45,7 +45,7 @@ pub fn main() {
             let batch = buffer.pop();
             let (net, loss) = A2C::loss(&state, actor_critic, batch);
             logger.push(&loss);
-            actor_critic = MlpSeparatedActorCriticNet::update(net, loss.actor_loss, loss.critic_loss, loss.entropy, 0.02, lr_a, lr_c, &mut opt_a, &mut opt_c)
+            actor_critic = net.update(loss.actor_loss, loss.critic_loss, loss.entropy, 0.02, lr_a, lr_c, &mut opt_a, &mut opt_c)
         }
 
         if tape.done() {

@@ -83,8 +83,8 @@ pub(crate) fn update_impl(generics: &Generics, self_ty: &Type) -> proc_macro2::T
             /// # Warning
             /// - The given network must be on autodiff device, which the loss function does it.
             /// - The given network is moved to inner device after the function call
-            pub fn update<N: ::bake_deep::net::network::Network>(net: N, loss: ::bake_deep::burn::prelude::Tensor<1>, lr: f64, opt: &mut ::bake_deep::burn::optim::ModuleOptimizer) -> N {
-                ::bake_deep::net::network::update(net, loss, lr, opt).valid()
+            pub fn update(self, loss: ::bake_deep::burn::prelude::Tensor<1>, lr: f64, opt: &mut ::bake_deep::burn::optim::ModuleOptimizer) -> Self {
+                ::bake_deep::net::network::update(self, loss, lr, opt).valid()
             }
         }
     }
@@ -99,9 +99,9 @@ pub(crate) fn update_policy_impl(generics: &Generics, self_ty: &Type) -> proc_ma
             /// # Warning
             /// - The given network must be on autodiff device, which the loss function does it.
             /// - The given network is moved to inner device after the function call
-            pub fn update<N: ::bake_deep::net::network::Network>(net: N, loss: ::bake_deep::burn::prelude::Tensor<1>, entropy: ::bake_deep::burn::prelude::Tensor<1>, c_e: f32, lr: f64, opt: &mut ::bake_deep::burn::optim::ModuleOptimizer) -> N {
+            pub fn update(self, loss: ::bake_deep::burn::prelude::Tensor<1>, entropy: ::bake_deep::burn::prelude::Tensor<1>, c_e: f32, lr: f64, opt: &mut ::bake_deep::burn::optim::ModuleOptimizer) -> Self {
                 let loss = loss - entropy * c_e;
-                ::bake_deep::net::network::update(net, loss, lr, opt).valid()
+                ::bake_deep::net::network::update(self, loss, lr, opt).valid()
             }
         }
     }
@@ -116,8 +116,8 @@ pub(crate) fn update_separated_ac_impl(generics: &Generics, self_ty: &Type) -> p
             /// # Warning
             /// - The given network must be on autodiff device, which the loss function does it.
             /// - The given network is moved to inner device after the function call
-            pub fn update<N: ::bake_deep::net::network::Network>(
-                mut net: N,
+            pub fn update(
+                mut self,
                 actor_loss: ::bake_deep::burn::prelude::Tensor<1>,
                 critic_loss: ::bake_deep::burn::prelude::Tensor<1>,
                 entropy: ::bake_deep::burn::prelude::Tensor<1>,
@@ -126,11 +126,11 @@ pub(crate) fn update_separated_ac_impl(generics: &Generics, self_ty: &Type) -> p
                 lr_c: f64,
                 opt_a: &mut ::bake_deep::burn::optim::ModuleOptimizer,
                 opt_c: &mut ::bake_deep::burn::optim::ModuleOptimizer,
-            ) -> N {
+            ) -> Self {
                 let loss = actor_loss - entropy * c_e;
-                net = ::bake_deep::net::network::update(net, loss, lr_a, opt_a);
-                net = ::bake_deep::net::network::update(net, critic_loss, lr_c, opt_c);
-                net.valid()
+                self = ::bake_deep::net::network::update(self, loss, lr_a, opt_a);
+                self = ::bake_deep::net::network::update(self, critic_loss, lr_c, opt_c);
+                self.valid()
             }
         }
     }
@@ -145,8 +145,8 @@ pub(crate) fn update_shared_ac_impl(generics: &Generics, self_ty: &Type) -> proc
             /// # Warning
             /// - The given network must be on autodiff device, which the loss function does it.
             /// - The given network is moved to inner device after the function call
-            pub fn update<N: ::bake_deep::net::network::Network>(
-                net: N,
+            pub fn update(
+                self,
                 actor_loss: ::bake_deep::burn::prelude::Tensor<1>,
                 critic_loss: ::bake_deep::burn::prelude::Tensor<1>,
                 entropy: ::bake_deep::burn::prelude::Tensor<1>,
@@ -154,9 +154,9 @@ pub(crate) fn update_shared_ac_impl(generics: &Generics, self_ty: &Type) -> proc
                 c_c: f32,
                 lr: f64,
                 opt: &mut ::bake_deep::burn::optim::ModuleOptimizer
-            ) -> N {
+            ) -> Self {
                 let loss = actor_loss - entropy * c_e + critic_loss * c_c;
-                ::bake_deep::net::network::update(net, loss, lr, opt).valid()
+                ::bake_deep::net::network::update(self, loss, lr, opt).valid()
             }
         }
     }

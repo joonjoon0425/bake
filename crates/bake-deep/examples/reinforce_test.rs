@@ -40,7 +40,7 @@ pub fn main() {
             let rollout = buffer.pop();
             let (net, loss) = Reinforce::loss(&state, policy, rollout);
             logger.push(&loss);
-            policy = MlpPolicyNet::update(net, loss.surrogate_loss, loss.entropy, 0.02, 1e-3, &mut opt);
+            policy = net.update(loss.surrogate_loss, loss.entropy, 0.02, 1e-3, &mut opt);
 
             logger.push_single("reward", tape.episode_reward);
             logger.push_single("step", tape.steps as f32);
