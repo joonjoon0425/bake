@@ -2,13 +2,12 @@ use bake_common::logger::MovingAvgLogger;
 use bake_deep::{
     algorithm::{AdvantageEstimator, Ppo},
     buffer::RolloutBuffer,
-    contract::ActorCritic,
+    contract::basic::Policy,
     data::{Batchable, extras::{ Advantage, LogProb, Return } },
-    distribution::{Categorical, Distribution},
+    distribution::Distribution,
     env::Tape,
     loss::Loss,
-    net::basic::MlpSeparatedActorCriticNet,
-    wrapper::ActorCriticWrapper
+    net::basic::MlpSeparatedActorCriticNet
 };
 use bake_deep::env::CartPole;
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
@@ -22,7 +21,7 @@ pub fn main() {
     
     let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
     let env = CartPole::new(seed, &device);
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device));
+    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device);
 
     let lr_a = 1e-4;
     let lr_c = 1e-3;
@@ -61,7 +60,7 @@ pub fn main() {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
                     logger.push(&loss);
-                    actor_critic = Ppo::update_separated(net, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                    actor_critic = MlpSeparatedActorCriticNet::update(net, loss.actor_loss, loss.critic_loss, loss.entropy, 0.02, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }
             }
             

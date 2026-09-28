@@ -2,7 +2,7 @@
 //! 
 use burn::prelude::*;
 
-use crate::{contract::ActorCritic, data::{Batch, Batchable}, distribution::{Distribution, PossibleConstraint}};
+use crate::{contract::compound::ActorCritic, data::{Batch, Batchable}, distribution::{Distribution, PossibleConstraint}};
 
 /// Advantage computation enumeration
 #[derive(Debug, Clone)]
@@ -45,8 +45,8 @@ impl AdvantageEstimator {
         batch: Batch<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>>,
         gamma: f32
     ) -> (Tensor<1>, Tensor<1>) {
-        let values = actor_critic.value(batch.obss);
-        let next_values = actor_critic.value(batch.next_obss);
+        let values = actor_critic.state_value(batch.obss);
+        let next_values = actor_critic.state_value(batch.next_obss);
         let adv = batch.rewards + gamma * next_values * (1f32 - batch.terminated.clone()) - values.clone();
         
         let returns = adv.clone() + values;
@@ -60,8 +60,8 @@ impl AdvantageEstimator {
     ) -> (Tensor<1>, Tensor<1>) {
         let n = batch.batch_size().unwrap();
         let device = batch.device();
-        let values = actor_critic.value(batch.obss);
-        let next_values = actor_critic.value(batch.next_obss);
+        let values = actor_critic.state_value(batch.obss);
+        let next_values = actor_critic.state_value(batch.next_obss);
         let deltas = batch.rewards + gamma * next_values * (1f32 - batch.terminated.clone()) - values.clone();
         let terminated = batch.terminated;
         let truncated = batch.truncated;
@@ -83,8 +83,8 @@ impl AdvantageEstimator {
     ) -> (Tensor<1>, Tensor<1>) {
         let n = batch.batch_size().unwrap();
         let device = batch.device();
-        let values = actor_critic.value(batch.obss);
-        let next_values = actor_critic.value(batch.next_obss);
+        let values = actor_critic.state_value(batch.obss);
+        let next_values = actor_critic.state_value(batch.next_obss);
         let deltas = batch.rewards + gamma * next_values * (1f32 - batch.terminated.clone()) - values.clone();
         let terminated = batch.terminated;
         let truncated = batch.truncated;

@@ -1,6 +1,13 @@
 use bake_common::logger::MovingAvgLogger;
 use bake_deep::{
-    algorithm::{AdvantageEstimator, Ppo}, buffer::RolloutBuffer, contract::ActorCritic, data::{Batchable, extras::{ Advantage, LogProb, Return } }, distribution::{Categorical, Distribution}, env::{tape::VecTape, vec::SynchronizedEnvironment}, loss::Loss, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper
+    algorithm::{AdvantageEstimator, Ppo},
+    buffer::RolloutBuffer,
+    contract::basic::Policy,
+    data::{Batchable, extras::{ Advantage, LogProb, Return } },
+    distribution::Distribution,
+    env::{tape::VecTape, vec::SynchronizedEnvironment},
+    loss::Loss,
+    net::basic::MlpSeparatedActorCriticNet,
 };
 use bake_deep::env::CartPole;
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
@@ -17,7 +24,7 @@ pub fn main() {
     for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
     let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: Loss::MseLoss };
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device));
+    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device);
     let mut envs = vec![];
     for seed in seeds { envs.push(CartPole::new(seed, &device)); }
     let env = SynchronizedEnvironment::new(envs);
@@ -59,7 +66,7 @@ pub fn main() {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
                     logger.push(&loss);
-                    actor_critic = Ppo::update_separated(net, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                    actor_critic = MlpSeparatedActorCriticNet::update(net, loss.actor_loss, loss.critic_loss, loss.entropy, 0.02, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }
             }
             

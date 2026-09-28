@@ -5,7 +5,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{Generics, Ident, ItemImpl, Result, Type, meta::ParseNestedMeta, spanned::Spanned};
 
-use crate::{policy, state_value, utils::{find_func, net_impl, obs_type, output_span, spanned_error}};
+use crate::{policy, state_value, utils::{find_func, net_impl, obs_type, output_span, spanned_error, update_separated_ac_impl, update_shared_ac_impl}};
 #[derive(Default)]
 pub(crate) struct ActorCriticOptions {
     distribution: Option<Type>,
@@ -50,9 +50,19 @@ pub(crate) fn expand(opts: &ActorCriticOptions, item: &ItemImpl) -> Result<Token
     let actor_critic_impl = if opts.encoder_sharing {
         let actor_critic_f = find_func("actor_critic", item)?;
         let actor_critic_out_span = output_span(&actor_critic_f.sig);
-        encoder_shared(&actor_critic_f.sig.ident, &actor_f.sig.ident, &critic_f.sig.ident, generics, self_ty, dist_ty, actor_critic_out_span, actor_out_span, critic_out_span)
+        let imp = encoder_shared(&actor_critic_f.sig.ident, &actor_f.sig.ident, &critic_f.sig.ident, generics, self_ty, dist_ty, actor_critic_out_span, actor_out_span, critic_out_span);
+        let update_impl = update_shared_ac_impl(generics, self_ty);
+        quote! {
+            #imp
+            #update_impl
+        }
     } else {
-        encoder_separated(&actor_f.sig.ident, &critic_f.sig.ident, generics, self_ty, dist_ty, actor_out_span, critic_out_span)
+        let imp = encoder_separated(&actor_f.sig.ident, &critic_f.sig.ident, generics, self_ty, dist_ty, actor_out_span, critic_out_span);
+        let update_impl = update_separated_ac_impl(generics, self_ty);
+        quote! {
+            #imp
+            #update_impl
+        }
     };
 
     let expanded = quote! {

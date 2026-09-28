@@ -1,8 +1,15 @@
+use bake_deep::contract::basic::Policy;
 use bake_deep::env::Tape;
 use bake_deep::logger::MovingAvgLogger;
 use bake_deep::scheduler::{LinearScheduler, Scheduler};
 use bake_deep::{
-    algorithm::{AdvantageEstimator, Ppo}, buffer::RolloutBuffer, contract::ActorCritic, data::{Batchable, extras::{ Advantage, LogProb, Return } }, distribution::{Categorical, Distribution}, env::{tape::VecTape, vec::SynchronizedEnvironment}, loss::Loss, net::basic::MlpSeparatedActorCriticNet, wrapper::ActorCriticWrapper
+    algorithm::{AdvantageEstimator, Ppo},
+    buffer::RolloutBuffer,
+    data::{Batchable, extras::{ Advantage, LogProb, Return } },
+    distribution::Distribution,
+    env::{tape::VecTape, vec::SynchronizedEnvironment},
+    loss::Loss,
+    net::basic::MlpSeparatedActorCriticNet,
 };
 use bake_gym::env::{GymLunarLander, KwArgs};
 use burn::{nn::activation::ActivationConfig::Relu, optim::AdamConfig, prelude::*};
@@ -21,7 +28,7 @@ pub fn main() {
     let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: Loss::MseLoss };
     let mut envs = vec![];
     for seed in seeds { envs.push(GymLunarLander::new(seed, &device, KwArgs::new())); }
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &device));
+    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &device);
     let env = SynchronizedEnvironment::new(envs);
 
     let mut c_e = 0.02;
@@ -65,7 +72,7 @@ pub fn main() {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
                     logger.push(&loss);
-                    actor_critic = Ppo::update_separated(net, loss, c_e, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                    actor_critic = MlpSeparatedActorCriticNet::update(net, loss.actor_loss, loss.critic_loss, loss.entropy, c_e, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }
             }
             c_e = c_e_sch.step() as f32

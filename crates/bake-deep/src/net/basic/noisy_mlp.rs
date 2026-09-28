@@ -190,11 +190,11 @@ impl NoisyMlpSeparatedActorCriticNet {
             critic_head,
         }
     }
-
+    /// returns the logits for Categorical distribution
     pub fn actor(&self, obs: Tensor<2>) -> Tensor<2> {
         self.actor_head.forward(self.actor_encoder.forward(obs))
     }
-
+    /// returns the state value of given observation
     pub fn critic(&self, obs: Tensor<2>) -> Tensor<1> {
         self.critic_head.forward(self.critic_encoder.forward(obs)).squeeze_dim(1)
     }
@@ -233,15 +233,15 @@ impl NoisyMlpSharedActorCriticNet {
             critic_head,
         }
     }
-
+    /// returns the logits for Categorical distribution
     pub fn actor(&self, obs: Tensor<2>) -> Tensor<2> {
         self.actor_head.forward(self.encoder.forward(obs))
     }
-
+    /// returns the state value of given observation
     pub fn critic(&self, obs: Tensor<2>) -> Tensor<1> {
         self.critic_head.forward(self.encoder.forward(obs)).squeeze_dim(1)
     }
-
+    /// returns the (logit, state value) tuple
     pub fn actor_critic(&self, obs: Tensor<2>) -> (Tensor<2>, Tensor<1>) {
         let encoded = self.encoder.forward(obs);
         (self.actor_head.forward(encoded.clone()), self.critic_head.forward(encoded).squeeze_dim(1))

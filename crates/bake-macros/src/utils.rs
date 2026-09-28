@@ -68,8 +68,96 @@ pub(crate) fn output_span(sig: &Signature) -> Span {
 pub(crate) fn net_impl(generics: &Generics, self_ty: &Type, obs_ty: &Type) -> proc_macro2::TokenStream {
     let (impl_generics, _, where_clause) = generics.split_for_impl();
     quote! {
-        impl #impl_generics ::bake_deep::contract::basic::Network for #self_ty #where_clause {
+        impl #impl_generics ::bake_deep::net::network::Network for #self_ty #where_clause {
             type Obs = #obs_ty;
+        }
+    }
+}
+
+/// ordinary `update` function
+pub(crate) fn update_impl(generics: &Generics, self_ty: &Type) -> proc_macro2::TokenStream {
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
+    quote! {
+        impl #impl_generics #self_ty #where_clause {
+            /// update the network with given learning rate and optimizer
+            /// # Warning
+            /// - The given network must be on autodiff device, which the loss function does it.
+            /// - The given network is moved to inner device after the function call
+            pub fn update<N: ::bake_deep::net::network::Network>(net: N, loss: ::bake_deep::burn::prelude::Tensor<1>, lr: f64, opt: &mut ::bake_deep::burn::optim::ModuleOptimizer) -> N {
+                ::bake_deep::net::network::update(net, loss, lr, opt).valid()
+            }
+        }
+    }
+}
+
+/// policy `update` function
+pub(crate) fn update_policy_impl(generics: &Generics, self_ty: &Type) -> proc_macro2::TokenStream {
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
+    quote! {
+        impl #impl_generics #self_ty #where_clause {
+            /// update the network with given learning rate and optimizer
+            /// # Warning
+            /// - The given network must be on autodiff device, which the loss function does it.
+            /// - The given network is moved to inner device after the function call
+            pub fn update<N: ::bake_deep::net::network::Network>(net: N, loss: ::bake_deep::burn::prelude::Tensor<1>, entropy: ::bake_deep::burn::prelude::Tensor<1>, c_e: f32, lr: f64, opt: &mut ::bake_deep::burn::optim::ModuleOptimizer) -> N {
+                let loss = loss - entropy * c_e;
+                ::bake_deep::net::network::update(net, loss, lr, opt).valid()
+            }
+        }
+    }
+}
+
+/// actor_critic separated `update` function
+pub(crate) fn update_separated_ac_impl(generics: &Generics, self_ty: &Type) -> proc_macro2::TokenStream {
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
+    quote! {
+        impl #impl_generics #self_ty #where_clause {
+            /// update the network with given learning rate and optimizer
+            /// # Warning
+            /// - The given network must be on autodiff device, which the loss function does it.
+            /// - The given network is moved to inner device after the function call
+            pub fn update<N: ::bake_deep::net::network::Network>(
+                mut net: N,
+                actor_loss: ::bake_deep::burn::prelude::Tensor<1>,
+                critic_loss: ::bake_deep::burn::prelude::Tensor<1>,
+                entropy: ::bake_deep::burn::prelude::Tensor<1>,
+                c_e: f32,
+                lr_a: f64,
+                lr_c: f64,
+                opt_a: &mut ::bake_deep::burn::optim::ModuleOptimizer,
+                opt_c: &mut ::bake_deep::burn::optim::ModuleOptimizer,
+            ) -> N {
+                let loss = actor_loss - entropy * c_e;
+                net = ::bake_deep::net::network::update(net, loss, lr_a, opt_a);
+                net = ::bake_deep::net::network::update(net, critic_loss, lr_c, opt_c);
+                net.valid()
+            }
+        }
+    }
+}
+
+/// actor_critic shared `update` function
+pub(crate) fn update_shared_ac_impl(generics: &Generics, self_ty: &Type) -> proc_macro2::TokenStream {
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
+    quote! {
+        impl #impl_generics #self_ty #where_clause {
+            /// update the network with given learning rate and optimizer
+            /// # Warning
+            /// - The given network must be on autodiff device, which the loss function does it.
+            /// - The given network is moved to inner device after the function call
+            pub fn update<N: ::bake_deep::net::network::Network>(
+                net: N,
+                actor_loss: ::bake_deep::burn::prelude::Tensor<1>,
+                critic_loss: ::bake_deep::burn::prelude::Tensor<1>,
+                entropy: ::bake_deep::burn::prelude::Tensor<1>,
+                c_e: f32,
+                c_c: f32,
+                lr: f64,
+                opt: &mut ::bake_deep::burn::optim::ModuleOptimizer
+            ) -> N {
+                let loss = actor_loss - entropy * c_e + critic_loss * c_c;
+                ::bake_deep::net::network::update(net, loss, lr, opt).valid()
+            }
         }
     }
 }

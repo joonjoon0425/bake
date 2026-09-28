@@ -1,7 +1,7 @@
 //! The state value trait
 
 use burn::prelude::*;
-use crate::contract::basic::network::Network;
+use crate::net::network::Network;
 
 /// The state value trait.
 /// - The network which implements this trait is able to produce the state values

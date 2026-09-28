@@ -1,11 +1,10 @@
 //! basic Mlp network implementations
-use bake_macros::{policy, qnet};
+use bake_macros::{actor_critic, policy, qnet};
 use burn::prelude::*;
 use burn::module::Module;
 use burn::nn::{Linear, LinearConfig, activation::{Activation, ActivationConfig}};
 
 use crate::distribution::Categorical;
-use crate::net::{ActorCriticNet};
 
 /// basic Mlp Encoder part.
 /// # Warning
@@ -140,6 +139,7 @@ pub struct MlpSeparatedActorCriticNet {
     critic_head: Linear,
 }
 
+#[actor_critic(distribution = Categorical)]
 impl MlpSeparatedActorCriticNet {
     /// create a new MlpActorCriticNet struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -157,22 +157,14 @@ impl MlpSeparatedActorCriticNet {
             critic_head,
         }
     }
-}
 
-impl ActorCriticNet for MlpSeparatedActorCriticNet {
-    type Obs = Tensor<2>;
-    type Params = Tensor<2>;
-    
-    fn params(&self, obs: Self::Obs) -> Self::Params {
+    /// returns the logits for Categorical distribution
+    pub fn actor(&self, obs: Tensor<2>) -> Tensor<2> {
         self.actor_head.forward(self.actor_encoder.forward(obs))
     }
-
-    fn values(&self, obs: Self::Obs) -> Tensor<1> {
+    /// returns the state value of given observation
+    pub fn critic(&self, obs: Tensor<2>) -> Tensor<1> {
         self.critic_head.forward(self.critic_encoder.forward(obs)).squeeze_dim(1)
-    }
-
-    fn encoder_type(&self) -> crate::contract::actor_critic::EncoderType {
-        crate::contract::actor_critic::EncoderType::Separated
     }
 }
 
@@ -184,6 +176,7 @@ pub struct MlpSharedActorCriticNet {
     critic_head: Linear,
 }
 
+#[actor_critic(distribution = Categorical, encoder_shared)]
 impl MlpSharedActorCriticNet {
     /// create a new MlpSharedActorCriticNet struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -199,26 +192,17 @@ impl MlpSharedActorCriticNet {
             critic_head,
         }
     }
-}
-
-impl ActorCriticNet for MlpSharedActorCriticNet {
-    type Obs = Tensor<2>;
-    type Params = Tensor<2>;
-    
-    fn params(&self, obs: Self::Obs) -> Self::Params {
+    /// returns the logits for Categorical distribution
+    pub fn actor(&self, obs: Tensor<2>) -> Tensor<2> {
         self.actor_head.forward(self.encoder.forward(obs))
     }
-
-    fn values(&self, obs: Self::Obs) -> Tensor<1> {
+    /// returns the state value of given observation
+    pub fn critic(&self, obs: Tensor<2>) -> Tensor<1> {
         self.critic_head.forward(self.encoder.forward(obs)).squeeze_dim(1)
     }
-
-    fn forward(&self, obs: Self::Obs) -> (Self::Params, Tensor<1>) {
+    /// returns the (logit, state value) tuple
+    pub fn actor_critic(&self, obs: Tensor<2>) -> (Tensor<2>, Tensor<1>) {
         let encoded = self.encoder.forward(obs);
         (self.actor_head.forward(encoded.clone()), self.critic_head.forward(encoded).squeeze_dim(1))
-    }
-
-    fn encoder_type(&self) -> crate::contract::actor_critic::EncoderType {
-        crate::contract::actor_critic::EncoderType::Shared
     }
 }

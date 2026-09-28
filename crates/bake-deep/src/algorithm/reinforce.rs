@@ -2,7 +2,7 @@
 //! 
 
 use bake_common::logger::ToLog;
-use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
+use burn::prelude::*;
 
 use crate::{
     contract::basic::Policy,
@@ -53,16 +53,6 @@ impl Reinforce {
         let surrogate_loss = -(returns * log_probs).mean();
 
         (policy, ReinforceLoss { surrogate_loss, entropy })
-    }
-
-    /// update the policy with given learning rate and optimizer, with entropy bonus
-    /// # Warning
-    /// - The given Policy must be on autodiff device, which the loss function does it.
-    /// - The given Policy is moved to inner device after the function call
-    pub fn update<P: Policy>(policy: P, loss: ReinforceLoss, c_e: f32, lr: f64, opt: &mut ModuleOptimizer) -> P {
-        let grads = (loss.surrogate_loss - c_e * loss.entropy).backward();
-        let grads = GradientsParams::from_grads(grads, &policy);
-        opt.step(lr, policy, grads).valid()
     }
 
     /// gives the name of recordable logs. use it to register at the logger

@@ -1,15 +1,14 @@
+use bake_deep::contract::basic::Policy;
 use bake_deep::logger::MovingAvgLogger;
 use bake_deep::scheduler::{LinearScheduler, Scheduler};
 use bake_deep::{
     algorithm::{AdvantageEstimator, Ppo},
     buffer::RolloutBuffer,
-    contract::ActorCritic,
     data::{Batchable, extras::{ Advantage, LogProb, Return } },
-    distribution::{Categorical, Distribution},
+    distribution::Distribution,
     env::Tape,
     loss::Loss,
     net::basic::MlpSeparatedActorCriticNet,
-    wrapper::ActorCriticWrapper
 };
 use bake_gym::env::KwArgs;
 use bake_gym::env::GymLunarLander;
@@ -26,7 +25,7 @@ pub fn main() {
     
     let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
     let env = GymLunarLander::new(seed, &device, KwArgs::new());
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 64, 64, env.n_actions()], Relu, &device));
+    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 64, 64, env.n_actions()], Relu, &device);
 
     let mut c_e = 0.02;
     let lr_a = 1e-3;
@@ -69,7 +68,7 @@ pub fn main() {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
                     logger.push(&loss);
-                    actor_critic = Ppo::update_separated(net, loss, c_e, lr_a, &mut opt_a, lr_c, &mut opt_c);
+                    actor_critic = MlpSeparatedActorCriticNet::update(net, loss.actor_loss, loss.critic_loss, loss.entropy, c_e, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }
             }
             

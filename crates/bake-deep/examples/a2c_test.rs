@@ -1,13 +1,6 @@
 use bake_common::logger::MovingAvgLogger;
 use bake_deep::{
-    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator},
-    loss::Loss,
-    buffer::RolloutBuffer,
-    contract::ActorCritic,
-    distribution::Categorical,
-    env::{CartPole, Tape},
-    net::basic::MlpSeparatedActorCriticNet,
-    wrapper::ActorCriticWrapper
+    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator}, buffer::RolloutBuffer, contract::basic::Policy, env::{CartPole, Tape}, loss::Loss, net::basic::MlpSeparatedActorCriticNet,
 };
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
@@ -19,7 +12,7 @@ pub fn main() {
     
     let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
     let env = CartPole::new(seed, &device);
-    let mut actor_critic: ActorCriticWrapper<_, Categorical> = ActorCriticWrapper::new(MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device));
+    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device);
 
     let lr_a = 1e-4;
     let lr_c = 1e-3;
@@ -45,7 +38,7 @@ pub fn main() {
             let batch = buffer.pop();
             let (net, loss) = A2C::loss(&state, actor_critic, batch);
             logger.push(&loss);
-            actor_critic = A2C::update_separated(net, loss, 0.02, lr_a, &mut opt_a, lr_c, &mut opt_c)
+            actor_critic = MlpSeparatedActorCriticNet::update(net, loss.actor_loss, loss.critic_loss, loss.entropy, 0.02, lr_a, lr_c, &mut opt_a, &mut opt_c);
         }
 
         if tape.done() {

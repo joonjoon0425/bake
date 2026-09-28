@@ -56,7 +56,7 @@ pub fn main() {
         if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
             let (net, loss) = Dqn::loss(&config, online, &target, batch, batch_info.clone());
             logger.push(&loss);
-            online = Dqn::update(net, loss, lr, &mut opt);
+            online = LinearQNet::update(net, loss.loss, lr, &mut opt);
         }
 
         if count % sync_freq == 0 {

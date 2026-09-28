@@ -48,8 +48,13 @@ pub(crate) fn expand(opts: &QNetOptions, item: &ItemImpl) -> Result<TokenStream>
         plain(&f.sig.ident, generics, self_ty, out_span)
     };
 
-    let mut item_original = quote! { #item };
-    item_original.extend(net_impl);
-    item_original.extend(action_value_impl);
-    return Ok(item_original);                                
+    let update_impl = update_impl(generics, self_ty);
+
+    let expanded = quote! {
+        #item
+        #net_impl
+        #action_value_impl
+        #update_impl
+    };
+    return Ok(expanded);                         
 }

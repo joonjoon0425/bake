@@ -57,7 +57,7 @@ pub fn main() {
             let (net, loss) = Dqn::loss(&config, online, &target, batch, batch_info.clone());
             logger.push(&loss);
             buffer.update_priority(&batch_info.indices, loss.td_error.clone());
-            online = Dqn::update(net, loss, lr, &mut opt);
+            online = MlpDiscreteDuelingQNet::update(net, loss.loss, lr, &mut opt);
         }
 
         if count % sync_freq == 0 {

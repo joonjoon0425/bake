@@ -1,8 +1,8 @@
 //! A Deep-QNetwork algorithm implementation
 use bake_common::logger::ToLog;
-use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
+use burn::prelude::*;
 use crate::{
-    buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::basic::{DiscreteActionValue, Network}, data::{Batch, Batchable}, loss::Loss
+    buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::basic::DiscreteActionValue, data::{Batch, Batchable}, loss::Loss
 };
 
 /// state for DQN
@@ -58,16 +58,6 @@ impl Dqn {
                 (online, DqnLoss { loss, td_error, qmean })
             }
         }
-    }
-
-    /// update the Q function with given learning rate and optimizer
-    /// # Warning
-    /// - The given QFunction must be on autodiff device, which the loss function does it.
-    /// - The given QFunction is moved to inner device after the function call
-    pub fn update<Q: Network>(online: Q, loss: DqnLoss, lr: f64, opt: &mut ModuleOptimizer) -> Q {
-        let grads = loss.loss.backward();
-        let grads = GradientsParams::from_grads(grads, &online);
-        opt.step(lr, online, grads).valid()
     }
 
     /// gives the name of recordable logs. use it to register at the logger

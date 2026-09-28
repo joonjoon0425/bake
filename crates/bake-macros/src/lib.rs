@@ -30,9 +30,9 @@ pub fn derive_batchable(input: TokenStream) -> TokenStream {
 /// This macro implements following traits;
 /// - `Network`
 /// - `ActionValue`
-/// # Field Attributes
+/// # Field Arguments
 /// ## Mandatory
-/// - No mandatory field attributes
+/// - No mandatory field arguments
 /// ## Optional
 /// - `qnet(dueling)`: for dueling dqn methods
 /// # Warning
@@ -55,12 +55,12 @@ pub fn qnet(args: TokenStream, input: TokenStream) -> TokenStream {
 /// This macro implements following traits;
 /// - `Network`
 /// - `Policy`
-/// # Field Attributes
+/// # Field Arguments
 /// ## Mandatory
 /// - `policy(distribution = <distribution name>)`. Followings are the list of possible distributions
 ///     - `Categorical`
 /// ## Optional
-/// - No optional field attributes
+/// - No optional field arguments
 /// # Warning
 /// - The user must implement `forward` function which returns the parameters of the distribution
 /// - The `forward` function must have following signature: `pub fn forward(&self, obs: <observation type>) -> <distribution name>::Params`
@@ -82,17 +82,17 @@ pub fn policy(args: TokenStream, input: TokenStream) -> TokenStream {
 /// - `Policy`
 /// - `StateValue`
 /// - `ActorCritic`
-/// # Field Attributes
+/// # Field Arguments
 /// ## Mandatory
 /// - `actor_critic(distribution = <distribution name>)`. Followings are the list of possible distributions
 ///     - `Categorical`
 /// ## Optional
 /// - `actor_critic(encoder_shared)`
-///     - This attribute indicates that the actor and critic shares the encoder
-///     - If the attribute is not indicated, the actor and critic does not share the encoder
+///     - This argument indicates that the actor and critic shares the encoder
+///     - If the argument is not indicated, the actor and critic does not share the encoder
 /// # Warning
 /// - The user must implement `actor` and `critic` function which returns the parameters of distribution and state value of given state, respectively
-/// - If the `encoder_shared` field attribute is used, the user must implement the `actor_critic` function which returns the parameters of distribution and state value of given state at once.
+/// - If the `encoder_shared` field argument is used, the user must implement the `actor_critic` function which returns the parameters of distribution and state value of given state at once.
 ///     - The user must make sure that the encoder is shared for actor and critic 
 #[proc_macro_attribute]
 pub fn actor_critic(args: TokenStream, input: TokenStream) -> TokenStream {

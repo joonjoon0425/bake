@@ -1,6 +1,6 @@
 //! A trait for parametrized policy
 use crate::distribution::{Distribution, PossibleConstraint};
-use crate::contract::basic::network::Network;
+use crate::net::network::Network;
 /// a parametrized policy
 pub trait Policy: Network {
     /// the distribution which policy produces
