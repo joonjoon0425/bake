@@ -12,6 +12,7 @@ numpy.workspace = true
 burn.workspace = true
 rand.workspace = true
 bake-deep.workspace = true
+bake-macros.workspace = true
 
 [build-dependencies]
 pyo3-build-config = "0.29.2"

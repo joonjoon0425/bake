@@ -1,10 +1,10 @@
-use bake_deep::net::DiscreteQNet;
+
 use bake_deep::scheduler::{LinearScheduler, Scheduler};
 use bake_deep::buffer::replay::ReplayBufferConfig;
 use bake_deep::explore::{EpsGreedy, Exploration, Greedy};
 use bake_deep::logger::MovingAvgLogger;
-use bake_deep::wrapper::DiscreteQNetWrapper;
 use bake_gym::env::KwArgs;
+use bake_macros::qnet;
 use burn::nn::{Linear, LinearConfig, Initializer::Zeros};
 use burn::optim::AdamConfig;
 use burn::prelude::*;
@@ -23,7 +23,7 @@ pub fn main() {
     
     let env = GymTaxi::new(seed, &device, KwArgs::new());
     let config = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
-    let mut online = DiscreteQNetWrapper::new(LinearQNet::new(env.n_obs(), env.n_actions(), &device));
+    let mut online = LinearQNet::new(env.n_obs(), env.n_actions(), &device);
     let mut target = online.clone();
     let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();
@@ -103,18 +103,15 @@ struct LinearQNet {
     linear: Linear,
 }
 
+#[qnet]
 impl LinearQNet {
     pub fn new(d_input: usize, d_output: usize, device: &Device) -> Self {
         Self {
             linear: LinearConfig::new(d_input, d_output).with_initializer(Zeros).init(device)
         }
     }
-}
-
-impl DiscreteQNet for LinearQNet {
-    type Obs = Tensor<2>;
     
-    fn forward(&self, obs: Self::Obs) -> Tensor<2> {
+    pub fn forward(&self, obs: Tensor<2>) -> Tensor<2> {
         self.linear.forward(obs)
     }
 }

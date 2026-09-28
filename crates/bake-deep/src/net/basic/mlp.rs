@@ -1,9 +1,11 @@
 //! basic Mlp network implementations
+use bake_macros::{policy, qnet};
 use burn::prelude::*;
 use burn::module::Module;
 use burn::nn::{Linear, LinearConfig, activation::{Activation, ActivationConfig}};
 
-use crate::net::{ActorCriticNet, DiscreteDuelingQNet, DiscreteQNet, PolicyNet};
+use crate::distribution::Categorical;
+use crate::net::{ActorCriticNet};
 
 /// basic Mlp Encoder part.
 /// # Warning
@@ -52,6 +54,7 @@ pub struct MlpDiscreteQNet {
     head: Linear,
 }
 
+#[qnet]
 impl MlpDiscreteQNet {
     /// create a new `MlpDiscreteQNet`
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -63,17 +66,13 @@ impl MlpDiscreteQNet {
             head,
         }
     }
-}
-
-impl DiscreteQNet for MlpDiscreteQNet {
-    type Obs = Tensor<2>;
-
-    fn forward(&self, obs: Self::Obs) -> Tensor<2> {
+    
+    /// return the action values
+    pub fn forward(&self, obs: Tensor<2>) -> Tensor<2> {
         let x = self.encoder.forward(obs);
         self.head.forward(x)
     }
 }
-
 /// DiscreteDuelingQNet implementation with Mlp
 #[derive(Module, Debug)]
 pub struct MlpDiscreteDuelingQNet {
@@ -82,6 +81,7 @@ pub struct MlpDiscreteDuelingQNet {
     value_layer: Linear,
 }
 
+#[qnet(dueling)]
 impl MlpDiscreteDuelingQNet {
     /// create a new MlpDiscreteDuelingQNet struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -96,12 +96,8 @@ impl MlpDiscreteDuelingQNet {
             value_layer,
         }
     }
-}
-
-impl DiscreteDuelingQNet for MlpDiscreteDuelingQNet {
-    type Obs = Tensor<2>;
-
-    fn forward(&self, obs: Self::Obs) -> (Tensor<1>, Tensor<2>) {
+    /// return the (value, advantage) tuple
+    pub fn forward(&self, obs: Tensor<2>) -> (Tensor<1>, Tensor<2>) {
         let x = self.encoder.forward(obs);
         let value = self.value_layer.forward(x.clone()).squeeze_dim(1);
         let advantage = self.advantage_layer.forward(x);
@@ -116,6 +112,7 @@ pub struct MlpPolicyNet {
     head: Linear,
 }
 
+#[policy(distribution = Categorical)]
 impl MlpPolicyNet {
     /// create a new MlpPolicy struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -128,13 +125,8 @@ impl MlpPolicyNet {
             head
         }
     }
-}
-
-impl PolicyNet for MlpPolicyNet {
-    type Obs = Tensor<2>;
-    type Params = Tensor<2>;
-
-    fn forward(&self, obs: Self::Obs) -> Tensor<2> {
+    
+    fn forward(&self, obs: Tensor<2>) -> Tensor<2> {
         self.head.forward(self.encoder.forward(obs))
     }
 }

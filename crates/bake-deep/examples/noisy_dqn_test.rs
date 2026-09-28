@@ -3,7 +3,6 @@ use bake_deep::explore::{Greedy, Exploration};
 use bake_common::logger::MovingAvgLogger;
 use bake_deep::net::basic::NoisyMlpDiscreteQNet;
 use bake_deep::net::layer::NoiseReset;
-use bake_deep::wrapper::DiscreteQNetWrapper;
 use burn::optim::AdamConfig;
 use burn::prelude::*;
 use nn::activation::ActivationConfig::Relu;
@@ -21,7 +20,7 @@ pub fn main() {
     device.seed(seed);
     let env = CartPole::new(seed, &device);
     let config = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
-    let mut online = DiscreteQNetWrapper::new(NoisyMlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &device));
+    let mut online = NoisyMlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &device);
     let mut target = online.clone();
     let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();

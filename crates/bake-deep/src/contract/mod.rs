@@ -9,3 +9,6 @@ pub use qfunction::{DiscreteQFunction};
 
 pub mod policy;
 pub use policy::{Policy};
+
+pub mod basic;
+pub mod compound;

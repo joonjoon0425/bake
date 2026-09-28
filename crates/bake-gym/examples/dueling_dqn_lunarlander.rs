@@ -3,7 +3,6 @@ use bake_deep::buffer::replay::ReplayBufferConfig;
 use bake_deep::explore::{EpsGreedy, Exploration, Greedy};
 use bake_deep::logger::MovingAvgLogger;
 use bake_deep::net::basic::MlpDiscreteDuelingQNet;
-use bake_deep::wrapper::DiscreteDuelingQNetWrapper;
 use bake_gym::env::KwArgs;
 use burn::optim::AdamConfig;
 use burn::prelude::*;
@@ -23,7 +22,7 @@ pub fn main() {
     
     let env = GymLunarLander::new(seed, &device, KwArgs::new());
     let config = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
-    let mut online = DiscreteDuelingQNetWrapper::new(MlpDiscreteDuelingQNet::new(&[env.obs_shape()[1], 128, 84, env.n_actions()], Relu, &device));
+    let mut online = MlpDiscreteDuelingQNet::new(&[env.obs_shape()[1], 128, 84, env.n_actions()], Relu, &device);
     let mut target = online.clone();
     let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();

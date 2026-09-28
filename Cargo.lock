@@ -429,6 +429,7 @@ name = "bake-gym"
 version = "0.3.1"
 dependencies = [
  "bake-deep",
+ "bake-macros",
  "burn",
  "numpy",
  "pyo3",

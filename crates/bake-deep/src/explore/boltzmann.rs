@@ -2,7 +2,7 @@
 //! 
 use burn::{prelude::*, tensor::activation::softmax};
 
-use crate::{constraint::discrete_constraint::DiscreteConstraint, contract::DiscreteQFunction, explore::Exploration};
+use crate::{constraint::discrete_constraint::DiscreteConstraint, contract::basic::DiscreteActionValue, explore::Exploration};
 
 /// Boltzmann (softmax) policy implementation
 pub struct Boltzmann {
@@ -26,8 +26,8 @@ impl Boltzmann {
 }
 
 impl Exploration for Boltzmann {
-    fn sample<Q: DiscreteQFunction>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
-        let probs = softmax(qfunc.forward(obs, constraint) / self.temp, 1);
+    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
+        let probs = softmax(qfunc.action_values(obs, constraint) / self.temp, 1);
         let actions = probs.categorical(1).squeeze_dim(1);
         actions
     }
@@ -35,7 +35,7 @@ impl Exploration for Boltzmann {
 
 #[cfg(test)]
 mod tests {
-    use crate::{constraint::discrete_constraint::DiscreteMask, explore::{Boltzmann, Exploration}, net::basic::MlpDiscreteQNet, wrapper::DiscreteQNetWrapper};
+    use crate::{constraint::discrete_constraint::DiscreteMask, explore::{Boltzmann, Exploration}, net::basic::MlpDiscreteQNet};
     use burn::{nn::activation::ActivationConfig::Relu, prelude::*};
     
     #[test]
@@ -50,7 +50,7 @@ mod tests {
         device.seed(12);
         let c = DiscreteMask(Tensor::from_bool([[false, false, true, false], [false, false, false, true], [true, false, false, false]], &device));
         let mut e = Boltzmann::new(1.0);
-        let qnet = DiscreteQNetWrapper::new(MlpDiscreteQNet::new(&[1, 1, 4], Relu, &device));
+        let qnet = MlpDiscreteQNet::new(&[1, 1, 4], Relu, &device);
         let obs = Tensor::from_floats([[11.], [-1.], [2.]], &device);
         let action = e.sample(&qnet, obs, c);
         assert!(action.equal(Tensor::from_ints([2, 3, 0], &device)).all().into_scalar::<bool>());

@@ -3,14 +3,14 @@
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
-use syn::{Generics, Type};
+use syn::{Generics, Ident, Type};
 
-pub(crate) fn dueling(generics: &Generics, self_ty: &Type, out_span: Span) -> TokenStream {
+pub(crate) fn dueling(func_name: &Ident, generics: &Generics, self_ty: &Type, out_span: Span) -> TokenStream {
     let (impl_generics, _, where_clause) = generics.split_for_impl();
     // dueling output check
     let dueling_out = quote_spanned! {
         out_span =>
-        let __out: (::burn::prelude::Tensor<1>, ::burn::prelude::Tensor<2>) = Self::forward(self, obs);
+        let __out: (::bake_deep::burn::prelude::Tensor<1>, ::bake_deep::burn::prelude::Tensor<2>) = Self::#func_name(self, obs);
     };
     quote! {
         impl #impl_generics ::bake_deep::contract::basic::DiscreteActionValue for #self_ty #where_clause {
@@ -24,16 +24,16 @@ pub(crate) fn dueling(generics: &Generics, self_ty: &Type, out_span: Span) -> To
     }
 }
 
-pub(crate) fn plain(generics: &Generics, self_ty: &Type, out_span: Span) -> TokenStream {
+pub(crate) fn plain(func_name: &Ident, generics: &Generics, self_ty: &Type, out_span: Span) -> TokenStream {
     let (impl_generics, _, where_clause) = generics.split_for_impl();
     // dueling output check
     let plain_out = quote_spanned! {
         out_span =>
-        let __out: ::burn::prelude::Tensor<2> = Self::forward(self, obs);
+        let __out: ::bake_deep::burn::prelude::Tensor<2> = Self::#func_name(self, obs);
     };
     quote! {
         impl #impl_generics ::bake_deep::contract::basic::DiscreteActionValue for #self_ty #where_clause {
-            fn action_values<C: ::bake_deep::constraint::discrete_constraint::DiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::burn::prelude::Tensor<2> {
+            fn action_values<C: ::bake_deep::constraint::discrete_constraint::DiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_deep::burn::prelude::Tensor<2> {
                 #plain_out
                 let action_vales = __out;
                 constraint.apply(action_vales, -1e9)

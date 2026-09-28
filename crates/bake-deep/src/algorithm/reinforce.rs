@@ -5,7 +5,7 @@ use bake_common::logger::ToLog;
 use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
 
 use crate::{
-    contract::Policy,
+    contract::basic::Policy,
     data::{Batch, Batchable},
     distribution::{Distribution, PossibleConstraint}
 };
@@ -39,7 +39,7 @@ impl Reinforce {
 
         let len = rollout.batch_size().unwrap();
         let device = rollout.device();
-        let dist = policy.forward(rollout.obss, rollout.constraints);
+        let dist = policy.dist(rollout.obss, rollout.constraints);
         let mut returns = Tensor::zeros([len], &device);
         returns.assign_inplace(rollout.rewards.clone().slice(len - 1..len), len - 1);
         for i in (0..(len - 1)).rev() {

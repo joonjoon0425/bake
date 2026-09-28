@@ -1,8 +1,9 @@
 //! basic Noisy network Mlp implementations
 
+use bake_macros::{actor_critic, policy, qnet};
 use burn::prelude::*;
 use burn::nn::{activation::{ActivationConfig, Activation}};
-use crate::net::{ActorCriticNet, DiscreteDuelingQNet, DiscreteQNet, PolicyNet};
+use crate::distribution::Categorical;
 use crate::net::layer::{NoiseReset, NoisyLinear};
 
 /// basic NoisyMlp Encoder part.
@@ -61,6 +62,7 @@ pub struct NoisyMlpDiscreteQNet {
     head: NoisyLinear,
 }
 
+#[qnet]
 impl NoisyMlpDiscreteQNet {
     /// create a new `NoisyMlpDiscreteQNet`
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -72,12 +74,9 @@ impl NoisyMlpDiscreteQNet {
             head,
         }
     }
-}
-
-impl DiscreteQNet for NoisyMlpDiscreteQNet {
-    type Obs = Tensor<2>;
-
-    fn forward(&self, obs: Self::Obs) -> Tensor<2> {
+    
+    /// return action values
+    pub fn forward(&self, obs: Tensor<2>) -> Tensor<2> {
         let x = self.encoder.forward(obs);
         self.head.forward(x)
     }
@@ -98,6 +97,7 @@ pub struct NoisyMlpDiscreteDuelingQNet {
     value_layer: NoisyLinear,
 }
 
+#[qnet(dueling)]
 impl NoisyMlpDiscreteDuelingQNet {
     /// create a new `NoisyMlpDiscreteDuelingQNet` struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -112,12 +112,9 @@ impl NoisyMlpDiscreteDuelingQNet {
             value_layer,
         }
     }
-}
-
-impl DiscreteDuelingQNet for NoisyMlpDiscreteDuelingQNet {
-    type Obs = Tensor<2>;
-
-    fn forward(&self, obs: Self::Obs) -> (Tensor<1>, Tensor<2>) {
+    
+    /// return (value, advantage) tuple
+    pub fn forward(&self, obs: Tensor<2>) -> (Tensor<1>, Tensor<2>) {
         let x = self.encoder.forward(obs);
         let value = self.value_layer.forward(x.clone()).squeeze_dim(1);
         let advantage = self.advantage_layer.forward(x);
@@ -140,6 +137,7 @@ pub struct NoisyMlpPolicyNet {
     head: NoisyLinear,
 }
 
+#[policy(distribution = Categorical)]
 impl NoisyMlpPolicyNet {
     /// create a new `NoisyMlpPolicy` struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -152,13 +150,8 @@ impl NoisyMlpPolicyNet {
             head
         }
     }
-}
-
-impl PolicyNet for NoisyMlpPolicyNet {
-    type Obs = Tensor<2>;
-    type Params = Tensor<2>;
-
-    fn forward(&self, obs: Self::Obs) -> Tensor<2> {
+    
+    fn forward(&self, obs: Tensor<2>) -> Tensor<2> {
         self.head.forward(self.encoder.forward(obs))
     }
 }
@@ -179,6 +172,7 @@ pub struct NoisyMlpSeparatedActorCriticNet {
     critic_head: NoisyLinear,
 }
 
+#[actor_critic(distribution = Categorical)]
 impl NoisyMlpSeparatedActorCriticNet {
     /// create a new NoisyMlpActorCriticNet struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -196,22 +190,13 @@ impl NoisyMlpSeparatedActorCriticNet {
             critic_head,
         }
     }
-}
 
-impl ActorCriticNet for NoisyMlpSeparatedActorCriticNet {
-    type Obs = Tensor<2>;
-    type Params = Tensor<2>;
-    
-    fn params(&self, obs: Self::Obs) -> Self::Params {
+    pub fn actor(&self, obs: Tensor<2>) -> Tensor<2> {
         self.actor_head.forward(self.actor_encoder.forward(obs))
     }
 
-    fn values(&self, obs: Self::Obs) -> Tensor<1> {
+    pub fn critic(&self, obs: Tensor<2>) -> Tensor<1> {
         self.critic_head.forward(self.critic_encoder.forward(obs)).squeeze_dim(1)
-    }
-
-    fn encoder_type(&self) -> crate::contract::actor_critic::EncoderType {
-        crate::contract::actor_critic::EncoderType::Separated
     }
 }
 
@@ -232,6 +217,7 @@ pub struct NoisyMlpSharedActorCriticNet {
     critic_head: NoisyLinear,
 }
 
+#[actor_critic(distribution = Categorical, encoder_shared)]
 impl NoisyMlpSharedActorCriticNet {
     /// create a new `NoisyMlpSharedActorCriticNet` struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
@@ -247,27 +233,18 @@ impl NoisyMlpSharedActorCriticNet {
             critic_head,
         }
     }
-}
 
-impl ActorCriticNet for NoisyMlpSharedActorCriticNet {
-    type Obs = Tensor<2>;
-    type Params = Tensor<2>;
-    
-    fn params(&self, obs: Self::Obs) -> Self::Params {
+    pub fn actor(&self, obs: Tensor<2>) -> Tensor<2> {
         self.actor_head.forward(self.encoder.forward(obs))
     }
 
-    fn values(&self, obs: Self::Obs) -> Tensor<1> {
+    pub fn critic(&self, obs: Tensor<2>) -> Tensor<1> {
         self.critic_head.forward(self.encoder.forward(obs)).squeeze_dim(1)
     }
 
-    fn forward(&self, obs: Self::Obs) -> (Self::Params, Tensor<1>) {
+    pub fn actor_critic(&self, obs: Tensor<2>) -> (Tensor<2>, Tensor<1>) {
         let encoded = self.encoder.forward(obs);
         (self.actor_head.forward(encoded.clone()), self.critic_head.forward(encoded).squeeze_dim(1))
-    }
-
-    fn encoder_type(&self) -> crate::contract::actor_critic::EncoderType {
-        crate::contract::actor_critic::EncoderType::Shared
     }
 }
 

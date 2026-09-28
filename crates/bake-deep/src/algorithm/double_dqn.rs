@@ -2,14 +2,10 @@
 use bake_common::logger::ToLog;
 use burn::{optim::{GradientsParams, ModuleOptimizer}, prelude::*};
 use crate::{
-    buffer::sampler::SampleInfo,
-    constraint::discrete_constraint::DiscreteConstraint,
-    contract::DiscreteQFunction,
-    data::{
+    buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::basic::{DiscreteActionValue, Network}, data::{
         Batch,
         Batchable
-    },
-    loss::Loss
+    }, loss::Loss
 };
 
 /// state for Double DQN
@@ -39,19 +35,19 @@ impl DoubleDqn {
     /// - The DiscreteQFunction will be move to inner device when `update` is called
     pub fn loss<Q, Constraint>(state: &DoubleDqn, online: Q, target: &Q, batch: Batch<Q::Obs, Tensor<1, Int>, Constraint>, batch_info: SampleInfo) -> (Q, DoubleDqnLoss)
     where
-        Q: DiscreteQFunction,
+        Q: DiscreteActionValue,
         Constraint: DiscreteConstraint
     {
         let online = online.train();
         let target = target.clone().train();
         let batch = batch.into_autodiff();
 
-        let qvalues = online.forward(batch.obss, batch.constraints);
+        let qvalues = online.action_values(batch.obss, batch.constraints);
         let qvalues = qvalues.gather(1, batch.actions.unsqueeze_dim(1)).squeeze_dim::<1>(1);
 
-        let next_qvalues_online = online.forward(batch.next_obss.clone(), batch.next_constraints.clone()).detach();
+        let next_qvalues_online = online.action_values(batch.next_obss.clone(), batch.next_constraints.clone()).detach();
         let argmax = next_qvalues_online.argmax(1);
-        let next_qvalues_target = target.forward(batch.next_obss, batch.next_constraints).detach();
+        let next_qvalues_target = target.action_values(batch.next_obss, batch.next_constraints).detach();
         let next_qvalues = next_qvalues_target.gather(1, argmax).squeeze_dim::<1>(1);
         let targets = (batch.rewards + state.gamma * next_qvalues * (1f32 - batch.terminated)).detach();
 
@@ -74,7 +70,7 @@ impl DoubleDqn {
     /// # Warning
     /// - The given QFunction must be on autodiff device, which the loss function does it.
     /// - The given QFunction is moved to inner device after the function call
-    pub fn update<Q: DiscreteQFunction>(online: Q, loss: DoubleDqnLoss, lr: f64, opt: &mut ModuleOptimizer) -> Q {
+    pub fn update<Q: Network>(online: Q, loss: DoubleDqnLoss, lr: f64, opt: &mut ModuleOptimizer) -> Q {
         let grads = loss.loss.backward();
         let grads = GradientsParams::from_grads(grads, &online);
         opt.step(lr, online, grads).valid()

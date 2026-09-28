@@ -1,6 +1,10 @@
 //! # A framework for deep reinforcement learning
-//! 
+//!
+//!
 #![warn(missing_docs)]
+
+extern crate self as bake_deep;
+pub extern crate burn;
 
 pub mod algorithm;
 pub mod buffer;
