@@ -6,7 +6,7 @@ use bake_deep::{
     loss::LossFn,
     buffer::RolloutBuffer,
     env::Tape,
-    net::basic::MlpSeparatedActorCriticNet,
+    net::basic::MlpSeparatedActorCritic,
 };
 use bake_gym::env::{GymCartPole, KwArgs};
 
@@ -19,7 +19,7 @@ pub fn main() {
     
     let state = A2C { gamma: 0.99, c_e: 0.02, c_c: 0.0, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: LossFn::MseLoss };
     let env = GymCartPole::new(seed, &device, KwArgs::new());
-    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 128, env.n_actions()], Relu, &device);
+    let mut actor_critic = MlpSeparatedActorCritic::new(&[env.obs_shape()[1], 128, env.n_actions()], Relu, &device);
 
     let lr_a = 1e-3;
     let lr_c = 2e-3;

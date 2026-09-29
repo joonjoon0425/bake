@@ -9,7 +9,7 @@ use bake_deep::{
     distribution::Distribution,
     env::{tape::VecTape, vec::SynchronizedEnvironment},
     loss::LossFn,
-    net::basic::MlpSeparatedActorCriticNet,
+    net::basic::MlpSeparatedActorCritic,
 };
 use bake_gym::env::{GymLunarLander, KwArgs};
 use burn::{nn::activation::ActivationConfig::Relu, optim::AdamConfig, prelude::*};
@@ -28,7 +28,7 @@ pub fn main() {
     let mut state = Ppo { gamma: 0.99, c_e: 0.02, c_c: 0.0, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: LossFn::MseLoss };
     let mut envs = vec![];
     for seed in seeds { envs.push(GymLunarLander::new(seed, &device, KwArgs::new())); }
-    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &device);
+    let mut actor_critic = MlpSeparatedActorCritic::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &device);
     let env = SynchronizedEnvironment::new(envs);
 
     let lr_a = 1e-3;

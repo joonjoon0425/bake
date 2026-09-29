@@ -7,7 +7,7 @@ use bake_deep::{
     distribution::Distribution,
     env::{tape::VecTape, vec::SynchronizedEnvironment},
     loss::LossFn,
-    net::basic::MlpSeparatedActorCriticNet,
+    net::basic::MlpSeparatedActorCritic,
 };
 use bake_deep::env::CartPole;
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
@@ -24,7 +24,7 @@ pub fn main() {
     for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
     let state = Ppo { gamma: 0.99, c_e: 0.02, c_c: 0.0, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: LossFn::MseLoss };
-    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device);
+    let mut actor_critic = MlpSeparatedActorCritic::new(&[4, 128, 2], Relu, &device);
     let mut envs = vec![];
     for seed in seeds { envs.push(CartPole::new(seed, &device)); }
     let env = SynchronizedEnvironment::new(envs);

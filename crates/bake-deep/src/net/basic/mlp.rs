@@ -46,7 +46,7 @@ impl Mlp {
     }
 }
 
-/// DiscreteQNet implementation with Mlp
+/// Mlp network for plain dqn methods
 #[derive(Module, Debug)]
 pub struct MlpDiscreteQNet {
     encoder: Mlp,
@@ -72,7 +72,7 @@ impl MlpDiscreteQNet {
         self.head.forward(x)
     }
 }
-/// DiscreteDuelingQNet implementation with Mlp
+/// Mlp network for dueling dqn methods
 #[derive(Module, Debug)]
 pub struct MlpDiscreteDuelingQNet {
     encoder: Mlp,
@@ -104,15 +104,15 @@ impl MlpDiscreteDuelingQNet {
     }
 }
 
-/// PolicyNet implementation with mlp
+/// Mlp network for policy gradient methods with discrete actions
 #[derive(Module, Debug)]
-pub struct MlpPolicyNet {
+pub struct MlpPolicy {
     encoder: Mlp,
     head: Linear,
 }
 
 #[policy(distribution = Categorical)]
-impl MlpPolicyNet {
+impl MlpPolicy {
     /// create a new MlpPolicy struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
         if dims.len() < 2 { panic!("MlpPolicyNet requires at least two dims: input dimension and output dimension."); }
@@ -130,9 +130,9 @@ impl MlpPolicyNet {
     }
 }
 
-/// Separated ActorCritic implementation with mlp
+/// Mlp network for separated encoder actor critic methods with discrete actions
 #[derive(Module, Debug)]
-pub struct MlpSeparatedActorCriticNet {
+pub struct MlpSeparatedActorCritic {
     actor_encoder: Mlp,
     critic_encoder: Mlp,
     actor_head: Linear,
@@ -140,7 +140,7 @@ pub struct MlpSeparatedActorCriticNet {
 }
 
 #[actor_critic(distribution = Categorical)]
-impl MlpSeparatedActorCriticNet {
+impl MlpSeparatedActorCritic {
     /// create a new MlpActorCriticNet struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
         if dims.len() < 2 { panic!("MlpSeparatedActorCriticNet requires at least two dims: input dimension and output dimension."); }
@@ -168,16 +168,16 @@ impl MlpSeparatedActorCriticNet {
     }
 }
 
-/// Shared ActorCritic implementation with mlp
+/// Mlp network for shared encoder actor critic methods with discrete actions
 #[derive(Module, Debug)]
-pub struct MlpSharedActorCriticNet {
+pub struct MlpSharedActorCritic {
     encoder: Mlp,
     actor_head: Linear,
     critic_head: Linear,
 }
 
 #[actor_critic(distribution = Categorical, encoder_shared)]
-impl MlpSharedActorCriticNet {
+impl MlpSharedActorCritic {
     /// create a new MlpSharedActorCriticNet struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
         if dims.len() < 2 { panic!("MlpSharedActorCriticNet requires at least two dims: input dimension and output dimension."); }

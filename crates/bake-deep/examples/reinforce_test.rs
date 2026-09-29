@@ -2,7 +2,7 @@ use bake_deep::algorithm::Reinforce;
 use bake_deep::contract::basic::Policy;
 use bake_deep::env::{CartPole, Tape};
 use bake_deep::buffer::RolloutBuffer;
-use bake_deep::net::basic::MlpPolicyNet;
+use bake_deep::net::basic::MlpPolicy;
 use bake_deep::algorithm::reinforce::Baseline;
 use bake_common::logger::MovingAvgLogger;
 
@@ -18,7 +18,7 @@ pub fn main() {
 
     let env = CartPole::new(seed, &device);
     let state = Reinforce{ gamma: 0.99, c_e: 0.02, baseline: Baseline::Normalized };
-    let mut policy = MlpPolicyNet::new(&[4, 128, 2], Relu, &device);
+    let mut policy = MlpPolicy::new(&[4, 128, 2], Relu, &device);
     let mut opt = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();

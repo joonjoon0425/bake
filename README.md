@@ -60,7 +60,7 @@ with `NoisyLinear`: [noisylinear.rs](crates/bake-deep/src/net/layer/noisy_linear
 **DQN and Double DQN variants**
 |Variant|Implementation|
 |:---:|:---:|
-|Dueling|with `DiscreteDuelingQNet`|
+|Dueling|with `#[qnet(dueling)]`|
 |Prioritized Experience Replay|with `ReplayBufferConfig::prioritized()`|
 </details>
 
@@ -106,60 +106,52 @@ use bake_deep::buffer::replay::ReplayBufferConfig;
 use bake_deep::explore::{EpsGreedy, Exploration};
 use bake_common::logger::MovingAvgLogger;
 use bake_deep::net::basic::MlpDiscreteQNet;
-use bake_deep::wrapper::DiscreteQNetWrapper;
-use bake_deep::env::{CartPole, Tape};
-use bake_deep::algorithm::Dqn;
-use bake_deep::loss::Loss;
-
 use burn::optim::AdamConfig;
 use burn::prelude::*;
+use nn::activation::ActivationConfig::Relu;
+
+use bake_deep::env::{CartPole, Tape};
+use bake_deep::algorithm::Dqn;
+use bake_deep::loss::LossFn;
 
 #[derive(Module, Debug)]
-struct MyOwnQNet {
-    /*  */,
-}
+pub struct MyNet { /* ... */ }
 
-impl MyOwnQNet {
-    pub fn new(/* */) -> Self {
-        /* */
-    }
-}
-
-impl DiscreteQNet for MyOwnQNet {
-    type Obs = /*  */;
-    
-    fn forward(&self, obs: Self::Obs) -> Tensor<2> {
-        /* */
+#[qnet]
+impl MyNet {
+    pub fn forward(&self, obs: /* observation type */) -> Tensor<2> {
+        /* ... */
     }
 }
 
 pub fn main() {
     println!("count,reward_avg,step_avg,loss,td_error,qmean,eps");
-    let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
-    // device settings
+    let seed = 12;
     let device = Device::default();
     device.seed(seed);
-    let autodiff_device = device.clone().autodiff();
-    // environment setting
+    // CartPole environment
     let env = CartPole::new(seed, &device);
-    // algorithm state setting
-    let state = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
-    // create yout own network on autodiff device
-    // wrap it with DiscreteQNetWrapper
-    let mut online = DiscreteQNetWrapper::new(MyOwnQNet::new(/* */, &autodiff_device));
+    // the state for algorithm
+    let state = Dqn{ gamma: 0.99, loss_fn: LossFn::MseLoss };
+    // the online network
+    let mut online = MyNet::new(/* ... */, &device);
+    // the target network
     let mut target = online.clone();
+    // learning rate
     let lr = 2.5e-4;
+    // Adam optimizer
     let mut opt = AdamConfig::new().init();
 
-    // exploration strategy
+    // exploration method
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
-    // Prioritized Experience Replay with alpha = 0.6 and bets = 0.4
+    // prioritized experience replay buffer
     let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
-    // This is the helper struct which creates a Transition for the user
+    // the helper struct for transitions and logs
     let mut tape = Tape::new(env);
-    // Moving average logger
+    // the moving average logger
     let mut logger = MovingAvgLogger::new();
 
+    // total steps to take
     let total_steps = 500000;
     let warmup = 10000;
     let update_freq = 10;
@@ -167,45 +159,45 @@ pub fn main() {
     let batch_size = 128;
 
     let window = 100;
-    logger.register("loss", 500);
-    logger.register("mean_td_error", 500);
-    logger.register("qmean", 500);
     logger.register("reward", window);
     logger.register("step", window);
 
-    // scheduler for schedulable values
+    // linear scheduler for epsilon of epsilon greedy policy
     let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    // linear scheduler for beta of PER
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..=total_steps {
+        // pick an action
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
+        // take a step in environment with given action, and get the transition (s, a, r, s')
         let t = tape.step(action);
         buffer.push(t);
-
+        // update
         if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
-            // get the dqn objective
-            // the given network must be passed to the update function
+            // get the loss for Dqn algorithm
             let (net, loss) = Dqn::loss(&state, online, &target, batch, batch_info.clone());
-            // record the loss informations into logger
-            logger.push(&loss);
-            // update the priority of prioritized replay buffer
+            logger.push(&loss, window.into());
+            // update the PER buffer with new TD error
             buffer.update_priority(&batch_info.indices, loss.td_error.clone());
-            // update the network
-            online = Dqn::update(net, loss, lr, &mut opt);
+            // update the online network
+            online = net.update(loss, lr, &mut opt);
         }
 
         if count % sync_freq == 0 {
-            let record = online.clone().into_record();
-            target = target.load_record(record);
+            // hard sync
+            target = online.clone();
         }
 
         if tape.done() {
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("step", tape.steps as f32);
+            // push a single log
+            logger.push_single("reward", tape.episode_reward, None);
+            logger.push_single("step", tape.steps as f32, None);
             tape.reset();
         }
 
         if count % 5000 == 0 {
+            // emit logs
             let reward = logger.emit("reward");
             let step = logger.emit("step");
             let loss = logger.emit("loss");

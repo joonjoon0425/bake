@@ -16,7 +16,6 @@ pub mod env;
 pub mod explore;
 pub mod loss;
 pub mod net;
-pub mod experimental;
 
 pub mod logger {
     //! re-exportation of bake_common::logger

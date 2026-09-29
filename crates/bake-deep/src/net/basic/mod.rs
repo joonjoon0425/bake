@@ -6,9 +6,9 @@ pub use mlp::{
     Mlp,
     MlpDiscreteDuelingQNet,
     MlpDiscreteQNet,
-    MlpPolicyNet,
-    MlpSeparatedActorCriticNet,
-    MlpSharedActorCriticNet,
+    MlpPolicy,
+    MlpSeparatedActorCritic,
+    MlpSharedActorCritic,
 };
 
 pub mod noisy_mlp;
@@ -16,7 +16,7 @@ pub use noisy_mlp::{
     NoisyMlp,
     NoisyMlpDiscreteDuelingQNet,
     NoisyMlpDiscreteQNet,
-    NoisyMlpPolicyNet,
-    NoisyMlpSeparatedActorCriticNet,
-    NoisyMlpSharedActorCriticNet,
+    NoisyMlpPolicy,
+    NoisyMlpSeparatedActorCritic,
+    NoisyMlpSharedActorCritic,
 };

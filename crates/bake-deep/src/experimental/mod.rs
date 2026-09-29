@@ -1,3 +1,0 @@
-//! expermental
-//! 
-pub mod contract;

@@ -1,6 +1,6 @@
 use bake_common::logger::MovingAvgLogger;
 use bake_deep::{
-    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator}, buffer::RolloutBuffer, contract::basic::Policy, env::{CartPole, Tape}, loss::LossFn, net::basic::MlpSeparatedActorCriticNet,
+    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator}, buffer::RolloutBuffer, contract::basic::Policy, env::{CartPole, Tape}, loss::LossFn, net::basic::MlpSeparatedActorCritic,
 };
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
@@ -12,7 +12,7 @@ pub fn main() {
     
     let state = A2C { gamma: 0.99, c_e: 0.02, c_c: 0.0, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: LossFn::MseLoss };
     let env = CartPole::new(seed, &device);
-    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device);
+    let mut actor_critic = MlpSeparatedActorCritic::new(&[4, 128, 2], Relu, &device);
 
     let lr_a = 1e-4;
     let lr_c = 1e-3;

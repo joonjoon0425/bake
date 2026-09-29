@@ -8,7 +8,7 @@ use bake_deep::{
     distribution::Distribution,
     env::Tape,
     loss::LossFn,
-    net::basic::MlpSeparatedActorCriticNet,
+    net::basic::MlpSeparatedActorCritic,
 };
 use bake_gym::env::KwArgs;
 use bake_gym::env::GymLunarLander;
@@ -25,7 +25,7 @@ pub fn main() {
     
     let mut state = Ppo { gamma: 0.99, c_e: 0.02, c_c: 0.0, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: LossFn::MseLoss };
     let env = GymLunarLander::new(seed, &device, KwArgs::new());
-    let mut actor_critic = MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 64, 64, env.n_actions()], Relu, &device);
+    let mut actor_critic = MlpSeparatedActorCritic::new(&[env.obs_shape()[1], 64, 64, env.n_actions()], Relu, &device);
 
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;

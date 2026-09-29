@@ -55,7 +55,7 @@ impl NoiseReset for NoisyMlp {
 }
 
 
-/// DiscreteQNet implementation with NoisyMlp
+/// NoisyMlp network for plain NoisyNet-Dqn methods
 #[derive(Module, Debug)]
 pub struct NoisyMlpDiscreteQNet {
     encoder: NoisyMlp,
@@ -89,7 +89,7 @@ impl NoiseReset for NoisyMlpDiscreteQNet {
     }
 }
 
-/// DiscreteDuelingQNet implementation with NoisyMlp
+/// NoisyMlp network for NoisyNet-DuelingDqn methods
 #[derive(Module, Debug)]
 pub struct NoisyMlpDiscreteDuelingQNet {
     encoder: NoisyMlp,
@@ -130,15 +130,15 @@ impl NoiseReset for NoisyMlpDiscreteDuelingQNet {
     }
 }
 
-/// PolicyNet implementation with NoisyMlp
+/// NoisyMlp network for NoisyNet policy gradient methods with discrete actions
 #[derive(Module, Debug)]
-pub struct NoisyMlpPolicyNet {
+pub struct NoisyMlpPolicy {
     encoder: NoisyMlp,
     head: NoisyLinear,
 }
 
 #[policy(distribution = Categorical)]
-impl NoisyMlpPolicyNet {
+impl NoisyMlpPolicy {
     /// create a new `NoisyMlpPolicy` struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
         if dims.len() < 2 { panic!("NoisyMlpPolicyNet requires at least two dims: input dimension and output dimension."); }
@@ -156,16 +156,16 @@ impl NoisyMlpPolicyNet {
     }
 }
 
-impl NoiseReset for NoisyMlpPolicyNet {
+impl NoiseReset for NoisyMlpPolicy {
     fn reset_noise(&mut self) {
         self.encoder.reset_noise();
         self.head.reset_noise();
     }
 }
 
-/// Separated ActorCritic implementation with NoisyMlp
+/// NoisyMlp network for separated encoder, NoisyNet actor critic methods with discrete actions
 #[derive(Module, Debug)]
-pub struct NoisyMlpSeparatedActorCriticNet {
+pub struct NoisyMlpSeparatedActorCritic {
     actor_encoder: NoisyMlp,
     critic_encoder: NoisyMlp,
     actor_head: NoisyLinear,
@@ -173,7 +173,7 @@ pub struct NoisyMlpSeparatedActorCriticNet {
 }
 
 #[actor_critic(distribution = Categorical)]
-impl NoisyMlpSeparatedActorCriticNet {
+impl NoisyMlpSeparatedActorCritic {
     /// create a new NoisyMlpActorCriticNet struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
         if dims.len() < 2 { panic!("NoisyMlpSeparatedActorCriticNet requires at least two dims: input dimension and output dimension."); }
@@ -200,7 +200,7 @@ impl NoisyMlpSeparatedActorCriticNet {
     }
 }
 
-impl NoiseReset for NoisyMlpSeparatedActorCriticNet {
+impl NoiseReset for NoisyMlpSeparatedActorCritic {
     fn reset_noise(&mut self) {
         self.actor_encoder.reset_noise();
         self.critic_encoder.reset_noise();
@@ -209,16 +209,16 @@ impl NoiseReset for NoisyMlpSeparatedActorCriticNet {
     }
 }
 
-/// Shared ActorCritic implementation with NoisyMlp
+/// NoisyMlp network for shared encoder, NoisyNet actor critic methods with discrete actions
 #[derive(Module, Debug)]
-pub struct NoisyMlpSharedActorCriticNet {
+pub struct NoisyMlpSharedActorCritic {
     encoder: NoisyMlp,
     actor_head: NoisyLinear,
     critic_head: NoisyLinear,
 }
 
 #[actor_critic(distribution = Categorical, encoder_shared)]
-impl NoisyMlpSharedActorCriticNet {
+impl NoisyMlpSharedActorCritic {
     /// create a new `NoisyMlpSharedActorCriticNet` struct with given dimensions and activation unit
     pub fn new(dims: &[usize], activation: ActivationConfig, device: &Device) -> Self {
         if dims.len() < 2 { panic!("NoisyMlpSharedActorCriticNet requires at least two dims: input dimension and output dimension."); }
@@ -248,7 +248,7 @@ impl NoisyMlpSharedActorCriticNet {
     }
 }
 
-impl NoiseReset for NoisyMlpSharedActorCriticNet {
+impl NoiseReset for NoisyMlpSharedActorCritic {
     fn reset_noise(&mut self) {
         self.encoder.reset_noise();
         self.actor_head.reset_noise();
