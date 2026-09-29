@@ -160,7 +160,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
                         #batched: Batchable::to_device(self.#batched, device),
                     )*
                     #(
-                        #skipped
+                        #skipped: self.#skipped
                     )*
                 }
             }
@@ -171,7 +171,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
                         #batched: Batchable::into_autodiff(self.#batched),
                     )*
                     #(
-                        #skipped
+                        #skipped: self.#skipped
                     )*
                 }
             }

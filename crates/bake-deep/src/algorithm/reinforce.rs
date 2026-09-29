@@ -5,9 +5,7 @@ use bake_common::logger::ToLog;
 use burn::prelude::*;
 
 use crate::{
-    contract::basic::Policy,
-    data::{Batch, Batchable},
-    distribution::{Distribution, PossibleConstraint}
+    contract::basic::Policy, data::{Batch, Batchable}, distribution::{Distribution, PossibleConstraint}, loss::traits::TotalLoss
 };
 
 /// A state of REINFORCE algorithm
@@ -15,17 +13,10 @@ use crate::{
 pub struct Reinforce {
     /// discount rate
     pub gamma: f32,
+    /// entropy coeffiecient
+    pub c_e: f32,
     /// baseline for computing the advantage
     pub baseline: Baseline,
-}
-
-/// loss struct for REINFORCE algorithm
-#[derive(Debug, Clone)]
-pub struct ReinforceLoss {
-    /// the surrogate loss of REINFORCE algorithm
-    pub surrogate_loss: Tensor<1>,
-    /// the entropy of policy
-    pub entropy: Tensor<1>,
 }
 
 impl Reinforce {
@@ -50,27 +41,47 @@ impl Reinforce {
         let returns = state.baseline.advantage(returns).detach();
         let log_probs = dist.log_probs(rollout.actions);
         let entropy = dist.entropy().mean();
-        let surrogate_loss = -(returns * log_probs).mean();
+        let policy_loss = -(returns * log_probs).mean();
 
-        (policy, ReinforceLoss { surrogate_loss, entropy })
+        let total_loss = policy_loss.clone() - state.c_e * entropy.clone();
+        (policy, ReinforceLoss { total_loss, policy_loss, entropy })
     }
 
     /// gives the name of recordable logs. use it to register at the logger
     pub fn log_names() -> Vec<&'static str> {
         vec![
-            "surrogate_loss",
+            "loss",
+            "policy_loss",
             "entropy"
         ]
     }
 }
 
+/// loss struct for REINFORCE algorithm
+#[derive(Debug, Clone)]
+pub struct ReinforceLoss {
+    /// total loss (policy loss with entropy)
+    pub total_loss: Tensor<1>,
+    /// the policy loss of REINFORCE algorithm
+    pub policy_loss: Tensor<1>,
+    /// the entropy of policy
+    pub entropy: Tensor<1>,
+}
+
+impl TotalLoss for ReinforceLoss {
+    fn total_loss(&self) -> Tensor<1> {
+        self.total_loss.clone()
+    }
+}
+
 impl ToLog for ReinforceLoss {
     fn to_log(&self) -> std::collections::HashMap<&'static str, f32> {
-        let mut log = std::collections::HashMap::new();
-        log.insert("surrogate_loss", self.surrogate_loss.clone().into_scalar());
-        log.insert("entropy", self.entropy.clone().into_scalar());
+        let mut record = std::collections::HashMap::new();
+        record.insert("loss", self.total_loss.clone().into_scalar());
+        record.insert("policy_loss", self.policy_loss.clone().into_scalar());
+        record.insert("entropy", self.entropy.clone().into_scalar());
 
-        log
+        record
     }
 }
 

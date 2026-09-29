@@ -35,8 +35,8 @@ pub fn main() {
         }
         
         if tape.done() {
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("steps", tape.steps as f32);
+            logger.push_single("reward", tape.episode_reward, None);
+            logger.push_single("steps", tape.steps as f32, None);
             tape.reset();
             window.clear();
             // drain the window buffer

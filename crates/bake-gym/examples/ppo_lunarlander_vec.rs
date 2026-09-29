@@ -8,7 +8,7 @@ use bake_deep::{
     data::{Batchable, extras::{ Advantage, LogProb, Return } },
     distribution::Distribution,
     env::{tape::VecTape, vec::SynchronizedEnvironment},
-    loss::Loss,
+    loss::LossFn,
     net::basic::MlpSeparatedActorCriticNet,
 };
 use bake_gym::env::{GymLunarLander, KwArgs};
@@ -25,13 +25,12 @@ pub fn main() {
     let mut seeds = vec![];
     for _ in 0..n_envs { seeds.push(rng.sample(rand::distr::Uniform::new(0, 100).unwrap())); }
     
-    let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: Loss::MseLoss };
+    let mut state = Ppo { gamma: 0.99, c_e: 0.02, c_c: 0.0, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs }, loss_fn: LossFn::MseLoss };
     let mut envs = vec![];
     for seed in seeds { envs.push(GymLunarLander::new(seed, &device, KwArgs::new())); }
     let mut actor_critic = MlpSeparatedActorCriticNet::new(&[envs[0].obs_shape()[1], 64, 64, envs[0].n_actions()], Relu, &device);
     let env = SynchronizedEnvironment::new(envs);
 
-    let mut c_e = 0.02;
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;
     let mut opt_a = AdamConfig::new().init();
@@ -41,16 +40,11 @@ pub fn main() {
     let mut tape = VecTape::new(env);
     
     let total_steps = 100000;
-    let mut c_e_sch = LinearScheduler::new(c_e as f64, 0.002, total_steps, 1.0);
+    let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
     logger.register("step", 100);
-    logger.register("actor_loss", 100);
-    logger.register("critic_loss", 100);
-    logger.register("entropy", 100);
-    logger.register("approx_kl", 100);
-    logger.register("clip_fraction", 100);
 
     for count in 0..=total_steps {
         let dist = actor_critic.dist(tape.obss.clone(), tape.constraints.clone());
@@ -71,18 +65,18 @@ pub fn main() {
                 for chunk in perm.chunks(128) {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
-                    logger.push(&loss);
-                    actor_critic = net.update(loss.actor_loss, loss.critic_loss, loss.entropy, c_e, lr_a, lr_c, &mut opt_a, &mut opt_c);
+                    logger.push(&loss, 100.into());
+                    actor_critic = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }
             }
-            c_e = c_e_sch.step() as f32
+            state.c_e = c_e_sch.step() as f32
         }
 
         // logging episodic rewards and steps
         let (r, s) = tape.finished_reward_steps();
         for (reward, step) in r.iter().zip(s.iter()) {
-            logger.push_single("reward", *reward);
-            logger.push_single("step", *step);
+            logger.push_single("reward", *reward, None);
+            logger.push_single("step", *step, None);
         }
         
         if count % 5000 == 0 {

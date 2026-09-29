@@ -17,7 +17,7 @@ pub fn main() {
     device.seed(seed);
 
     let env = CartPole::new(seed, &device);
-    let state = Reinforce{ gamma: 0.99, baseline: Baseline::Normalized };
+    let state = Reinforce{ gamma: 0.99, c_e: 0.02, baseline: Baseline::Normalized };
     let mut policy = MlpPolicyNet::new(&[4, 128, 2], Relu, &device);
     let mut opt = AdamConfig::new().init();
 
@@ -28,8 +28,9 @@ pub fn main() {
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
     logger.register("step", 100);
-    logger.register("surrogate_loss", 20);
-    logger.register("entropy", 20);
+    for name in Reinforce::log_names() {
+        logger.register(name, 100);
+    }
 
     for count in 0..=total_steps {
         let action = policy.action(tape.obs.clone(), tape.constraint.clone());
@@ -39,11 +40,11 @@ pub fn main() {
         if tape.done() {
             let rollout = buffer.pop();
             let (net, loss) = Reinforce::loss(&state, policy, rollout);
-            logger.push(&loss);
-            policy = net.update(loss.surrogate_loss, loss.entropy, 0.02, 1e-3, &mut opt);
+            logger.push(&loss, 100.into());
+            policy = net.update(loss, 1e-3, &mut opt);
 
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("step", tape.steps as f32);
+            logger.push_single("reward", tape.episode_reward, None);
+            logger.push_single("step", tape.steps as f32, None);
             tape.reset();
         }
 

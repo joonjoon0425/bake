@@ -5,7 +5,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{Generics, Ident, ItemImpl, Result, Type, meta::ParseNestedMeta, spanned::Spanned};
 
-use crate::utils::{find_func, net_impl, obs_type, output_span, spanned_error, update_policy_impl};
+use crate::utils::{find_func, net_impl, obs_type, output_span, spanned_error, update_impl};
 
 /// policy options
 #[derive(Default)]
@@ -50,7 +50,7 @@ pub(crate) fn expand(opts: &PolicyOptions, item: &ItemImpl) -> Result<TokenStrea
 
     let policy_impl = policy_impl(&f.sig.ident, generics, self_ty, dist_ty, out_span);
 
-    let update_impl = update_policy_impl(generics, self_ty);
+    let update_impl = update_impl(generics, self_ty);
 
     let expanded = quote! {
         #item

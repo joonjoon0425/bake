@@ -3,7 +3,7 @@ use bake_deep::distribution::Distribution;
 use bake_deep::logger::MovingAvgLogger;
 use bake_deep::{
     algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator},
-    loss::Loss,
+    loss::LossFn,
     buffer::RolloutBuffer,
     env::Tape,
     net::basic::MlpSeparatedActorCriticNet,
@@ -17,7 +17,7 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     
-    let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
+    let state = A2C { gamma: 0.99, c_e: 0.02, c_c: 0.0, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: LossFn::MseLoss };
     let env = GymCartPole::new(seed, &device, KwArgs::new());
     let mut actor_critic = MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 128, env.n_actions()], Relu, &device);
 
@@ -32,9 +32,6 @@ pub fn main() {
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
     logger.register("step", 100);
-    logger.register("actor_loss", 100);
-    logger.register("critic_loss", 100);
-    logger.register("entropy", 100);
 
     for count in 0..=600000 {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
@@ -44,13 +41,13 @@ pub fn main() {
         if buffer.len() >= 128 {
             let batch = buffer.pop();
             let (net, loss) = A2C::loss(&state, actor_critic, batch);
-            logger.push(&loss);
-            actor_critic = net.update(loss.actor_loss, loss.critic_loss, loss.entropy, 0.02, lr_a, lr_c, &mut opt_a, &mut opt_c)
+            logger.push(&loss, 100.into());
+            actor_critic = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c)
         }
 
         if tape.done() {
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("step", tape.steps as f32);
+            logger.push_single("reward", tape.episode_reward, None);
+            logger.push_single("step", tape.steps as f32, None);
             tape.reset();
         }
 

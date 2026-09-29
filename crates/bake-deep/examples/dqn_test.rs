@@ -9,7 +9,7 @@ use nn::activation::ActivationConfig::Relu;
 
 use bake_deep::env::{CartPole, Tape};
 use bake_deep::algorithm::Dqn;
-use bake_deep::loss::Loss;
+use bake_deep::loss::LossFn;
 
 pub fn main() {
     println!("count,reward_avg,step_avg,loss,td_error,qmean,eps");
@@ -17,7 +17,7 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     let env = CartPole::new(seed, &device);
-    let state = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
+    let state = Dqn{ gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = MlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &device);
     let mut target = online.clone();
     let lr = 2.5e-4;
@@ -35,11 +35,9 @@ pub fn main() {
     let batch_size = 128;
 
     let window = 100;
-    logger.register("loss", 500);
-    logger.register("mean_td_error", 500);
-    logger.register("qmean", 500);
     logger.register("reward", window);
     logger.register("step", window);
+
 
     let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
@@ -51,9 +49,9 @@ pub fn main() {
 
         if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
             let (net, loss) = Dqn::loss(&state, online, &target, batch, batch_info.clone());
-            logger.push(&loss);
+            logger.push(&loss, window.into());
             buffer.update_priority(&batch_info.indices, loss.td_error.clone());
-            online = net.update(loss.loss, lr, &mut opt);
+            online = net.update(loss, lr, &mut opt);
         }
 
         if count % sync_freq == 0 {
@@ -61,8 +59,8 @@ pub fn main() {
         }
 
         if tape.done() {
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("step", tape.steps as f32);
+            logger.push_single("reward", tape.episode_reward, None);
+            logger.push_single("step", tape.steps as f32, None);
             tape.reset();
         }
 

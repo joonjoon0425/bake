@@ -2,7 +2,7 @@
 use bake_common::logger::ToLog;
 use burn::prelude::*;
 use crate::{
-    buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::basic::DiscreteActionValue, data::{Batch, Batchable}, loss::Loss
+    buffer::sampler::SampleInfo, constraint::discrete_constraint::DiscreteConstraint, contract::basic::DiscreteActionValue, data::{Batch, Batchable}, loss::{LossFn, traits::TotalLoss}
 };
 
 /// state for DQN
@@ -11,19 +11,9 @@ pub struct Dqn {
     /// discount factor
     pub gamma: f32,
     /// loss function
-    pub loss_fn: Loss,
+    pub loss_fn: LossFn,
 }
 
-/// A loss struct for Dqn
-#[derive(Debug, Clone)]
-pub struct DqnLoss {
-    /// loss
-    pub loss: Tensor<1>,
-    /// temporal-difference error
-    pub td_error: Tensor<1>,
-    /// q-value mean
-    pub qmean: Tensor<1>,
-}
 
 impl Dqn {
     /// compute the loss for Dqn algorithm. If `is_weight` is not `None` in `batch_info`, the weighted loss is returned,
@@ -67,6 +57,23 @@ impl Dqn {
             "mean_td_error",
             "qmean"
         ]
+    }
+}
+
+/// A loss struct for Dqn
+#[derive(Debug, Clone)]
+pub struct DqnLoss {
+    /// loss
+    pub loss: Tensor<1>,
+    /// temporal-difference error
+    pub td_error: Tensor<1>,
+    /// q-value mean
+    pub qmean: Tensor<1>,
+}
+
+impl TotalLoss for DqnLoss {
+    fn total_loss(&self) -> Tensor<1> {
+        self.loss.clone()
     }
 }
 

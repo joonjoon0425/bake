@@ -11,7 +11,7 @@ use burn::prelude::*;
 
 use bake_deep::env::Tape;
 use bake_deep::algorithm::Dqn;
-use bake_deep::loss::Loss;
+use bake_deep::loss::LossFn;
 
 use bake_gym::env::GymTaxi;
 
@@ -22,7 +22,7 @@ pub fn main() {
     device.seed(seed);
     
     let env = GymTaxi::new(seed, &device, KwArgs::new());
-    let config = Dqn{ gamma: 0.99, loss_fn: Loss::MseLoss };
+    let config = Dqn{ gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = LinearQNet::new(env.n_obs(), env.n_actions(), &device);
     let mut target = online.clone();
     let lr = 2.5e-4;
@@ -40,9 +40,6 @@ pub fn main() {
     let batch_size = 128;
 
     let window = 100;
-    logger.register("loss", 500);
-    logger.register("mean_td_error", 500);
-    logger.register("qmean", 500);
     logger.register("reward", window);
     logger.register("step", window);
 
@@ -55,8 +52,8 @@ pub fn main() {
 
         if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
             let (net, loss) = Dqn::loss(&config, online, &target, batch, batch_info.clone());
-            logger.push(&loss);
-            online = net.update(loss.loss, lr, &mut opt);
+            logger.push(&loss, window.into());
+            online = net.update(loss, lr, &mut opt);
         }
 
         if count % sync_freq == 0 {
@@ -64,8 +61,8 @@ pub fn main() {
         }
 
         if tape.done() {
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("step", tape.steps as f32);
+            logger.push_single("reward", tape.episode_reward, None);
+            logger.push_single("step", tape.steps as f32, None);
             tape.reset();
         }
 

@@ -7,7 +7,7 @@ use bake_deep::{
     data::{Batchable, extras::{ Advantage, LogProb, Return } },
     distribution::Distribution,
     env::Tape,
-    loss::Loss,
+    loss::LossFn,
     net::basic::MlpSeparatedActorCriticNet,
 };
 use bake_gym::env::KwArgs;
@@ -23,11 +23,10 @@ pub fn main() {
 
     let mut rng = SmallRng::seed_from_u64(seed);
     
-    let state = Ppo { gamma: 0.99, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
+    let mut state = Ppo { gamma: 0.99, c_e: 0.02, c_c: 0.0, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: LossFn::MseLoss };
     let env = GymLunarLander::new(seed, &device, KwArgs::new());
     let mut actor_critic = MlpSeparatedActorCriticNet::new(&[env.obs_shape()[1], 64, 64, env.n_actions()], Relu, &device);
 
-    let mut c_e = 0.02;
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;
     let mut opt_a = AdamConfig::new().init();
@@ -39,14 +38,9 @@ pub fn main() {
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
     logger.register("step", 100);
-    logger.register("actor_loss", 100);
-    logger.register("critic_loss", 100);
-    logger.register("entropy", 100);
-    logger.register("approx_kl", 100);
-    logger.register("clip_fraction", 100);
 
     let total_steps = 1000000;
-    let mut c_e_sch = LinearScheduler::new(c_e as f64, 0.002, total_steps, 1.0);
+    let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     for count in 0..=total_steps {
         let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
@@ -67,15 +61,15 @@ pub fn main() {
                 for chunk in perm.chunks(128) {
                     let idx = Tensor::<1, Int>::from_data(TensorData::new(chunk.to_vec(), [chunk.len()]), &device);
                     let (net, loss) = Ppo::loss(&state, actor_critic, batch.clone().select(idx));
-                    logger.push(&loss);
-                    actor_critic = net.update(loss.actor_loss, loss.critic_loss, loss.entropy, c_e, lr_a, lr_c, &mut opt_a, &mut opt_c);
+                    logger.push(&loss, 100.into());
+                    actor_critic = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }
             }
             
         }
         if tape.done() {
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("step", tape.steps as f32);
+            logger.push_single("reward", tape.episode_reward, None);
+            logger.push_single("step", tape.steps as f32, None);
             tape.reset();
         }
         
@@ -88,7 +82,7 @@ pub fn main() {
             println!("{count},{reward_avg},{step_avg},{entropy},{approx_kl},{clip_fraction}");
         }
 
-        c_e = c_e_sch.step() as f32;
+        state.c_e = c_e_sch.step() as f32;
     }
 
     // evaluation

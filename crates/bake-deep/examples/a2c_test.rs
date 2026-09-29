@@ -1,6 +1,6 @@
 use bake_common::logger::MovingAvgLogger;
 use bake_deep::{
-    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator}, buffer::RolloutBuffer, contract::basic::Policy, env::{CartPole, Tape}, loss::Loss, net::basic::MlpSeparatedActorCriticNet,
+    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator}, buffer::RolloutBuffer, contract::basic::Policy, env::{CartPole, Tape}, loss::LossFn, net::basic::MlpSeparatedActorCriticNet,
 };
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
@@ -10,7 +10,7 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     
-    let state = A2C { gamma: 0.99, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: Loss::MseLoss };
+    let state = A2C { gamma: 0.99, c_e: 0.02, c_c: 0.0, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: LossFn::MseLoss };
     let env = CartPole::new(seed, &device);
     let mut actor_critic = MlpSeparatedActorCriticNet::new(&[4, 128, 2], Relu, &device);
 
@@ -25,9 +25,6 @@ pub fn main() {
     let mut logger = MovingAvgLogger::new();
     logger.register("reward", 100);
     logger.register("step", 100);
-    logger.register("actor_loss", 100);
-    logger.register("critic_loss", 100);
-    logger.register("entropy", 100);
 
     for count in 0..=600000 {
         let action = actor_critic.action(tape.obs.clone(), tape.constraint.clone());
@@ -37,13 +34,13 @@ pub fn main() {
         if buffer.len() >= 128 {
             let batch = buffer.pop();
             let (net, loss) = A2C::loss(&state, actor_critic, batch);
-            logger.push(&loss);
-            actor_critic = net.update(loss.actor_loss, loss.critic_loss, loss.entropy, 0.02, lr_a, lr_c, &mut opt_a, &mut opt_c);
+            logger.push(&loss, 100.into());
+            actor_critic = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);
         }
 
         if tape.done() {
-            logger.push_single("reward", tape.episode_reward);
-            logger.push_single("step", tape.steps as f32);
+            logger.push_single("reward", tape.episode_reward, None);
+            logger.push_single("step", tape.steps as f32, None);
             tape.reset();
         }
 
