@@ -26,3 +26,8 @@ pub mod scheduler {
     //! re-exportation of bake_common::scheduler
     pub use bake_common::scheduler::*;
 }
+
+pub mod macros {
+    //! re-exportation of bake_macros
+    pub use bake_macros::*;
+}

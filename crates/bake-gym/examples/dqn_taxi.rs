@@ -4,7 +4,7 @@ use bake_deep::buffer::replay::ReplayBufferConfig;
 use bake_deep::explore::{EpsGreedy, Exploration, Greedy};
 use bake_deep::logger::MovingAvgLogger;
 use bake_gym::env::KwArgs;
-use bake_macros::qnet;
+use bake_deep::macros::qnet;
 use burn::nn::{Linear, LinearConfig, Initializer::Zeros};
 use burn::optim::AdamConfig;
 use burn::prelude::*;

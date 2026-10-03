@@ -106,13 +106,15 @@ use bake_deep::buffer::replay::ReplayBufferConfig;
 use bake_deep::explore::{EpsGreedy, Exploration};
 use bake_common::logger::MovingAvgLogger;
 use bake_deep::net::basic::MlpDiscreteQNet;
-use burn::optim::AdamConfig;
-use burn::prelude::*;
-use nn::activation::ActivationConfig::Relu;
 
 use bake_deep::env::{CartPole, Tape};
 use bake_deep::algorithm::Dqn;
 use bake_deep::loss::LossFn;
+
+use bake_deep::macros::qnet;
+
+use burn::optim::AdamConfig;
+use burn::prelude::*;
 
 #[derive(Module, Debug)]
 pub struct MyNet { /* ... */ }
@@ -244,7 +246,7 @@ cargo run --release --example ppo_lunarlander
 |a2c_test|`CartPole`|[code](crates/bake-deep/examples/a2c_test.rs)|
 |ppo_test|`CartPole`|[code](crates/bake-deep/examples/ppo_test.rs)|
 |tabular_test|`MaskedCliffWalking`|[code](crates/bake-deep/examples/tabular_test.rs)|
-|vec_test|`SynchronizedEnvironment<CartPole>`|[code](crates/bake-deep/examples/vec_env_test.rs)|
+|vec_env_test|`SynchronizedEnvironment<CartPole>`|[code](crates/bake-deep/examples/vec_env_test.rs)|
 
 #### Deep RL: Gymnasium Environments
 |Example name|Environment|Code|
