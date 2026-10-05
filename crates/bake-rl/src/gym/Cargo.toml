@@ -1,5 +1,5 @@
 [package]
-name = "bake-gym"
+name = "bake-rl-env-gym"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -11,7 +11,8 @@ pyo3.workspace = true
 numpy.workspace = true
 burn.workspace = true
 rand.workspace = true
-bake-deep.workspace = true
+bake-rl-env.workspace = true
+bake-rl-deep = { workspace = true, optional = true }
 
 [build-dependencies]
 pyo3-build-config = "0.29.2"

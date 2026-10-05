@@ -1,0 +1,13 @@
+[package]
+name = "bake-rl-env"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+burn = { workspace = true, optional = true }
+
+[features]
+deep = ["dep:burn"]

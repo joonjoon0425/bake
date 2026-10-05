@@ -1,6 +1,6 @@
 //! Implementations of Gym environments
 use std::marker::PhantomData;
-use bake_deep::{constraint::Unconstrained, env::Environment};
+use bake_rl_deep::{constraint::Unconstrained, env::Environment};
 use pyo3::{prelude::*, types::PyDict};
 use numpy::{PyArray1, prelude::*};
 use burn::prelude::*;

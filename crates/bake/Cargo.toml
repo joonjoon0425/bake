@@ -8,15 +8,11 @@ repository.workspace = true
 
 [dependencies]
 bake-common.workspace = true
-bake-tabular = { workspace = true, optional = true }
-bake-deep = { workspace = true, optional = true }
-bake-gym = { workspace = true, optional = true }
-burn = { workspace = true, optional = true }
-rand.workspace = true
+bake-rl = { workspace = true, default-features = false }
 
 [features]
-default = ["tabular", "deep"]
-tabular = ["dep:bake-tabular"]
-deep = ["dep:bake-deep", "dep:burn"]
-deep-gym = ["deep", "dep:burn", "dep:bake-gym"]
-full = ["tabular", "deep-gym"]
+rl = ["rl-deep", "rl-tabular"]
+rl-tabular = ["bake-rl/tabular"]
+rl-deep = ["bake-rl/deep"]
+rl-gym = ["bake-rl/gym"]
+rl-full = ["rl", "rl-gym"]

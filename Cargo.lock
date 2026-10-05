@@ -401,40 +401,12 @@ name = "bake"
 version = "0.4.0"
 dependencies = [
  "bake-common",
- "bake-deep",
- "bake-gym",
- "bake-tabular",
- "burn",
- "rand 0.10.3",
+ "bake-rl",
 ]
 
 [[package]]
 name = "bake-common"
 version = "0.4.0"
-
-[[package]]
-name = "bake-deep"
-version = "0.4.0"
-dependencies = [
- "bake-common",
- "bake-macros",
- "burn",
- "rand 0.10.3",
- "serde",
- "toml 0.9.12+spec-1.1.0",
-]
-
-[[package]]
-name = "bake-gym"
-version = "0.4.0"
-dependencies = [
- "bake-deep",
- "burn",
- "numpy",
- "pyo3",
- "pyo3-build-config",
- "rand 0.10.3",
-]
 
 [[package]]
 name = "bake-macros"
@@ -446,10 +418,54 @@ dependencies = [
 ]
 
 [[package]]
-name = "bake-tabular"
+name = "bake-rl"
+version = "0.4.0"
+dependencies = [
+ "bake-rl-deep",
+ "bake-rl-env",
+ "bake-rl-env-gym",
+ "bake-rl-tabular",
+]
+
+[[package]]
+name = "bake-rl-deep"
 version = "0.4.0"
 dependencies = [
  "bake-common",
+ "bake-macros",
+ "bake-rl-env",
+ "burn",
+ "rand 0.10.3",
+ "serde",
+ "toml 0.9.12+spec-1.1.0",
+]
+
+[[package]]
+name = "bake-rl-env"
+version = "0.4.0"
+dependencies = [
+ "burn",
+]
+
+[[package]]
+name = "bake-rl-env-gym"
+version = "0.4.0"
+dependencies = [
+ "bake-rl-deep",
+ "bake-rl-env",
+ "burn",
+ "numpy",
+ "pyo3",
+ "pyo3-build-config",
+ "rand 0.10.3",
+]
+
+[[package]]
+name = "bake-rl-tabular"
+version = "0.4.0"
+dependencies = [
+ "bake-common",
+ "bake-rl-env",
  "rand 0.10.3",
  "serde",
  "toml 0.9.12+spec-1.1.0",

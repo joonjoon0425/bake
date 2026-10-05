@@ -1,5 +1,5 @@
 [package]
-name = "bake-deep"
+name = "bake-rl-deep"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -9,6 +9,8 @@ repository.workspace = true
 [dependencies]
 bake-common.workspace = true
 bake-macros.workspace = true
+bake-rl-env.workspace = true
+
 burn.workspace = true
 rand.workspace = true
 serde.workspace = true

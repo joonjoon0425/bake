@@ -1,6 +1,9 @@
 [workspace]
 resolver = "3"
-members = ["crates/*"]
+members = [
+    "crates/*",
+    "crates/bake-rl",
+    ]
 
 [workspace.package]
 version = "0.4.0"
@@ -11,10 +14,13 @@ repository = "https://github.com/joonjoon0425/bake"
 
 [workspace.dependencies]
 bake-common = { path = "crates/bake-common" }
-bake-deep = { path = "crates/bake-deep" }
-bake-tabular = { path = "crates/bake-tabular" }
 bake-macros = { path = "crates/bake-macros" }
-bake-gym = { path = "crates/bake-gym" }
+bake-rl = { path = "crates/bake-rl", default-features = false }
+bake-rl-deep = { path = "crates/bake-rl/src/deep" }
+bake-rl-tabular = { path = "crates/bake-rl/src/tabular" }
+bake-rl-env = { path = "crates/bake-rl/src/env" }
+bake-rl-env-gym = { path = "crates/bake-rl/src/gym" }
+
 burn = { version = "0.22.0-pre.4", features = ["flex", "linalg"] }
 rand = "0.10.2"
 pyo3 = { version = "0.29.2", features = ["auto-initialize"] }
