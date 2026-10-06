@@ -1,7 +1,7 @@
 //! An implementation of tabular n-step Q-learning algorithm
 //! 
-use crate::{algorithm::nstep_estimator, constraint::Constraint, data::Transition, explore::{Exploration, Greedy}, qtable::{QTable, QValues}};
-
+use bake_rl_core::{constraint::Constraint, data::Transition};
+use crate::{algorithm::nstep_estimator, explore::{Exploration, Greedy}, qtable::{QTable, QValues}};
 /// A state for QLearning
 #[derive(Debug, Clone)]
 pub struct NStepQLearning {

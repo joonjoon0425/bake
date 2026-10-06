@@ -8,6 +8,7 @@ repository.workspace = true
 
 [dependencies]
 burn = { workspace = true, optional = true }
+bake-macros = { workspace = true, optional = true }
 
 [features]
-deep = ["dep:burn"]
+deep = ["dep:burn", "dep:bake-macros"]

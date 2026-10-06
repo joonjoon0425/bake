@@ -1,6 +1,7 @@
 //! Strategies for exploration
 //! 
-use crate::{constraint::Constraint, qtable::QTable};
+use bake_rl_core::constraint::Constraint;
+use crate::qtable::QTable;
 
 /// A basic trait for all exploration strategies
 pub trait Exploration {

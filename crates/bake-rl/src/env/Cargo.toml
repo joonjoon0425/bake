@@ -10,5 +10,8 @@ repository.workspace = true
 bake-rl-core.workspace = true
 burn = { workspace = true, optional = true }
 
+[dev-dependencies]
+bake-rl-tabular.workspace = true
+
 [features]
 deep = ["dep:burn", "bake-rl-core/deep"]

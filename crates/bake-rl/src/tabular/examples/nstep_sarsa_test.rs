@@ -1,17 +1,15 @@
-use bake_tabular::algorithm::NStepSarsa;
-use bake_tabular::qtable::QTable;
-use bake_tabular::explore::EpsGreedy;
-
-use bake_common::logger::MovingAvgLogger;
-use bake_common::scheduler::{LinearScheduler, Scheduler};
-use bake_tabular::buffer::window::WindowBuffer;
-use bake_tabular::env::{MaskedCliffWalking, Tape};
-use bake_tabular::explore::Exploration;
+use bake::rl::tabular::algorithm::NStepSarsa;
+use bake::rl::tabular::qtable::QTable;
+use bake::rl::tabular::explore::{EpsGreedy, Exploration};
+use bake::rl::tabular::logger::MovingAvgLogger;
+use bake::rl::tabular::scheduler::{LinearScheduler, Scheduler};
+use bake::rl::tabular::buffer::window::WindowBuffer;
+use bake::rl::env::{Environment, EnvironmentConfiguration, TabularEnvironmentConfiguration, collection::MaskedCliffWalking, tape::Tape};
 
 pub fn main() {
     let state = NStepSarsa { n: 1, gamma: 0.99, alpha: 0.4 };
-    let env = MaskedCliffWalking::new();
-    let mut qtable = QTable::new(env.n_states(), env.n_actions());
+    let env = MaskedCliffWalking::new().init();
+    let mut qtable = QTable::new(env.config().n_obs(), env.config().n_actions());
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;

@@ -2,7 +2,8 @@
 //! 
 use std::marker::PhantomData;
 use burn::prelude::*;
-use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, SamplerConfig, uniform::UniformSamplerConfig}, data::{Batch, Batchable}};
+use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, SamplerConfig, uniform::UniformSamplerConfig}};
+use bake_rl_core::deep::data::{Batch, Batchable};
 
 /// Replay buffer implementation
 pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constraint: Batchable> {
@@ -156,7 +157,8 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> ReplayBufferConfi
 #[cfg(test)]
 mod tests {
     use burn::{prelude::*, tensor::Distribution};
-    use crate::{buffer::replay::ReplayBufferConfig, constraint::Unconstrained, data::{Batch, Batchable, extras::ExtraContainer}};
+    use crate::{buffer::replay::ReplayBufferConfig};
+    use bake_rl_core::deep::{constraint::Unconstrained, data::{Batch, Batchable, extras::ExtraContainer}};
 
     #[test]
     fn init_test() {

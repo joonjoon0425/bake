@@ -1,7 +1,8 @@
 //! A sampler trait and implementations for buffers
 //! 
 use burn::prelude::*;
-use crate::{buffer::replay::LazyStorage, data::{Batch, Batchable}};
+use crate::buffer::replay::LazyStorage;
+use bake_rl_core::deep::data::{Batch, Batchable};
 
 /// A `Sampler` trait which all samplers for buffers must implement
 pub trait Sampler {

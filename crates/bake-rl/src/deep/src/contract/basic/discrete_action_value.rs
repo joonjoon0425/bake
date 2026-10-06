@@ -1,7 +1,8 @@
 //! The action value trait
 
 use burn::prelude::*;
-use crate::{constraint::discrete_constraint::DiscreteConstraint, net::network::Network};
+use bake_rl_core::deep::constraint::discrete_constraint::DiscreteConstraint; 
+use crate::net::network::Network;
 
 /// The action value trait.
 /// - The network which implements this trait is able to produce the action values, for discrete actions

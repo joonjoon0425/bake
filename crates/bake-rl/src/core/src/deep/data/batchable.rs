@@ -7,7 +7,7 @@ use burn::{
     Tensor, tensor::{Bool, Int, Device},
 };
 
-use crate::constraint::{discrete_constraint::DiscreteMask, Unconstrained};
+use crate::deep::constraint::{discrete_constraint::DiscreteMask, Unconstrained};
 
 /// Can create into batch along the batch dimension
 pub trait Batchable: std::fmt::Debug + Sized + Clone + Send + Sync + 'static {
@@ -332,7 +332,7 @@ impl<T: Batchable> Batchable for Option<T> {
 mod tests {
     use bake_macros::Batchable;
 use burn::{Tensor, tensor::{Device, Int, Shape}};
-    use crate::data::batchable::Batchable;
+    use crate::deep::data::batchable::Batchable;
 
     #[test]
     fn cat_test() {

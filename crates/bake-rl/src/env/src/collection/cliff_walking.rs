@@ -1,42 +1,46 @@
-//! A cliff walking which are masked on boundaries
+//! A cliff walking environment for tabular rl algorithms
 //! 
 
-use crate::{constraint::DiscreteMask, env::Environment};
-/// CliffWakling with mask implementation
-/// - All feature are same but on the boundary, the agent receives an mask.
-/// - The agent won't be able to go left from the left boundary, right at right boundary, and so on.
-pub struct MaskedCliffWalking {
+use crate::{Environment, EnvironmentConfiguration, TabularEnvironmentConfiguration};
+use bake_rl_core::constraint::Unconstrained;
+
+/// A 4 * 12 cliff walking environment implementation
+/// - The algorithm has to find an efficient way to reach the goal.
+/// - The start position is (0, 0), and the goal is at (11, 0). There are cliffs along (1 .. 10, 0)
+/// - Every step gives agent a reward of -1, except when the agent reach the goal and receives reward of 100.
+/// - When the agent meets a cliff, the agent is moved back to the start position with reward of -100
+pub struct CliffWalking {
+    config: CliffWalkingConfig,
     pos: (usize, usize)
 }
 
-impl MaskedCliffWalking {
-    /// create a new `MaskedCliffWalking` environment with start position (0, 0)
-    pub fn new() -> Self { Self { pos: (0, 0) } }
-
-    /// return the number of states
-    pub fn n_states(&self) -> usize { 48 }
-
-    /// return the number of actions
-    pub fn n_actions(&self) -> usize { 4 }
-
-    fn pos2usize(&self) -> usize {
-        self.pos.1 * 12 + self.pos.0
-    }
+impl CliffWalking {
+    fn pos2usize(&self) -> usize { self.pos.1 * 12 + self.pos.0 }
 }
 
-impl Environment for MaskedCliffWalking {
-    type Constraint = DiscreteMask<4>;
+impl Environment for CliffWalking {
+    type Constraint = Unconstrained<4>;
+    type Obs = usize;
+    type Action = usize;
+    type EnvConfig = CliffWalkingConfig;
+
+    fn new() -> Self::EnvConfig {
+        CliffWalkingConfig
+    }
+
+    fn build(config: Self::EnvConfig) -> Self {
+        Self { pos: (0, 0), config }
+    }
 
     fn reset(&mut self) -> (usize, Self::Constraint) {
         self.pos = (0, 0);
-        (self.pos2usize(), DiscreteMask::from_bool([false, true, false, true]))
+        (self.pos2usize(), Unconstrained)
     }
 
     fn step(&mut self, action: usize) -> ((usize, Self::Constraint), f32, bool, bool) {
         assert!(action == 0 || action == 1 || action == 2 || action == 3);
-        let mut next_pos = (self.pos.0 as isize, self.pos.1 as isize);
+        let mut next_pos: (isize, isize) = (self.pos.0 as isize, self.pos.1 as isize);
 
-        // assumes that the correct actions were given; the environment won't check if the given action was the masked action or not
         match action {
             0 => next_pos.1 -= 1,
             1 => next_pos.1 += 1,
@@ -46,9 +50,11 @@ impl Environment for MaskedCliffWalking {
         }
         let mut reward = -1f32;
         let mut terminated = false;
-        let mut mask = DiscreteMask::new(true);
         
-        if next_pos.1 == 0 && (0 < next_pos.0 && next_pos.0 < 11) {
+        if next_pos.0 < 0 || next_pos.0 > 11 || next_pos.1 < 0 || next_pos.1 > 3 {
+            // the agent is out of boundary
+            next_pos = (self.pos.0 as isize, self.pos.1 as isize);
+        } else if next_pos.1 == 0 && (0 < next_pos.0 && next_pos.0 < 11) {
             // the agent met a cliff
             next_pos = (0, 0);
             reward = -100f32;
@@ -58,40 +64,47 @@ impl Environment for MaskedCliffWalking {
             terminated = true
         }
 
-        // masking
-        if next_pos.0 <= 0 {
-            mask.disable(2);
-        } else if next_pos.0 >= 11 {
-            mask.disable(3);
-        }
-
-        if next_pos.1 <= 0 {
-            mask.disable(0);
-        } else if next_pos.1 >= 3 {
-            mask.disable(1);
-        }
-
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);
-        ((self.pos2usize(), mask), reward, terminated, false)
+        ((self.pos2usize(), Unconstrained), reward, terminated, false)
+    }
+    
+    fn config(&self) -> &Self::EnvConfig { &self.config }
+}
+
+/// configuration for cliffwalking
+pub struct CliffWalkingConfig;
+impl EnvironmentConfiguration for CliffWalkingConfig {
+    type Env = CliffWalking;
+    fn init(self) -> Self::Env {
+        Self::Env::build(self)
     }
 }
 
+impl TabularEnvironmentConfiguration for CliffWalkingConfig {
+    fn n_obs(&self) -> usize {
+        48
+    }
+
+    fn n_actions(&self) -> usize {
+        4
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use crate::{env::{Environment, MaskedCliffWalking}, explore::{EpsGreedy, Exploration}, qtable::QTable};
+    use crate::{collection::CliffWalking, Environment, EnvironmentConfiguration };
 
     #[test]
     #[should_panic]
     fn invalid_action() {
-        let mut env = MaskedCliffWalking::new();
+        let mut env = CliffWalking::new().init();
         env.reset();
         env.step(5);
     }
 
     #[test]
     fn udlr() {
-        let mut env = MaskedCliffWalking::new();
+        let mut env = CliffWalking::new().init();
         env.reset();
         let ((pos, _), _, _, _) = env.step(1);
         assert_eq!(pos, 12);
@@ -103,7 +116,7 @@ mod tests {
 
     #[test]
     fn cliff_to_start() {
-        let mut env = MaskedCliffWalking::new();
+        let mut env = CliffWalking::new().init();
         env.reset();
         let ((pos, _), _, _, _) = env.step(3);
         assert_eq!(pos, 0)
@@ -111,7 +124,7 @@ mod tests {
 
     #[test]
     fn goal_terminate_reward() {
-        let mut env = MaskedCliffWalking::new();
+        let mut env = CliffWalking::new().init();
         env.reset();
 
         let (pos, reward, terminated, _) = env.step(1); // (0, 1)
@@ -140,19 +153,5 @@ mod tests {
         if reward != -1f32 || terminated { panic!("Wrong env impl") }
         let (_, reward, terminated, _) = env.step(0); // (11, 0) goal
         if reward != 100f32 || !terminated { panic!("Wrong env impl") }
-    }
-
-    #[test]
-    fn masking() {
-        let qtable = QTable::new(48, 4);
-        let mut exploration = EpsGreedy::new(1, 1.0);
-
-        let mut env = MaskedCliffWalking::new();
-        let (obs, constraint) = env.reset();
-
-        for _ in 0..1000 {
-            let action = exploration.sample(&qtable, obs, constraint);
-            assert!(action != 2 && action != 0);
-        }
     }
 }

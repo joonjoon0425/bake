@@ -1,7 +1,8 @@
 //! greedy policy implementation
+use bake_rl_core::deep::constraint::discrete_constraint::DiscreteConstraint;
 use burn::prelude::*;
 
-use crate::{constraint::discrete_constraint::DiscreteConstraint, contract::basic::DiscreteActionValue, explore::Exploration};
+use crate::{contract::basic::DiscreteActionValue, explore::Exploration};
 
 /// A greedy policy implementation
 pub struct Greedy;

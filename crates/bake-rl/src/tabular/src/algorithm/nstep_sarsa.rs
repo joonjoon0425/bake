@@ -1,6 +1,7 @@
 //! An implementation of tabular Sarsa algorithm
 //! 
-use crate::{algorithm::nstep_estimator, constraint::Constraint, data::Transition, qtable::QTable};
+use crate::{algorithm::nstep_estimator, qtable::QTable};
+use bake_rl_core::{constraint::Constraint, data::Transition};
 
 /// A state for Sarsa
 #[derive(Debug, Clone)]

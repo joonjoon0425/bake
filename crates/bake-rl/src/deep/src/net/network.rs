@@ -1,7 +1,7 @@
 //! A common trait for user-implemented networks
 //! 
+use bake_rl_core::deep::data::Batchable;
 use burn::{module::ModuleDisplay, optim::{GradientsParams, ModuleOptimizer}, prelude::*};
-use crate::data::Batchable;
 
 /// A common trait for user-implemented networks
 pub trait Network : Module + ModuleDisplay + Clone {

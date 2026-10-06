@@ -1,7 +1,8 @@
 //! Q-value tables which all tabular algorithms use
 //! 
 
-use crate::{constraint::Constraint, explore::Exploration};
+use bake_rl_core::constraint::Constraint;
+use crate::explore::Exploration;
 
 /// The Q(s,a) table for tabular algorithms
 #[derive(Debug)]

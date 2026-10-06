@@ -1,7 +1,7 @@
 //! A native rust environments for deep rl
 //! 
-
-use burn::tensor::Device;
+use bake_rl_core::deep::data::Batchable;
+use burn::prelude::*;
 
 /// ### A trait which all environments must implement
 /// ##### Warning
@@ -34,11 +34,3 @@ pub use masked_cliffwalking::MaskedCliffWalking;
 
 pub mod cliffwalking;
 pub use cliffwalking::CliffWalking;
-
-pub mod tape;
-pub use tape::Tape;
-pub use tape::VecTape;
-
-pub mod vec;
-
-use crate::data::Batchable;

@@ -6,7 +6,7 @@ use rand::SeedableRng;
 use rand::rngs::SmallRng;
 
 use crate::explore::Exploration;
-use crate::constraint::Constraint;
+use bake_rl_core::constraint::Constraint;
 use crate::qtable::{QTable, QValues};
 /// boltzmann exploration strategy implementation
 /// - chooses action using q values as logits for categorical distribution
@@ -60,7 +60,8 @@ impl Exploration for Boltzmann {
 
 #[cfg(test)]
 mod tests {
-    use crate::{constraint::DiscreteMask, explore::{Boltzmann, Exploration}, qtable::QTable};
+    use crate::{explore::{Boltzmann, Exploration}, qtable::QTable};
+    use bake_rl_core::constraint::DiscreteMask;
 
     #[test]
     #[should_panic]

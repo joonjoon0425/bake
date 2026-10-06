@@ -1,7 +1,8 @@
 //! A basic sampler which treats all elements equally
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
-use crate::{buffer::{replay::LazyStorage, sampler::{SampleInfo, Sampler, SamplerConfig}}, data::{Batch, Batchable}};
+use crate::{buffer::{replay::LazyStorage, sampler::{SampleInfo, Sampler, SamplerConfig}}};
+use bake_rl_core::deep::data::{Batch, Batchable};
 
 /// A basic sampler which treats all elements equally
 pub struct UniformSampler {

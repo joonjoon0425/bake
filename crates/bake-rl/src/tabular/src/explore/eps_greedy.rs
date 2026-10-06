@@ -4,7 +4,7 @@ use rand::{RngExt, SeedableRng};
 use rand::rngs::SmallRng;
 
 use crate::explore::Exploration;
-use crate::constraint::Constraint;
+use bake_rl_core::constraint::Constraint;
 use crate::qtable::{QTable, QValues};
 /// epsilon greedy exploration strategy implementation
 /// - exploits with probability `1 - eps` and explores with probability `eps`,
@@ -50,8 +50,8 @@ impl Exploration for EpsGreedy {
 
 #[cfg(test)]
 mod tests {
-    use crate::{constraint::DiscreteMask, explore::{EpsGreedy, Exploration}, qtable::QTable};
-
+    use crate::{explore::{EpsGreedy, Exploration}, qtable::QTable};
+    use bake_rl_core::constraint::DiscreteMask;
     #[test]
     #[should_panic]
     fn wrong_eps_over_one() {

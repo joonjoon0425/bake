@@ -3,7 +3,7 @@
 
 use bake_macros::Batchable;
 use burn::prelude::*;
-use crate::data::{batchable::Batchable, extras::{ExtraContainer, Key}};
+use crate::deep::data::{Batchable, extras::{ExtraContainer, Key}};
 /// A Batched transition struct
 #[derive(Debug, Clone, Batchable)]
 pub struct Batch<Obs: Batchable, Action: Batchable, Constraint: Batchable> {

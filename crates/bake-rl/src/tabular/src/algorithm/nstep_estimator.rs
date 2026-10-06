@@ -1,7 +1,8 @@
 //! computes the n-step results for n-step methods
 //! 
 
-use crate::{constraint::Constraint, data::Transition, explore::Exploration, qtable::QTable};
+use bake_rl_core::{constraint::Constraint, data::Transition};
+use crate::{explore::Exploration, qtable::QTable};
 
 /// compute the n-step return estimator
 pub fn base<C: Constraint>(gamma: f32, bootstrap: f32, t: Vec<Transition<C>>) -> f32 {

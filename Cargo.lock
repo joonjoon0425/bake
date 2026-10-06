@@ -432,6 +432,7 @@ dependencies = [
 name = "bake-rl-core"
 version = "0.4.0"
 dependencies = [
+ "bake-macros",
  "burn",
 ]
 
@@ -453,6 +454,7 @@ name = "bake-rl-env"
 version = "0.4.0"
 dependencies = [
  "bake-rl-core",
+ "bake-rl-tabular",
  "burn",
 ]
 
@@ -471,8 +473,10 @@ dependencies = [
 name = "bake-rl-tabular"
 version = "0.4.0"
 dependencies = [
+ "bake",
  "bake-common",
  "bake-rl-core",
+ "bake-rl-env",
  "rand 0.10.3",
 ]
 

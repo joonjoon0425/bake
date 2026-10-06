@@ -1,6 +1,7 @@
 //! An implementation of tabular Q-learning algorithm
 //! 
-use crate::{constraint::Constraint, data::Transition, qtable::{QTable, QValues}};
+use bake_rl_core::{constraint::Constraint, data::Transition};
+use crate::qtable::{QTable, QValues};
 
 /// A state for Q-learning
 #[derive(Debug, Clone)]

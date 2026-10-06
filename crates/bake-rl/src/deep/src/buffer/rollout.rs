@@ -1,6 +1,6 @@
 //! Rollout buffer for on-policy methods
 //! 
-use crate::data::{Batch, Batchable};
+use bake_rl_core::deep::data::{Batch, Batchable};
 /// Rollout buffer implementation. Currently uses AoS (Array of Structures)
 pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Constraint: Batchable> {
     batch: Vec<Batch<Obs, Action, Constraint>>,
@@ -32,7 +32,8 @@ impl<Obs: Batchable, Action: Batchable, Constraint: Batchable> RolloutBuffer<Obs
 #[cfg(test)]
 mod tests {
     use burn::{prelude::*, tensor::Distribution};
-    use crate::{buffer::rollout::RolloutBuffer, constraint::Unconstrained, data::{Batch, Batchable, extras::ExtraContainer}};
+    use crate::buffer::rollout::RolloutBuffer;
+    use bake_rl_core::deep::{constraint::Unconstrained, data::{Batch, Batchable, extras::ExtraContainer}};
 
     #[test]
     fn init_test() {

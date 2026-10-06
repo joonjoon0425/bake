@@ -1,8 +1,10 @@
 //! A `Tape` struct for Vectorized Environment
-use crate::{data::{Batch, extras::ExtraContainer}, env::vec::VectorizedEnvironment};
+use crate::vectorized::VectorizedEnvironment;
+use bake_rl_core::deep::data::{Batch, extras::ExtraContainer};
 use burn::prelude::*;
+
 /// A `VecTape` struct for vectorized environment
-pub struct VecTape<Ve: VectorizedEnvironment> {
+pub struct Tape<Ve: VectorizedEnvironment> {
     // environments
     envs: Ve,
     /// current observations
@@ -22,7 +24,7 @@ pub struct VecTape<Ve: VectorizedEnvironment> {
     pub steps: Tensor<1>,
 }
 
-impl<Ve: VectorizedEnvironment> VecTape<Ve> {
+impl<Ve: VectorizedEnvironment> Tape<Ve> {
     /// create a new `VecTape` struct
     /// # Warning
     /// calls 'reset' on given environments

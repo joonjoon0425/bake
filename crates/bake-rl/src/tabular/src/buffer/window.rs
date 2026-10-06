@@ -2,8 +2,7 @@
 //! 
 
 use std::collections::VecDeque;
-
-use crate::{constraint::Constraint, data::Transition};
+use bake_rl_core::{constraint::Constraint, data::Transition};
 
 /// Window buffer for n step methods
 pub struct WindowBuffer<C: Constraint> {

@@ -1,18 +1,17 @@
-use bake_tabular::algorithm::NStepQLearning;
-use bake_tabular::env::CliffWalking;
-use bake_tabular::qtable::QTable;
-use bake_tabular::explore::EpsGreedy;
+use bake::rl::tabular::algorithm::NStepQLearning;
+use bake::rl::tabular::qtable::QTable;
+use bake::rl::tabular::explore::EpsGreedy;
+use bake::rl::tabular::buffer::window::WindowBuffer;
+use bake::rl::tabular::explore::Exploration;
 
-use bake_common::logger::MovingAvgLogger;
-use bake_common::scheduler::{LinearScheduler, Scheduler};
-use bake_tabular::buffer::window::WindowBuffer;
-use bake_tabular::env::Tape;
-use bake_tabular::explore::Exploration;
+use bake::rl::env::{Environment, EnvironmentConfiguration, TabularEnvironmentConfiguration, collection::CliffWalking, tape::Tape};
+use bake::rl::tabular::logger::MovingAvgLogger;
+use bake::rl::tabular::scheduler::{LinearScheduler, Scheduler};
 
 pub fn main() {
     let state = NStepQLearning { n: 3, gamma: 0.99, alpha: 0.02 };
-    let env = CliffWalking::new();
-    let mut qtable = QTable::new(env.n_states(), env.n_actions());
+    let env = CliffWalking::new().init();
+    let mut qtable = QTable::new(env.config().n_obs(), env.config().n_actions());
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;

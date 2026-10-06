@@ -1,7 +1,7 @@
 //! Action mask trait and implementations for masking
 use std::fmt::Debug;
 use burn::{Tensor, tensor::Bool};
-use crate::{constraint::Unconstrained, data::batchable::Batchable};
+use crate::deep::{constraint::Unconstrained, data::batchable::Batchable};
 
 /// Discrete constraint trait for discrete action types
 pub trait DiscreteConstraint<const D: usize = 2> : Debug + Clone + Batchable {
@@ -36,7 +36,7 @@ impl<const D: usize> DiscreteConstraint<D> for Unconstrained {
 #[cfg(test)]
 mod tests {
     use burn::{Tensor, tensor::Device};
-    use crate::constraint::discrete_constraint::{DiscreteConstraint, DiscreteMask};
+    use crate::deep::constraint::discrete_constraint::{DiscreteConstraint, DiscreteMask};
 
     #[test]
     fn apply_test() {

@@ -8,11 +8,8 @@ pub extern crate burn;
 
 pub mod algorithm;
 pub mod buffer;
-pub mod constraint;
 pub mod contract;
-pub mod data;
 pub mod distribution;
-pub mod env;
 pub mod explore;
 pub mod loss;
 pub mod net;
@@ -30,4 +27,14 @@ pub mod scheduler {
 pub mod macros {
     //! re-exportation of bake_macros
     pub use bake_macros::*;
+}
+
+pub mod data {
+    //! re-exportation of bake_rl_core::deep::data
+    pub use bake_rl_core::deep::data::*;
+}
+
+pub mod constraint {
+    //! re-exportation of bake_rl_core::deep::constraint
+    pub use bake_rl_core::deep::constraint::*;
 }

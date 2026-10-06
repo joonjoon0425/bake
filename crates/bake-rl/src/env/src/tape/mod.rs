@@ -1,11 +1,11 @@
 //! A helper struct which creates and saves the transition (s, a, r, s')
 //! 
 use std::collections::HashMap;
-
-use crate::{data::Transition, env::Environment};
+use bake_rl_core::{constraint::Constraint, data::Transition};
+use crate::Environment;
 
 /// A helper struct which helps creating and taking a step in training loop
-pub struct Tape<E: Environment> {
+pub struct Tape<E: Environment<Obs = usize, Action = usize, Constraint: Constraint>> {
     /// environment
     env: E,
     /// current observation
@@ -25,7 +25,7 @@ pub struct Tape<E: Environment> {
     pub steps: usize,
 }
 
-impl<E: Environment> Tape<E> {
+impl<E: Environment<Obs = usize, Action = usize, Constraint: Constraint>> Tape<E> {
     /// create new `Tape` object with given env.
     /// # Warning
     /// - the given `env`'s `return` is called once internally

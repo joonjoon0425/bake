@@ -1,9 +1,10 @@
 //! epsilon-greedy policy
 //!
+use bake_rl_core::deep::constraint::discrete_constraint::DiscreteConstraint;
 use burn::{Tensor, tensor::{Distribution, Int}};
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
-use crate::{constraint::discrete_constraint::DiscreteConstraint, contract::basic::DiscreteActionValue, explore::Exploration};
+use crate::{contract::basic::DiscreteActionValue, explore::Exploration};
 
 /// An epsilon-greedy policy implementation
 pub struct EpsGreedy {
@@ -43,8 +44,9 @@ impl Exploration for EpsGreedy {
 
 #[cfg(test)]
 mod tests {
-    use burn::{nn::activation::ActivationConfig::Relu, prelude::*};
-    use crate::{constraint::discrete_constraint::DiscreteMask, explore::{EpsGreedy, Exploration}, net::basic::MlpDiscreteQNet};
+    use bake_rl_core::deep::constraint::discrete_constraint::DiscreteMask;
+use burn::{nn::activation::ActivationConfig::Relu, prelude::*};
+    use crate::{explore::{EpsGreedy, Exploration}, net::basic::MlpDiscreteQNet};
 
     #[test]
     #[should_panic]

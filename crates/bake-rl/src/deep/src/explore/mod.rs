@@ -1,8 +1,8 @@
 //! Strategies for exploration
 //! 
+use bake_rl_core::deep::constraint::discrete_constraint::DiscreteConstraint;
+use crate::contract::basic::DiscreteActionValue;
 use burn::prelude::*;
-use crate::{constraint::discrete_constraint::DiscreteConstraint, contract::basic::DiscreteActionValue};
-
 /// A trait which all exploration strategies must implement
 pub trait Exploration {
     /// sample an action using given q-function, observation and constraint

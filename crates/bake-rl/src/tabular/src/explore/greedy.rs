@@ -2,7 +2,7 @@
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
 use crate::explore::Exploration;
-use crate::constraint::Constraint;
+use bake_rl_core::constraint::Constraint;
 use crate::qtable::{QTable, QValues};
 
 /// Greedy policy implementation

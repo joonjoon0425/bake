@@ -1,21 +1,24 @@
 //! A Synchronized Vector Environment Wrapper
-use crate::{data::Batchable, env::{Environment, vec::VectorizedEnvironment}};
+use bake_rl_core::deep::data::Batchable;
+use crate::Environment;
+use crate::vectorized::VectorizedEnvironment;
 use burn::prelude::*;
 /// A Synchronized Vector Environment Wrapper implementation for Non-vectorized environments
 pub struct SynchronizedEnvironment<E: Environment> {
     envs: Vec<E>,
+    device: Device,
     final_obss: Vec<E::Obs>,
     final_constraints: Vec<E::Constraint>,
 }
 
-impl<E: Environment> SynchronizedEnvironment<E> {
+impl<E: Environment<Obs: Batchable, Action: Batchable, Constraint: Batchable>> SynchronizedEnvironment<E> {
     /// create a new vectorized environment from given homogeneous environments
-    pub fn new(envs: Vec<E>) -> Self {
-        Self { envs, final_obss: vec![], final_constraints: vec![] }
+    pub fn new(envs: Vec<E>, device: Device) -> Self {
+        Self { envs, device, final_obss: vec![], final_constraints: vec![] }
     }
 }
 
-impl<E: Environment> VectorizedEnvironment for SynchronizedEnvironment<E> {
+impl<E: Environment<Obs: Batchable, Action: Batchable, Constraint: Batchable>> VectorizedEnvironment for SynchronizedEnvironment<E> {
     type Obs = E::Obs;
     type Action = E::Action;
     type Constraint = E::Constraint;
@@ -65,8 +68,8 @@ impl<E: Environment> VectorizedEnvironment for SynchronizedEnvironment<E> {
         ((Self::Obs::cat(obss), Self::Constraint::cat(constraints)), rewards, terminated, truncated, (Self::Obs::cat(final_obss), Self::Constraint::cat(final_constraints)))
     }
 
-    fn device(&self) -> burn::prelude::Device {
-        self.envs[0].device()
+    fn device(&self) -> Device {
+        self.device.clone()
     }
 }
 

@@ -4,9 +4,6 @@
 
 pub mod algorithm;
 pub mod buffer;
-pub mod constraint;
-pub mod data;
-pub mod env;
 pub mod explore;
 pub mod qtable;
 
