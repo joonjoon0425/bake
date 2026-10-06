@@ -3,7 +3,10 @@ resolver = "3"
 members = [
     "crates/*",
     "crates/rl",
-    "crates/rl/src/*"
+    "crates/rl/core",
+    "crates/rl/tabular",
+    "crates/rl/deep",
+    "crates/rl/env",
     ]
 
 [workspace.package]
