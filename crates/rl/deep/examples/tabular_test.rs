@@ -1,15 +1,16 @@
-use bake_deep::scheduler::{LinearScheduler, Scheduler};
-use bake_deep::buffer::replay::ReplayBufferConfig;
-use bake_deep::explore::{EpsGreedy, Exploration};
-use bake_deep::logger::MovingAvgLogger;
-use bake_deep::macros::qnet;
+use bake::rl::deep::scheduler::{LinearScheduler, Scheduler};
+use bake::rl::deep::buffer::replay::ReplayBufferConfig;
+use bake::rl::deep::explore::{EpsGreedy, Exploration};
+use bake::rl::deep::logger::MovingAvgLogger;
+use bake::rl::deep::macros::qnet;
+use bake::rl::deep::algorithm::Dqn;
+use bake::rl::deep::loss::LossFn;
+
 use burn::nn::{Linear, LinearConfig, Initializer::Zeros};
 use burn::optim::AdamConfig;
 use burn::prelude::*;
 
-use bake_deep::env::{MaskedCliffWalking, Tape};
-use bake_deep::algorithm::Dqn;
-use bake_deep::loss::LossFn;
+use bake::rl::env::{MaskedCliffWalking, vectorized::Tape};
 
 pub fn main() {
     println!("count,reward_avg,step_avg,loss,td_error,qmean,eps");

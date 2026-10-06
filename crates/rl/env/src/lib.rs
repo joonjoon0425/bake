@@ -14,10 +14,6 @@ pub trait Environment {
     type Action;
     /// the constraint of which the environment produces
     type Constraint;
-    /// create a new environment configuration
-    fn new() -> Self::EnvConfig;
-    /// build itself from configuration
-    fn build(config: Self::EnvConfig) -> Self;
     /// reset the environment
     fn reset(&mut self) -> (Self::Obs, Self::Constraint);
     /// take one step and returns the tuple ((obs, constraint), reward, terminated, truncated)

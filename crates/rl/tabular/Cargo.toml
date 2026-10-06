@@ -12,5 +12,5 @@ bake-rl-core.workspace = true
 rand.workspace = true
 
 [dev-dependencies]
-bake = { workspace = true, features = ["rl"] }
+bake = { workspace = true, features = ["rl-tabular"] }
 bake-rl-env = { workspace = true }

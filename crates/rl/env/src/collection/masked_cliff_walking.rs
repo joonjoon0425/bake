@@ -25,14 +25,6 @@ impl Environment for MaskedCliffWalking {
     type Action = usize;
     type EnvConfig = MaskedCliffWalkingConfig;
 
-    fn new() -> Self::EnvConfig {
-        MaskedCliffWalkingConfig
-    }
-
-    fn build(config: Self::EnvConfig) -> Self {
-        Self { pos: (0, 0), config }
-    }
-
     fn reset(&mut self) -> (usize, Self::Constraint) {
         self.pos = (0, 0);
         (self.pos2usize(), DiscreteMask::from_bool([false, true, false, true]))
@@ -87,10 +79,15 @@ impl Environment for MaskedCliffWalking {
 }
 /// configuration for masked cliffwalking
 pub struct MaskedCliffWalkingConfig;
+impl MaskedCliffWalkingConfig {
+    /// create a new configuration
+    pub fn new() -> Self { Self }
+}
+
 impl EnvironmentConfiguration for MaskedCliffWalkingConfig {
     type Env = MaskedCliffWalking;
     fn init(self) -> Self::Env {
-        Self::Env::build(self)
+        Self::Env { pos: (0, 0), config: self }
     }
 }
 
@@ -106,20 +103,20 @@ impl TabularEnvironmentConfiguration for MaskedCliffWalkingConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::{{Environment, EnvironmentConfiguration}, collection::MaskedCliffWalking};
+    use crate::{{Environment, EnvironmentConfiguration}, collection::MaskedCliffWalkingConfig};
     use bake_rl_tabular::{explore::{EpsGreedy, Exploration}, qtable::QTable};
 
     #[test]
     #[should_panic]
     fn invalid_action() {
-        let mut env = MaskedCliffWalking::new().init();
+        let mut env = MaskedCliffWalkingConfig::new().init();
         env.reset();
         env.step(5);
     }
 
     #[test]
     fn udlr() {
-        let mut env = MaskedCliffWalking::new().init();
+        let mut env = MaskedCliffWalkingConfig::new().init();
         env.reset();
         let ((pos, _), _, _, _) = env.step(1);
         assert_eq!(pos, 12);
@@ -131,7 +128,7 @@ mod tests {
 
     #[test]
     fn cliff_to_start() {
-        let mut env = MaskedCliffWalking::new().init();
+        let mut env = MaskedCliffWalkingConfig::new().init();
         env.reset();
         let ((pos, _), _, _, _) = env.step(3);
         assert_eq!(pos, 0)
@@ -139,7 +136,7 @@ mod tests {
 
     #[test]
     fn goal_terminate_reward() {
-        let mut env = MaskedCliffWalking::new().init();
+        let mut env = MaskedCliffWalkingConfig::new().init();
         env.reset();
 
         let (pos, reward, terminated, _) = env.step(1); // (0, 1)
@@ -175,7 +172,7 @@ mod tests {
         let qtable = QTable::new(48, 4);
         let mut exploration = EpsGreedy::new(1, 1.0);
 
-        let mut env = MaskedCliffWalking::new().init();
+        let mut env = MaskedCliffWalkingConfig::new().init();
         let (obs, constraint) = env.reset();
 
         for _ in 0..1000 {

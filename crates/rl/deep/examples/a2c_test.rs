@@ -1,7 +1,13 @@
-use bake_common::logger::MovingAvgLogger;
-use bake_deep::{
-    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator}, buffer::RolloutBuffer, contract::basic::Policy, env::{CartPole, Tape}, loss::LossFn, net::basic::MlpSeparatedActorCritic,
+use bake::rl::deep::{
+    algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator},
+    buffer::RolloutBuffer,
+    contract::basic::Policy,
+    loss::LossFn,
+    logger::MovingAvgLogger,
+    net::basic::MlpSeparatedActorCritic,
 };
+use bake::rl::env::vectorized::Tape;
+
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
 

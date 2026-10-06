@@ -18,11 +18,11 @@ bake = { path = "crates/bake" }
 bake-common = { path = "crates/bake-common" }
 bake-macros = { path = "crates/bake-macros" }
 bake-rl = { path = "crates/rl", default-features = false }
-bake-rl-deep = { path = "crates/rl/src/deep" }
-bake-rl-tabular = { path = "crates/rl/src/tabular" }
-bake-rl-env = { path = "crates/rl/src/env" }
-bake-rl-env-gym = { path = "crates/rl/src/gym" }
-bake-rl-core = { path = "crates/rl/src/core" }
+bake-rl-deep = { path = "crates/rl/deep" }
+bake-rl-tabular = { path = "crates/rl/tabular" }
+bake-rl-env = { path = "crates/rl/env" }
+bake-rl-env-gym = { path = "crates/rl/gym" }
+bake-rl-core = { path = "crates/rl/core" }
 
 burn = { version = "0.22.0-pre.4", features = ["flex", "linalg"] }
 rand = "0.10.2"

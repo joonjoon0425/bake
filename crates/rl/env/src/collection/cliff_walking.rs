@@ -24,14 +24,6 @@ impl Environment for CliffWalking {
     type Action = usize;
     type EnvConfig = CliffWalkingConfig;
 
-    fn new() -> Self::EnvConfig {
-        CliffWalkingConfig
-    }
-
-    fn build(config: Self::EnvConfig) -> Self {
-        Self { pos: (0, 0), config }
-    }
-
     fn reset(&mut self) -> (usize, Self::Constraint) {
         self.pos = (0, 0);
         (self.pos2usize(), Unconstrained)
@@ -73,10 +65,15 @@ impl Environment for CliffWalking {
 
 /// configuration for cliffwalking
 pub struct CliffWalkingConfig;
+impl CliffWalkingConfig {
+    /// create a new configuration
+    pub fn new() -> Self { Self }
+}
+
 impl EnvironmentConfiguration for CliffWalkingConfig {
     type Env = CliffWalking;
     fn init(self) -> Self::Env {
-        Self::Env::build(self)
+        Self::Env { pos: (0, 0), config: self }
     }
 }
 
@@ -92,19 +89,19 @@ impl TabularEnvironmentConfiguration for CliffWalkingConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::{collection::CliffWalking, Environment, EnvironmentConfiguration };
+    use crate::{Environment, EnvironmentConfiguration, collection::CliffWalkingConfig };
 
     #[test]
     #[should_panic]
     fn invalid_action() {
-        let mut env = CliffWalking::new().init();
+        let mut env = CliffWalkingConfig::new().init();
         env.reset();
         env.step(5);
     }
 
     #[test]
     fn udlr() {
-        let mut env = CliffWalking::new().init();
+        let mut env = CliffWalkingConfig::new().init();
         env.reset();
         let ((pos, _), _, _, _) = env.step(1);
         assert_eq!(pos, 12);
@@ -116,7 +113,7 @@ mod tests {
 
     #[test]
     fn cliff_to_start() {
-        let mut env = CliffWalking::new().init();
+        let mut env = CliffWalkingConfig::new().init();
         env.reset();
         let ((pos, _), _, _, _) = env.step(3);
         assert_eq!(pos, 0)
@@ -124,7 +121,7 @@ mod tests {
 
     #[test]
     fn goal_terminate_reward() {
-        let mut env = CliffWalking::new().init();
+        let mut env = CliffWalkingConfig::new().init();
         env.reset();
 
         let (pos, reward, terminated, _) = env.step(1); // (0, 1)

@@ -11,8 +11,7 @@ bake-common.workspace = true
 bake-rl = { workspace = true, default-features = false }
 
 [features]
-rl = ["rl-deep", "rl-tabular"]
 rl-tabular = ["bake-rl/tabular"]
 rl-deep = ["bake-rl/deep"]
 rl-gym = ["bake-rl/gym"]
-rl-full = ["rl", "rl-gym"]
+rl-full = ["rl-tabular", "rl-deep", "rl-gym"]
