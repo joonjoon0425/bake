@@ -9,10 +9,8 @@ repository.workspace = true
 [dependencies]
 pyo3.workspace = true
 numpy.workspace = true
-burn.workspace = true
 rand.workspace = true
-bake-rl-env.workspace = true
-bake-rl-deep = { workspace = true, optional = true }
+bake-rl-core.workspace = true
 
 [build-dependencies]
 pyo3-build-config = "0.29.2"

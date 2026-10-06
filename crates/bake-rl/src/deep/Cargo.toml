@@ -9,7 +9,7 @@ repository.workspace = true
 [dependencies]
 bake-common.workspace = true
 bake-macros.workspace = true
-bake-rl-env.workspace = true
+bake-rl-core = { workspace = true, features = ["deep"] }
 
 burn.workspace = true
 rand.workspace = true

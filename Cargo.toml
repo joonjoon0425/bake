@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/*",
     "crates/bake-rl",
+    "crates/bake-rl/src/*"
     ]
 
 [workspace.package]
@@ -20,6 +21,7 @@ bake-rl-deep = { path = "crates/bake-rl/src/deep" }
 bake-rl-tabular = { path = "crates/bake-rl/src/tabular" }
 bake-rl-env = { path = "crates/bake-rl/src/env" }
 bake-rl-env-gym = { path = "crates/bake-rl/src/gym" }
+bake-rl-core = { path = "crates/bake-rl/src/core" }
 
 burn = { version = "0.22.0-pre.4", features = ["flex", "linalg"] }
 rand = "0.10.2"

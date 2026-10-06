@@ -9,11 +9,12 @@ repository.workspace = true
 [dependencies]
 bake-rl-deep = { workspace = true, optional = true }
 bake-rl-tabular = { workspace = true, optional = true }
+bake-rl-core.workspace = true
 bake-rl-env.workspace = true
 bake-rl-env-gym = { workspace = true, optional = true }
 
 [features]
 default = ["deep"]
-deep = ["dep:bake-rl-deep", "bake-rl-env/deep"]
+deep = ["dep:bake-rl-deep", "bake-rl-env/deep", "bake-rl-core/deep"]
 tabular = ["dep:bake-rl-tabular"]
 gym = ["dep:bake-rl-env-gym"]
