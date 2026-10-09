@@ -14,7 +14,7 @@ pub trait Constraint: Clone + Copy {
 
 /// Discrete constraint
 #[derive(Debug, Clone, Copy)]
-pub struct DiscreteMask<const D: usize>([bool; D]);
+pub struct DiscreteMask<const D: usize>(pub [bool; D]);
 
 impl<const D: usize> DiscreteMask<D> {
     /// create a new DiscreteMask as [enabled; D]

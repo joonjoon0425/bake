@@ -245,8 +245,6 @@ cargo run --release --example ppo_lunarlander
 |reinforce_test|`CartPole`|[code](crates/bake-deep/examples/reinforce_test.rs)|
 |a2c_test|`CartPole`|[code](crates/bake-deep/examples/a2c_test.rs)|
 |ppo_test|`CartPole`|[code](crates/bake-deep/examples/ppo_test.rs)|
-|tabular_test|`MaskedCliffWalking`|[code](crates/bake-deep/examples/tabular_test.rs)|
-|vec_env_test|`SynchronizedEnvironment<CartPole>`|[code](crates/bake-deep/examples/vec_env_test.rs)|
 
 #### Deep RL: Gymnasium Environments
 |Example name|Environment|Code|

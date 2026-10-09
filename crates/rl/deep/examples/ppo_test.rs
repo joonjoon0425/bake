@@ -8,10 +8,9 @@ use bake::rl::deep::{
     loss::LossFn,
     net::basic::MlpSeparatedActorCritic
 };
-use bake::rl::env::{
-    CartPole,
-    vectorized::Tape,
-};
+
+use bake::rl::env::vectorized::{Tape, sync_env::SynchronizedEnvironment};
+use bake::rl::env::collection::{CartPole, CartPoleConfig};
 
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};
 use rand::{SeedableRng, rngs::SmallRng, seq::SliceRandom};
@@ -23,7 +22,7 @@ pub fn main() {
     let mut rng = SmallRng::seed_from_u64(seed);
     
     let state = Ppo { gamma: 0.99, c_e: 0.02, c_c: 0.0, eps: 0.2, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: LossFn::MseLoss };
-    let env = CartPole::new(seed, &device);
+    let env = SynchronizedEnvironment::<CartPole>::new(vec![CartPoleConfig::new()], &device);
     let mut actor_critic = MlpSeparatedActorCritic::new(&[4, 128, 2], Relu, &device);
 
     let lr_a = 1e-4;
@@ -39,7 +38,7 @@ pub fn main() {
     logger.register("step", 100);
 
     for count in 0..=500000 {
-        let dist = actor_critic.dist(tape.obs.clone(), tape.constraint.clone());
+        let dist = actor_critic.dist(tape.obss.clone(), tape.constraints.clone());
         let action = dist.sample();
         let mut t = tape.step(action.clone());
         t.insert::<LogProb>(dist.log_probs(action));
@@ -63,10 +62,12 @@ pub fn main() {
             }
             
         }
-        if tape.done() {
-            logger.push_single("reward", tape.episode_reward, None);
-            logger.push_single("step", tape.steps as f32, None);
-            tape.reset();
+
+        // logging episodic rewards and steps
+        let (r, s) = tape.finished_reward_steps();
+        for (reward, step) in r.iter().zip(s.iter()) {
+            logger.push_single("reward", *reward, None);
+            logger.push_single("step", *step, None);
         }
         
         if count % 5000 == 0 {

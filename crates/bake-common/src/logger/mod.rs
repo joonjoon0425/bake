@@ -76,7 +76,10 @@ impl MovingAvgLogger {
             let moving_avg = moving_avg.unwrap();
             moving_avg.sum / moving_avg.values.len() as f32
         } else {
-            eprintln!("[MovingAvgLogger]: given name {name} was not registered");
+            eprintln!("[MovingAvgLogger]: given name {name} was not registered. Registered names are:");
+            for (name, _) in &self.moving_avg {
+                eprintln!("{name}")
+            }
             f32::NAN
         }
     }

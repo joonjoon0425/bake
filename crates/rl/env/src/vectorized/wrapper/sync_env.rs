@@ -1,27 +1,38 @@
 //! A Synchronized Vector Environment Wrapper
 use bake_rl_core::deep::data::Batchable;
-use crate::Environment;
+use crate::vectorized::element::BatchableElement;
+use crate::{Environment, EnvironmentConfiguration};
 use crate::vectorized::VectorizedEnvironment;
 use burn::prelude::*;
 /// A Synchronized Vector Environment Wrapper implementation for Non-vectorized environments
-pub struct SynchronizedEnvironment<E: Environment> {
+pub struct SynchronizedEnvironment<E>
+where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint: BatchableElement>
+{
     envs: Vec<E>,
     device: Device,
-    final_obss: Vec<E::Obs>,
-    final_constraints: Vec<E::Constraint>,
+    final_obss: Vec<<E::Obs as BatchableElement>::Batched>,
+    final_constraints: Vec<<E::Constraint as BatchableElement>::Batched>,
 }
 
-impl<E: Environment<Obs: Batchable, Action: Batchable, Constraint: Batchable>> SynchronizedEnvironment<E> {
-    /// create a new vectorized environment from given homogeneous environments
-    pub fn new(envs: Vec<E>, device: Device) -> Self {
-        Self { envs, device, final_obss: vec![], final_constraints: vec![] }
+impl<E> SynchronizedEnvironment<E>
+where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint: BatchableElement>
+{
+    /// create a new vectorized environment from given environment configurations
+    pub fn new(configs: Vec<E::EnvConfig>, device: &Device) -> Self {
+        let mut envs = Vec::with_capacity(configs.len());
+        for config in configs {
+            envs.push(config.init());
+        }
+        SynchronizedEnvironment::<<E::EnvConfig as EnvironmentConfiguration>::Env> { envs, device: device.clone(), final_obss: vec![], final_constraints: vec![]}
     }
 }
 
-impl<E: Environment<Obs: Batchable, Action: Batchable, Constraint: Batchable>> VectorizedEnvironment for SynchronizedEnvironment<E> {
-    type Obs = E::Obs;
-    type Action = E::Action;
-    type Constraint = E::Constraint;
+impl<E> VectorizedEnvironment for SynchronizedEnvironment<E> 
+where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint: BatchableElement>
+{
+    type Obs = <E::Obs as BatchableElement>::Batched;
+    type Action = <E::Action as BatchableElement>::Batched;
+    type Constraint = <E::Constraint as BatchableElement>::Batched;
 
     fn n_envs(&self) -> usize {
         self.envs.len()    
@@ -33,13 +44,13 @@ impl<E: Environment<Obs: Batchable, Action: Batchable, Constraint: Batchable>> V
         let mut constraints = Vec::with_capacity(n_envs);
         for env in &mut self.envs {
             let (obs, constraint) = env.reset();
-            obss.push(obs);
-            constraints.push(constraint);
+            obss.push(obs.to_batchable(&self.device));
+            constraints.push(constraint.to_batchable(&self.device));
         }
         (Self::Obs::cat(obss), Self::Constraint::cat(constraints))
     }
 
-    fn step(&mut self, actions: <E as Environment>::Action) -> ((<E as Environment>::Obs, <E as Environment>::Constraint), Tensor<1>, Tensor<1>, Tensor<1>, (<E as Environment>::Obs, <E as Environment>::Constraint)) {
+    fn step(&mut self, actions: Self::Action) -> ((Self::Obs, Self::Constraint), Tensor<1>, Tensor<1>, Tensor<1>, (Self::Obs, Self::Constraint)) {
         let n_envs = self.n_envs();
         let mut obss = Vec::with_capacity(n_envs);
         let mut constraints = Vec::with_capacity(n_envs);
@@ -48,12 +59,12 @@ impl<E: Environment<Obs: Batchable, Action: Batchable, Constraint: Batchable>> V
         let mut truncated = Vec::with_capacity(n_envs);
         for i in 0..n_envs {
             let action = actions.clone().slice(i..i + 1);
-            let ((mut obs, mut constraint), reward, term, trunc) = self.envs[i].step(action);
-            self.final_obss.push(obs.clone());
-            self.final_constraints.push(constraint.clone());
+            let ((mut obs, mut constraint), reward, term, trunc) = self.envs[i].step(E::Action::to_raw(action));
+            self.final_obss.push(obs.clone().to_batchable(&self.device));
+            self.final_constraints.push(constraint.clone().to_batchable(&self.device));
             if term || trunc { (obs, constraint) = self.envs[i].reset() }
-            obss.push(obs);
-            constraints.push(constraint);
+            obss.push(obs.to_batchable(&self.device));
+            constraints.push(constraint.to_batchable(&self.device));
             rewards.push(reward);
             terminated.push(if term { 1f32 } else { 0f32 });
             truncated.push(if trunc { 1f32 } else { 0f32 });
@@ -76,18 +87,18 @@ impl<E: Environment<Obs: Batchable, Action: Batchable, Constraint: Batchable>> V
 #[cfg(test)]
 mod tests {
     use burn::prelude::*;
-    use crate::env::{CartPole, vec::{SynchronizedEnvironment, VectorizedEnvironment}};
+    use crate::{collection::{CartPole, CartPoleConfig}, vectorized::{VectorizedEnvironment, wrapper::sync_env::SynchronizedEnvironment}};
 
     #[test]
     fn env_does_run_test() {
         let device = Device::default();
         device.seed(0);
         let seeds = [1u64, 2, 3, 4, 5];
-        let mut envs = Vec::with_capacity(seeds.len());
+        let mut configs = Vec::with_capacity(seeds.len());
         for seed in seeds {
-            envs.push(CartPole::new(seed, &device));
+            configs.push(CartPoleConfig::new().seed(seed));
         }
-        let mut envs = SynchronizedEnvironment::new(envs);
+        let mut envs = SynchronizedEnvironment::<CartPole>::new(configs, &device);
         envs.reset_all();
         for k in 0..50 {
             let actions = Tensor::from_ints([0, 0, 0, 0, 0], &device);

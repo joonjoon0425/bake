@@ -6,7 +6,8 @@ use bake::rl::deep::net::basic::MlpDiscreteQNet;
 use bake::rl::deep::algorithm::Dqn;
 use bake::rl::deep::loss::LossFn;
 
-use bake::rl::env::{CartPole, vectorized::Tape};
+use bake::rl::env::vectorized::{Tape, sync_env::SynchronizedEnvironment};
+use bake::rl::env::collection::{CartPole, CartPoleConfig};
 
 use burn::prelude::*;
 use burn::optim::AdamConfig;
@@ -17,7 +18,7 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
-    let env = CartPole::new(seed, &device);
+    let env = SynchronizedEnvironment::<CartPole>::new(vec![CartPoleConfig::new()], &device);
     let state = Dqn{ gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = MlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &device);
     let mut target = online.clone();
@@ -44,7 +45,7 @@ pub fn main() {
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..=total_steps {
-        let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
+        let action = exploration.sample(&online, tape.obss.clone(), tape.constraints.clone());
         let t = tape.step(action);
         buffer.push(t);
 
@@ -59,10 +60,11 @@ pub fn main() {
             target = online.clone();
         }
 
-        if tape.done() {
-            logger.push_single("reward", tape.episode_reward, None);
-            logger.push_single("step", tape.steps as f32, None);
-            tape.reset();
+        // logging episodic rewards and steps
+        let (r, s) = tape.finished_reward_steps();
+        for (reward, step) in r.iter().zip(s.iter()) {
+            logger.push_single("reward", *reward, None);
+            logger.push_single("step", *step, None);
         }
 
         if count % 5000 == 0 {

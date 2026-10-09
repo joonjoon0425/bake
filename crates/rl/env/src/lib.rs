@@ -25,7 +25,7 @@ pub trait Environment {
 /// Environment configuration trait
 pub trait EnvironmentConfiguration {
     /// the type of environment which the configuration is about
-    type Env: Environment;
+    type Env: Environment<EnvConfig = Self>;
     /// create a new environment
     fn init(self) -> Self::Env;
 }
@@ -37,22 +37,34 @@ pub trait TabularEnvironmentConfiguration : EnvironmentConfiguration<Env: Enviro
     fn n_actions(&self) -> usize;
 }
 /// Configuration for Discrete action environments
-pub trait DiscreteEnvironmentConfiguration<const O: usize> : EnvironmentConfiguration {
-    /// shape of observation (may change later since this only supports 1-dimensional observations)
-    fn obs_shape(&self) -> [usize; O];
+pub trait DiscreteEnvironmentConfiguration<const OBS_RANK: usize> : EnvironmentConfiguration {
+    /// the shape of the observation
+    const OBS_SHAPE: [usize; OBS_RANK];
+    /// shape of observation 
+    fn obs_shape(&self) -> [usize; OBS_RANK] {
+        Self::OBS_SHAPE
+    }
     /// range of observation
     fn obs_range(&self) -> (<Self::Env as Environment>::Obs, <Self::Env as Environment>::Obs);
     /// total number of actions
     fn n_actions(&self) -> usize;
 }
 /// Configuration for Continuous action environments
-pub trait ContinuousEnvironmentConfiguration<const O: usize, const A: usize> : EnvironmentConfiguration {
-    /// shape of observation (may change later since this only supports 1-dimensional observations)
-    fn obs_shape(&self) -> [usize; O];
+pub trait ContinuousEnvironmentConfiguration<const OBS_RANK: usize, const ACTION_RANK: usize> : EnvironmentConfiguration {
+    /// the shape of the observation
+    const OBS_SHAPE: [usize; OBS_RANK];
+    /// the shape of the action
+    const ACTION_SHAPE: [usize; ACTION_RANK];
+    /// shape of observation 
+    fn obs_shape(&self) -> [usize; OBS_RANK] {
+        Self::OBS_SHAPE
+    }
     /// range of observation
     fn obs_range(&self) -> (<Self::Env as Environment>::Obs, <Self::Env as Environment>::Obs);
-    /// shape of action (may change later since this only supports 1-dimensional action)
-    fn action_shape(&self) -> [usize; A];
+    /// shape of action 
+    fn action_shape(&self) -> [usize; ACTION_RANK] {
+        Self::ACTION_SHAPE
+    }
     /// range of action
     fn action_range(&self) -> (<Self::Env as Environment>::Action, <Self::Env as Environment>::Action);
 }
