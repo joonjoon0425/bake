@@ -2,6 +2,7 @@
 #![warn(missing_docs)]
 pub mod collection;
 pub mod tape;
+pub mod wrapper;
 /// Environment trait which all environments must implement
 /// # Warning
 /// - The environment is basically non-vectorzied

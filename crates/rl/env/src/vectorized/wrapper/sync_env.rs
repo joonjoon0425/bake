@@ -18,12 +18,12 @@ impl<E> SynchronizedEnvironment<E>
 where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint: BatchableElement>
 {
     /// create a new vectorized environment from given environment configurations
-    pub fn new(configs: Vec<E::EnvConfig>, device: &Device) -> Self {
+    pub fn new<C: EnvironmentConfiguration<Env = E>>(configs: Vec<C>, device: &Device) -> Self {
         let mut envs = Vec::with_capacity(configs.len());
         for config in configs {
             envs.push(config.init());
         }
-        SynchronizedEnvironment::<<E::EnvConfig as EnvironmentConfiguration>::Env> { envs, device: device.clone(), final_obss: vec![], final_constraints: vec![]}
+        Self { envs, device: device.clone(), final_obss: vec![], final_constraints: vec![]}
     }
 }
 
@@ -87,7 +87,7 @@ where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint
 #[cfg(test)]
 mod tests {
     use burn::prelude::*;
-    use crate::{collection::{CartPole, CartPoleConfig}, vectorized::{VectorizedEnvironment, wrapper::sync_env::SynchronizedEnvironment}};
+    use crate::{collection::CartPoleConfig, vectorized::{VectorizedEnvironment, wrapper::sync_env::SynchronizedEnvironment}};
 
     #[test]
     fn env_does_run_test() {
@@ -98,7 +98,7 @@ mod tests {
         for seed in seeds {
             configs.push(CartPoleConfig::new().seed(seed));
         }
-        let mut envs = SynchronizedEnvironment::<CartPole>::new(configs, &device);
+        let mut envs = SynchronizedEnvironment::new(configs, &device);
         envs.reset_all();
         for k in 0..50 {
             let actions = Tensor::from_ints([0, 0, 0, 0, 0], &device);

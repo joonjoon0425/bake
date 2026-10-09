@@ -8,7 +8,7 @@ use bake::rl::deep::scheduler::{LinearScheduler, Scheduler};
 use bake::rl::deep::algorithm::Dqn;
 use bake::rl::deep::loss::LossFn;
 use bake::rl::env::vectorized::{Tape, sync_env::SynchronizedEnvironment};
-use bake::rl::env::collection::{CartPole, CartPoleConfig};
+use bake::rl::env::collection::CartPoleConfig;
 
 use burn::optim::AdamConfig;
 use burn::prelude::*;
@@ -19,7 +19,7 @@ pub fn main() {
     let seed: u64 = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(12);
     let device = Device::default();
     device.seed(seed);
-    let env = SynchronizedEnvironment::<CartPole>::new(vec![CartPoleConfig::new()], &device);
+    let env = SynchronizedEnvironment::new(vec![CartPoleConfig::new()], &device);
     let config = Dqn{ gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = NoisyMlpDiscreteQNet::new(&[4, 128, 84, 2], Relu, &device);
     let mut target = online.clone();

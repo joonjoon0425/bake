@@ -7,7 +7,7 @@ use bake::rl::deep::{
     net::basic::MlpSeparatedActorCritic,
 };
 use bake::rl::env::vectorized::{Tape, sync_env::SynchronizedEnvironment};
-use bake::rl::env::collection::{CartPole, CartPoleConfig};
+use bake::rl::env::collection::CartPoleConfig;
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, tensor::Device};
 
 
@@ -17,7 +17,7 @@ pub fn main() {
     device.seed(seed);
     
     let state = A2C { gamma: 0.99, c_e: 0.02, c_c: 0.0, advantage: AdvantageEstimator::Gae { lambda: 0.95, n_envs: 1 }, loss_fn: LossFn::MseLoss };
-    let env = SynchronizedEnvironment::<CartPole>::new(vec![CartPoleConfig::new()], &device);
+    let env = SynchronizedEnvironment::new(vec![CartPoleConfig::new()], &device);
     let mut actor_critic = MlpSeparatedActorCritic::new(&[4, 128, 2], Relu, &device);
 
     let lr_a = 1e-4;
