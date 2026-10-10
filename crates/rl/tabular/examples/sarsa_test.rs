@@ -4,12 +4,12 @@ use bake::rl::tabular::explore::{EpsGreedy, Exploration};
 
 use bake::rl::tabular::logger::MovingAvgLogger;
 use bake::rl::tabular::scheduler::{LinearScheduler, Scheduler};
-use bake::rl::env::{Environment, EnvironmentConfiguration, TabularEnvironmentConfiguration, collection::CliffWalkingConfig, tape::Tape};
+use bake::rl::env::{TabularEnvironment, EnvironmentConfiguration, collection::CliffWalkingConfig, tape::Tape};
 
 pub fn main() {
     let state = Sarsa { gamma: 0.99, alpha: 0.4 };
     let env = CliffWalkingConfig::new().init();
-    let mut qtable = QTable::new(env.config().n_obs(), env.config().n_actions());
+    let mut qtable = QTable::new(env.n_obs(), env.n_actions());
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;

@@ -7,7 +7,7 @@
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use bake_rl_core::constraint::Unconstrained;
 use crate::Environment;
-use crate::DiscreteEnvironmentConfiguration;
+use crate::DiscreteEnvironment;
 use crate::EnvironmentConfiguration;
  
 const GRAVITY: f32 = 9.8;
@@ -47,7 +47,6 @@ pub struct CartPole {
     theta_dot: f32,
     steps: u32,
     rng: StdRng,
-    config: CartPoleConfig,
     /// Pre-built all-true mask. Cloning a tensor clones a handle, not the buffer,
     /// so this avoids rebuilding it on every step.
     mask: <Self as Environment>::Constraint,
@@ -69,7 +68,6 @@ impl Environment for CartPole {
     type Obs = [f32; 4];
     type Action = usize;
     type Constraint = Unconstrained<2>;
-    type EnvConfig = CartPoleConfig;
 
     fn reset(&mut self) -> (Self::Obs, Self::Constraint) {
         let mut sample = || self.rng.random_range(-INIT_RANGE..INIT_RANGE);
@@ -116,10 +114,6 @@ impl Environment for CartPole {
             truncated,
         )
     }
-
-    fn config(&self) -> &Self::EnvConfig {
-        &self.config
-    }
 }
 
 /// configuration struct for `CartPole` environment
@@ -143,6 +137,14 @@ impl CartPoleConfig {
     } 
 }
 
+impl DiscreteEnvironment for CartPole {
+    fn obs_shape(&self) -> Vec<usize> { vec![4] }
+    fn n_actions(&self) -> usize { 2 }
+    fn obs_range(&self) -> (Self::Obs, Self::Obs) { 
+        ([-f32::INFINITY; 4], [f32::INFINITY; 4])
+    }
+}
+
 impl EnvironmentConfiguration for CartPoleConfig {
     type Env = CartPole;
     fn init(self) -> Self::Env {
@@ -154,15 +156,6 @@ impl EnvironmentConfiguration for CartPoleConfig {
             steps: 0,
             rng: StdRng::seed_from_u64(*self.seed.as_ref().unwrap_or(&12)),
             mask: Unconstrained,
-            config: self
         }
-    }
-}
-
-impl DiscreteEnvironmentConfiguration<1> for CartPoleConfig {
-    const OBS_SHAPE: [usize; 1] = [4];
-    fn n_actions(&self) -> usize { 2 }
-    fn obs_range(&self) -> (<Self::Env as Environment>::Obs, <Self::Env as Environment>::Obs) { 
-        ([-f32::INFINITY; 4], [f32::INFINITY; 4])
     }
 }

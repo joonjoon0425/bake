@@ -6,16 +6,14 @@ use crate::vectorized::VectorizedEnvironment;
 use burn::prelude::*;
 /// A Synchronized Vector Environment Wrapper implementation for Non-vectorized environments
 pub struct SynchronizedEnvironment<E>
-where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint: BatchableElement>
+where E: Environment
 {
     envs: Vec<E>,
     device: Device,
-    final_obss: Vec<<E::Obs as BatchableElement>::Batched>,
-    final_constraints: Vec<<E::Constraint as BatchableElement>::Batched>,
 }
 
 impl<E> SynchronizedEnvironment<E>
-where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint: BatchableElement>
+where E: Environment
 {
     /// create a new vectorized environment from given environment configurations
     pub fn new<C: EnvironmentConfiguration<Env = E>>(configs: Vec<C>, device: &Device) -> Self {
@@ -23,7 +21,7 @@ where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint
         for config in configs {
             envs.push(config.init());
         }
-        Self { envs, device: device.clone(), final_obss: vec![], final_constraints: vec![]}
+        Self { envs, device: device.clone() }
     }
 }
 
@@ -57,11 +55,13 @@ where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint
         let mut rewards = Vec::with_capacity(n_envs);
         let mut terminated = Vec::with_capacity(n_envs);
         let mut truncated = Vec::with_capacity(n_envs);
+        let mut final_obss = vec![];
+        let mut final_constraints = vec![];
         for i in 0..n_envs {
             let action = actions.clone().slice(i..i + 1);
             let ((mut obs, mut constraint), reward, term, trunc) = self.envs[i].step(E::Action::to_raw(action));
-            self.final_obss.push(obs.clone().to_batchable(&self.device));
-            self.final_constraints.push(constraint.clone().to_batchable(&self.device));
+            final_obss.push(obs.clone().to_batchable(&self.device));
+            final_constraints.push(constraint.clone().to_batchable(&self.device));
             if term || trunc { (obs, constraint) = self.envs[i].reset() }
             obss.push(obs.to_batchable(&self.device));
             constraints.push(constraint.to_batchable(&self.device));
@@ -72,10 +72,6 @@ where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint
         let rewards = Tensor::from_floats(rewards.as_slice(), &self.device());
         let terminated = Tensor::from_floats(terminated.as_slice(), &self.device());
         let truncated = Tensor::from_floats(truncated.as_slice(), &self.device());
-        let final_obss = self.final_obss.clone();
-        let final_constraints = self.final_constraints.clone();
-        self.final_obss.clear();
-        self.final_constraints.clear();
         ((Self::Obs::cat(obss), Self::Constraint::cat(constraints)), rewards, terminated, truncated, (Self::Obs::cat(final_obss), Self::Constraint::cat(final_constraints)))
     }
 
