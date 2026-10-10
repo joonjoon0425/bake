@@ -6,9 +6,12 @@
 //! (e.g. dueling) can be exercised on an unmasked task.
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use bake_rl_core::constraint::Unconstrained;
+use ndarray::prelude::*;
+
 use crate::Environment;
-use crate::DiscreteEnvironment;
 use crate::EnvironmentConfiguration;
+use crate::space::DiscreteSpace;
+use crate::space::continuous::NdArrayContinuousSpace;
  
 const GRAVITY: f32 = 9.8;
 const MASS_CART: f32 = 1.0;
@@ -50,12 +53,15 @@ pub struct CartPole {
     /// Pre-built all-true mask. Cloning a tensor clones a handle, not the buffer,
     /// so this avoids rebuilding it on every step.
     mask: <Self as Environment>::Constraint,
+
+    obs_space: NdArrayContinuousSpace,
+    action_space: DiscreteSpace,
 }
  
 impl CartPole {
     /// Build the observation tensor from the current state.
-    fn obs(&self) -> [f32; 4] {
-            [self.x, self.x_dot, self.theta, self.theta_dot]
+    fn obs(&self) -> ArrayD<f32> {
+            arr1(&[self.x, self.x_dot, self.theta, self.theta_dot]).into_dyn()
     }
  
     /// Whether the current state is outside the failure thresholds.
@@ -65,11 +71,11 @@ impl CartPole {
 }
  
 impl Environment for CartPole {
-    type Obs = [f32; 4];
-    type Action = usize;
+    type ObsSpace = NdArrayContinuousSpace;
+    type ActionSpace = DiscreteSpace;
     type Constraint = Unconstrained<2>;
 
-    fn reset(&mut self) -> (Self::Obs, Self::Constraint) {
+    fn reset(&mut self) -> (ArrayD<f32>, Self::Constraint) {
         let mut sample = || self.rng.random_range(-INIT_RANGE..INIT_RANGE);
  
         self.x = sample();
@@ -81,7 +87,7 @@ impl Environment for CartPole {
         (self.obs(), self.mask.clone())
     }
  
-    fn step(&mut self, action: Self::Action) -> ((Self::Obs, Self::Constraint), f32, bool, bool) {
+    fn step(&mut self, action: usize) -> ((ArrayD<f32>, Self::Constraint), f32, bool, bool) {
         debug_assert!(
             (0..N_ACTIONS).contains(&action),
             "action out of range: {action}"
@@ -114,6 +120,14 @@ impl Environment for CartPole {
             truncated,
         )
     }
+
+    fn obs_space(&self) -> &Self::ObsSpace {
+        &self.obs_space
+    }
+
+    fn action_space(&self) -> &Self::ActionSpace {
+        &self.action_space
+    }
 }
 
 /// configuration struct for `CartPole` environment
@@ -137,17 +151,11 @@ impl CartPoleConfig {
     } 
 }
 
-impl DiscreteEnvironment for CartPole {
-    fn obs_shape(&self) -> Vec<usize> { vec![4] }
-    fn n_actions(&self) -> usize { 2 }
-    fn obs_range(&self) -> (Self::Obs, Self::Obs) { 
-        ([-f32::INFINITY; 4], [f32::INFINITY; 4])
-    }
-}
-
 impl EnvironmentConfiguration for CartPoleConfig {
     type Env = CartPole;
     fn init(self) -> Self::Env {
+        let obs_space = NdArrayContinuousSpace::new(vec![4], arr1(&[-f32::INFINITY]).into_dyn(), arr1(&[f32::INFINITY]).into_dyn());
+        let action_space = DiscreteSpace::new(2);
         CartPole {
             x: 0.0,
             x_dot: 0.0,
@@ -156,6 +164,8 @@ impl EnvironmentConfiguration for CartPoleConfig {
             steps: 0,
             rng: StdRng::seed_from_u64(*self.seed.as_ref().unwrap_or(&12)),
             mask: Unconstrained,
+            obs_space,
+            action_space,
         }
     }
 }

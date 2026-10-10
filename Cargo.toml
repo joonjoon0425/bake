@@ -26,6 +26,7 @@ bake-rl-tabular = { path = "crates/rl/tabular" }
 bake-rl-env = { path = "crates/rl/env" }
 bake-rl-env-gym = { path = "crates/rl/gym" }
 bake-rl-core = { path = "crates/rl/core" }
+ndarray = "0.17.2"
 
 burn = { version = "0.22.0", features = ["flex", "linalg"] }
 rand = "0.10.2"

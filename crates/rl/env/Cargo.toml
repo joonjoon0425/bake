@@ -10,6 +10,7 @@ repository.workspace = true
 bake-rl-core.workspace = true
 burn = { workspace = true, optional = true }
 rand.workspace = true
+ndarray.workspace = true
 
 [dev-dependencies]
 bake-rl-tabular.workspace = true

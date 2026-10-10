@@ -1,7 +1,7 @@
 //! A cliff walking environment for tabular rl algorithms
 //! 
 
-use crate::{Environment, EnvironmentConfiguration, TabularEnvironment};
+use crate::{Environment, EnvironmentConfiguration, space::DiscreteSpace};
 use bake_rl_core::constraint::Unconstrained;
 
 /// A 4 * 12 cliff walking environment implementation
@@ -10,7 +10,9 @@ use bake_rl_core::constraint::Unconstrained;
 /// - Every step gives agent a reward of -1, except when the agent reach the goal and receives reward of 100.
 /// - When the agent meets a cliff, the agent is moved back to the start position with reward of -100
 pub struct CliffWalking {
-    pos: (usize, usize)
+    pos: (usize, usize),
+    obs_space: DiscreteSpace,
+    action_space: DiscreteSpace,
 }
 
 impl CliffWalking {
@@ -19,8 +21,8 @@ impl CliffWalking {
 
 impl Environment for CliffWalking {
     type Constraint = Unconstrained<4>;
-    type Obs = usize;
-    type Action = usize;
+    type ObsSpace = DiscreteSpace;
+    type ActionSpace = DiscreteSpace;
 
     fn reset(&mut self) -> (usize, Self::Constraint) {
         self.pos = (0, 0);
@@ -57,15 +59,13 @@ impl Environment for CliffWalking {
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);
         ((self.pos2usize(), Unconstrained), reward, terminated, false)
     }
-}
 
-impl TabularEnvironment for CliffWalking {
-    fn n_obs(&self) -> usize {
-        48
+    fn obs_space(&self) -> &Self::ObsSpace {
+        &self.obs_space
     }
 
-    fn n_actions(&self) -> usize {
-        4
+    fn action_space(&self) -> &Self::ActionSpace {
+        &self.action_space
     }
 }
 
@@ -79,7 +79,9 @@ impl CliffWalkingConfig {
 impl EnvironmentConfiguration for CliffWalkingConfig {
     type Env = CliffWalking;
     fn init(self) -> Self::Env {
-        Self::Env { pos: (0, 0) }
+        let obs_space = DiscreteSpace::new(48);
+        let action_space = DiscreteSpace::new(4);
+        Self::Env { pos: (0, 0), obs_space, action_space }
     }
 }
 

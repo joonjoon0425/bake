@@ -1,14 +1,16 @@
 //! A cliff walking which are masked on boundaries
 //! 
 
-use crate::{Environment, EnvironmentConfiguration, TabularEnvironment};
+use crate::{Environment, EnvironmentConfiguration, space::DiscreteSpace};
 use bake_rl_core::constraint::DiscreteMask;
 
 /// CliffWakling with mask implementation
 /// - All feature are same but on the boundary, the agent receives an mask.
 /// - The agent won't be able to go left from the left boundary, right at right boundary, and so on.
 pub struct MaskedCliffWalking {
-    pos: (usize, usize)
+    pos: (usize, usize),
+    obs_space: DiscreteSpace,
+    action_space: DiscreteSpace,
 }
 
 impl MaskedCliffWalking {
@@ -20,8 +22,8 @@ impl MaskedCliffWalking {
 
 impl Environment for MaskedCliffWalking {
     type Constraint = DiscreteMask<4>;
-    type Obs = usize;
-    type Action = usize;
+    type ObsSpace = DiscreteSpace;
+    type ActionSpace = DiscreteSpace;
 
     fn reset(&mut self) -> (usize, Self::Constraint) {
         self.pos = (0, 0);
@@ -70,17 +72,16 @@ impl Environment for MaskedCliffWalking {
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);
         ((self.pos2usize(), mask), reward, terminated, false)
     }
-}
 
-impl TabularEnvironment for MaskedCliffWalking {
-    fn n_obs(&self) -> usize {
-        48
+    fn obs_space(&self) -> &Self::ObsSpace {
+        &self.obs_space
     }
 
-    fn n_actions(&self) -> usize {
-        4
+    fn action_space(&self) -> &Self::ActionSpace {
+        &self.action_space
     }
 }
+
 /// configuration for masked cliffwalking
 pub struct MaskedCliffWalkingConfig;
 impl MaskedCliffWalkingConfig {
@@ -91,7 +92,9 @@ impl MaskedCliffWalkingConfig {
 impl EnvironmentConfiguration for MaskedCliffWalkingConfig {
     type Env = MaskedCliffWalking;
     fn init(self) -> Self::Env {
-        Self::Env { pos: (0, 0) }
+        let obs_space = DiscreteSpace::new(48);
+        let action_space = DiscreteSpace::new(4);
+        Self::Env { pos: (0, 0), obs_space, action_space }
     }
 }
 

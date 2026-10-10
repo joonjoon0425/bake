@@ -28,8 +28,8 @@ where E: Environment
 impl<E> VectorizedEnvironment for SynchronizedEnvironment<E> 
 where E: Environment<Obs: BatchableElement, Action: BatchableElement, Constraint: BatchableElement>
 {
-    type Obs = <E::Obs as BatchableElement>::Batched;
-    type Action = <E::Action as BatchableElement>::Batched;
+    type ObsSpace = <E::Obs as BatchableElement>::Batched;
+    type ActionSpace = <E::Action as BatchableElement>::Batched;
     type Constraint = <E::Constraint as BatchableElement>::Batched;
 
     fn n_envs(&self) -> usize {
