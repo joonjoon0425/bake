@@ -9,6 +9,8 @@ pub trait Constraint: Clone + Copy {
     fn apply(&self, qvalue: Vec<f32>) -> Vec<f32>;
     /// return the number of possible actions
     fn n_possible_actions(&self) -> Option<usize>;
+    /// checks if given action is possible
+    fn is_possible(&self, action: usize) -> bool;
 }
 
 /// Discrete constraint
@@ -38,13 +40,19 @@ impl<const D: usize> Constraint for DiscreteMask<D> {
     fn apply(&self, mut qvalue: Vec<f32>) -> Vec<f32> {
         assert!(qvalue.len() == D, "The number of action and the length of given qvalue does not matches");
         for i in 0..D {
-            qvalue[i] = -1e9;
+            if !self.0[i] {
+                qvalue[i] = -1e9;
+            }
         }
         qvalue
     }
 
     fn n_possible_actions(&self) -> Option<usize> {
         Some(self.0.iter().filter(|p| **p).count())
+    }
+
+    fn is_possible(&self, action: usize) -> bool {
+        self.0[action]
     }
 }
 
@@ -64,6 +72,7 @@ pub struct Unconstrained;
 impl Constraint for Unconstrained {
     fn apply(&self, qvalue: Vec<f32>) -> Vec<f32> { qvalue }
     fn n_possible_actions(&self) -> Option<usize> { None }
+    fn is_possible(&self, _: usize) -> bool { true }
 }
 
 #[cfg(feature = "deep")]

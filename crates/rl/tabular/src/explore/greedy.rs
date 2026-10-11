@@ -17,6 +17,6 @@ impl Exploration for Greedy {
     fn prob<C: Constraint>(&self, qvalues: Vec<f32>, action: usize, constraint: C) -> f32 {
         let qvalues = constraint.apply(qvalues);
         let index = qvalues.argmax();
-        if index == action { 1.0 } else { 0.0 }
+        if index == action && constraint.is_possible(action) { 1.0 } else { 0.0 }
     }
 }

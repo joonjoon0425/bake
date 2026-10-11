@@ -47,7 +47,7 @@ impl Exploration for EpsGreedy {
         let n_possible_actions = constraint.n_possible_actions().unwrap_or_else(|| {
             qvalues.len()
         });
-        if index == action { (1. - self.eps) + self.eps / n_possible_actions as f32 } else { self.eps / n_possible_actions as f32 }
+        if index == action && constraint.is_possible(action) { (1. - self.eps) + self.eps / n_possible_actions as f32 } else { self.eps / n_possible_actions as f32 }
     }
 }
 
