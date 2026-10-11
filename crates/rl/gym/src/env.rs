@@ -17,7 +17,7 @@ pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
 impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnvironment<ObsSpace, ActionSpace> {
     type ObsSpace = ObsSpace;
     type ActionSpace = ActionSpace;
-    type Constraint = Unconstrained<0>;
+    type Constraint = Unconstrained<6>;
 
     fn reset(&mut self) -> (<Self::ObsSpace as bake_rl_env::space::Space>::Element, Self::Constraint) {
         return Python::attach(|py| {
@@ -102,10 +102,10 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfiguration for Gym
             kwargs.set_item("seed", self.seed).unwrap();
             env.call_method("reset", (), Some(&kwargs)).unwrap();
 
-            let obs_space = env.call_method0("observation_space").unwrap();
+            let obs_space = env.getattr("observation_space").unwrap();
             let obs_space = ObsSpace::from_gym(&obs_space).unwrap();
 
-            let action_space = env.call_method0("action_space").unwrap();
+            let action_space = env.getattr("action_space").unwrap();
             let action_space = ActionSpace::from_gym(&action_space).unwrap();
             GymnasiumEnvironment {
                 env: env.unbind(),
@@ -119,20 +119,20 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfiguration for Gym
 pub mod cartpole;
 pub use cartpole::cartpole;
 
-// pub mod acrobot;
-// pub use acrobot::GymAcrobot;
+pub mod acrobot;
+pub use acrobot::acrobot;
 
-// pub mod lunarlander;
-// pub use lunarlander::GymLunarLander;
+pub mod lunarlander;
+pub use lunarlander::lunar_lander;
 
-// pub mod mountaincar;
-// pub use mountaincar::GymMountainCar;
+pub mod mountaincar;
+pub use mountaincar::mountain_car;
 
-// pub mod taxi;
-// pub use taxi::GymTaxi;
+pub mod taxi;
+pub use taxi::taxi;
 
-// pub mod cliffwalking;
-// pub use cliffwalking::GymCliffWalking;
+pub mod cliffwalking;
+pub use cliffwalking::cliff_walking;
 
-// pub mod frozenlake;
-// pub use frozenlake::GymFrozenLake;
+pub mod frozenlake;
+pub use frozenlake::frozen_lake;

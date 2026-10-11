@@ -1,15 +1,10 @@
 //! FrozenLake-v1
 //! 
 
-use crate::{env::TabularGymnasiumEnvironment, info::TabularGymEnvInfo};
-/// FrozenLake-v1
-#[derive(Debug, Clone, Copy)]
-pub struct FrozenLakeInfo;
-impl TabularGymEnvInfo for FrozenLakeInfo {
-    fn name() -> &'static str { "FrozenLake-v1" }
-    fn n_obs() -> usize { 16 }
-    fn n_actions() -> usize { 4 }
-}
+use bake_rl_env::space::DiscreteSpace;
+use crate::env::GymnasiumEnvironmentConfig;
 
 /// FrozenLake-v1
-pub type GymFrozenLake = TabularGymnasiumEnvironment<FrozenLakeInfo>;
+pub fn frozen_lake() -> GymnasiumEnvironmentConfig<DiscreteSpace, DiscreteSpace> {
+    GymnasiumEnvironmentConfig::new("FrozenLake-v1")
+}

@@ -14,7 +14,7 @@ bake-rl-core.workspace = true
 bake-rl-env.workspace = true
 
 [dev-dependencies]
-bake.workspace = true
+bake = { workspace = true, features = ["rl-full"] }
 
 [build-dependencies]
 pyo3-build-config = "0.29.2"
