@@ -2,10 +2,10 @@
 //! 
 use std::collections::HashMap;
 use bake_rl_core::{constraint::Constraint, data::Transition};
-use crate::Environment;
+use crate::{Environment, space::DiscreteSpace};
 
 /// A helper struct which helps creating and taking a step in training loop
-pub struct Tape<E: Environment<Obs = usize, Action = usize, Constraint: Constraint>> {
+pub struct Tape<E: Environment<ObsSpace = DiscreteSpace, ActionSpace = DiscreteSpace, Constraint: Constraint>> {
     /// environment
     env: E,
     /// current observation
@@ -25,7 +25,7 @@ pub struct Tape<E: Environment<Obs = usize, Action = usize, Constraint: Constrai
     pub steps: usize,
 }
 
-impl<E: Environment<Obs = usize, Action = usize, Constraint: Constraint>> Tape<E> {
+impl<E: Environment<ObsSpace = DiscreteSpace, ActionSpace = DiscreteSpace, Constraint: Constraint>> Tape<E> {
     /// create new `Tape` object with given env.
     /// # Warning
     /// - the given `env`'s `return` is called once internally

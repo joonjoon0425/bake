@@ -1,6 +1,6 @@
 //! epsilon-greedy policy
 //!
-use bake_rl_core::deep::constraint::discrete_constraint::DiscreteConstraint;
+use bake_rl_core::constraint::deep::discrete_constraint::DiscreteConstraint;
 use burn::{Tensor, tensor::{Distribution, Int}};
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
@@ -44,9 +44,8 @@ impl Exploration for EpsGreedy {
 
 #[cfg(test)]
 mod tests {
-    use bake_rl_core::deep::constraint::discrete_constraint::DiscreteMask;
-use burn::{nn::activation::ActivationConfig::Relu, prelude::*};
-    use crate::{explore::{EpsGreedy, Exploration}, net::basic::MlpDiscreteQNet};
+    use burn::{nn::activation::ActivationConfig::Relu, prelude::*};
+    use crate::{explore::{EpsGreedy, Exploration}, net::basic::MlpDiscreteQNet, constraint::discrete_constraint::DiscreteMask};
 
     #[test]
     #[should_panic]

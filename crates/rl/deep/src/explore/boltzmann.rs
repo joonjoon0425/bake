@@ -1,6 +1,6 @@
 //! boltzmann exploration
 //! 
-use bake_rl_core::deep::constraint::discrete_constraint::DiscreteConstraint;
+use bake_rl_core::constraint::deep::discrete_constraint::DiscreteConstraint;
 use burn::{prelude::*, tensor::activation::softmax};
 
 use crate::{contract::basic::DiscreteActionValue, explore::Exploration};
@@ -36,9 +36,8 @@ impl Exploration for Boltzmann {
 
 #[cfg(test)]
 mod tests {
-    use crate::{explore::{Boltzmann, Exploration}, net::basic::MlpDiscreteQNet};
-    use bake_rl_core::deep::constraint::discrete_constraint::DiscreteMask;
-use burn::{nn::activation::ActivationConfig::Relu, prelude::*};
+    use crate::{explore::{Boltzmann, Exploration}, net::basic::MlpDiscreteQNet, constraint::discrete_constraint::DiscreteMask};
+    use burn::{nn::activation::ActivationConfig::Relu, prelude::*};
     
     #[test]
     #[should_panic]

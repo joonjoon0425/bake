@@ -3,6 +3,3 @@
 #![warn(missing_docs)]
 pub mod constraint;
 pub mod data;
-
-#[cfg(feature = "deep")]
-pub mod deep;

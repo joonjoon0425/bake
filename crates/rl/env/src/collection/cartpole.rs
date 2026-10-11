@@ -11,7 +11,7 @@ use ndarray::prelude::*;
 use crate::Environment;
 use crate::EnvironmentConfiguration;
 use crate::space::DiscreteSpace;
-use crate::space::continuous::NdArrayContinuousSpace;
+use crate::space::continuous::ContinuousSpace;
  
 const GRAVITY: f32 = 9.8;
 const MASS_CART: f32 = 1.0;
@@ -54,7 +54,7 @@ pub struct CartPole {
     /// so this avoids rebuilding it on every step.
     mask: <Self as Environment>::Constraint,
 
-    obs_space: NdArrayContinuousSpace,
+    obs_space: ContinuousSpace,
     action_space: DiscreteSpace,
 }
  
@@ -71,7 +71,7 @@ impl CartPole {
 }
  
 impl Environment for CartPole {
-    type ObsSpace = NdArrayContinuousSpace;
+    type ObsSpace = ContinuousSpace;
     type ActionSpace = DiscreteSpace;
     type Constraint = Unconstrained<2>;
 
@@ -154,7 +154,7 @@ impl CartPoleConfig {
 impl EnvironmentConfiguration for CartPoleConfig {
     type Env = CartPole;
     fn init(self) -> Self::Env {
-        let obs_space = NdArrayContinuousSpace::new(vec![4], arr1(&[-f32::INFINITY]).into_dyn(), arr1(&[f32::INFINITY]).into_dyn());
+        let obs_space = ContinuousSpace::new([4], arr1(&[-f32::INFINITY]).into_dyn(), arr1(&[f32::INFINITY]).into_dyn());
         let action_space = DiscreteSpace::new(2);
         CartPole {
             x: 0.0,

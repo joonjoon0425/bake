@@ -2,13 +2,13 @@
 use std::collections::HashMap;
 
 use bake_common::logger::ToLog;
-use bake_rl_core::deep::data::{Batch, Batchable};
 use burn::prelude::*;
 use crate::{
     algorithm::advantage_estimator::AdvantageEstimator,
     contract::compound::ActorCritic,
     distribution::{Distribution, PossibleConstraint},
-    loss::{LossFn, traits::{ActorCriticLoss, TotalLoss}}
+    loss::{LossFn, traits::{ActorCriticLoss, TotalLoss}},
+    data::{Batch, Batchable}
 };
 
 /// state for A2C

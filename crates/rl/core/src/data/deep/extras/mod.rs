@@ -4,7 +4,7 @@
 use std::{any::{Any, TypeId}, collections::HashMap};
 use core::ops::Range;
 use burn::prelude::*;
-use crate::deep::data::Batchable;
+use crate::data::deep::Batchable;
 
 /// key trait which key-types must implement.
 pub trait Key: 'static {
@@ -276,7 +276,7 @@ pub use key::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::deep::data::{Batchable, extras::{ExtraContainer, Key, key::*}};
+    use crate::data::deep::{Batchable, extras::{ExtraContainer, Key, key::*}};
     use burn::prelude::*;
     
     /// test feature

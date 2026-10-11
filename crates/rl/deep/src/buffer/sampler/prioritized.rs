@@ -2,7 +2,7 @@
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
 use crate::{buffer::{replay::LazyStorage, sampler::{SampleInfo, Sampler, SamplerConfig}}};
-use bake_rl_core::deep::data::{Batch, Batchable};
+use bake_rl_core::data::deep::{Batch, Batchable};
 
 /// A sampler which uses Priority (PER)
 pub struct PrioritizedSampler {

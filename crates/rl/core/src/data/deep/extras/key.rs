@@ -2,7 +2,7 @@
 //! Users are free to implement their own Key type
 //!
 //! 
-use crate::deep::data::extras::Key;
+use crate::data::deep::extras::Key;
 use burn::prelude::*;
 /// key for advantage
 pub struct Advantage;

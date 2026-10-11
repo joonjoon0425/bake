@@ -1,7 +1,7 @@
 //! A probability distribution traits and structs
 //! 
 use burn::Tensor;
-use bake_rl_core::deep::data::Batchable;
+use bake_rl_core::data::deep::Batchable;
 
 /// Probability distribution trait
 pub trait Distribution : std::fmt::Debug + Clone + Sync + Send + 'static {

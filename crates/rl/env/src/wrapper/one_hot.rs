@@ -1,13 +1,13 @@
 //! Struct for converting Tabular environments into one-hot encoded observation environment
 //! 
-use crate::{Environment, EnvironmentConfiguration, space::{ContinuousSpace, DiscreteSpace, continuous::NdArrayContinuousSpace}};
+use crate::{Environment, EnvironmentConfiguration, space::{ContinuousSpace, DiscreteSpace}};
 use ndarray::prelude::*;
 
 /// Environment for one-hot encoded observation
 pub struct OneHotEncodedEnvironment<E>
 where E: Environment<ObsSpace = DiscreteSpace, ActionSpace = DiscreteSpace> {
     env: E,
-    obs_space: NdArrayContinuousSpace,
+    obs_space: ContinuousSpace,
     action_space: DiscreteSpace
 }
 
@@ -16,8 +16,8 @@ where E: Environment<ObsSpace = DiscreteSpace, ActionSpace = DiscreteSpace> {
     /// create a new one-hot encoded environment from given environment
     pub fn new(env: E) -> Self {
         let shape = vec![env.obs_space().n()];
-        let obs_space = NdArrayContinuousSpace::new(
-            shape.clone(),
+        let obs_space = ContinuousSpace::new(
+            shape.clone().try_into().unwrap(),
             ArrayD::zeros(shape.clone()),
             ArrayD::ones(shape)
         );
@@ -34,20 +34,20 @@ where E: Environment<ObsSpace = DiscreteSpace, ActionSpace = DiscreteSpace> {
 
 impl<E> Environment for OneHotEncodedEnvironment<E>
 where E: Environment<ObsSpace = DiscreteSpace, ActionSpace = DiscreteSpace> {
-    type ObsSpace = NdArrayContinuousSpace;
+    type ObsSpace = ContinuousSpace;
     type ActionSpace = DiscreteSpace;
     type Constraint = E::Constraint;
 
     fn reset(&mut self) -> (ArrayD<f32>, Self::Constraint) {
         let (obs, constraint) = self.env.reset();
-        let mut onehot = ArrayD::zeros(self.obs_space.shape().clone());
+        let mut onehot = ArrayD::zeros(self.obs_space.shape());
         onehot[[obs]] = 1f32;
         (onehot, constraint)
     }
 
     fn step(&mut self, action: usize) -> ((ArrayD<f32>, Self::Constraint), f32, bool, bool) {
         let ((obs, constraint), reward, terminated, truncated) = self.env.step(action);
-        let mut onehot = ArrayD::zeros(self.obs_space.shape().clone());
+        let mut onehot = ArrayD::zeros(self.obs_space.shape());
         onehot[obs] = 1f32;
         ((onehot, constraint), reward, terminated, truncated)
     }
@@ -82,8 +82,8 @@ where E: Environment<ObsSpace = DiscreteSpace, ActionSpace = DiscreteSpace>
     fn init(self) -> Self::Env {
         let env = self.config.init();
         let shape = vec![env.obs_space().n()];
-        let obs_space = NdArrayContinuousSpace::new(
-            shape.clone(),
+        let obs_space = ContinuousSpace::new(
+            shape.clone().try_into().unwrap(),
             ArrayD::zeros(shape.clone()),
             ArrayD::ones(shape)
         );

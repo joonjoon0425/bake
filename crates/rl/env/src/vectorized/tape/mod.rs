@@ -1,6 +1,6 @@
 //! A `Tape` struct for Vectorized Environment
-use crate::vectorized::VectorizedEnvironment;
-use bake_rl_core::deep::data::{Batch, extras::ExtraContainer};
+use crate::{space::Space, vectorized::VectorizedEnvironment};
+use bake_rl_core::data::deep::{Batch, extras::ExtraContainer};
 use burn::prelude::*;
 
 /// A `VecTape` struct for vectorized environment
@@ -8,7 +8,7 @@ pub struct Tape<Ve: VectorizedEnvironment> {
     // environments
     envs: Ve,
     /// current observations
-    pub obss: Ve::Obs,
+    pub obss: <Ve::ObsSpace as Space>::Element,
     /// current constraints
     pub constraints: Ve::Constraint,
     /// current reward
@@ -51,7 +51,7 @@ impl<Ve: VectorizedEnvironment> Tape<Ve> {
 
     /// take a step in environment with given action and return the transition object
     /// after the step, `VecTape` updates reward, terminated, and truncated
-    pub fn step(&mut self, actions: Ve::Action) -> Batch<Ve::Obs, Ve::Action, Ve::Constraint> {
+    pub fn step(&mut self, actions: <Ve::ActionSpace as Space>::Element) -> Batch<<Ve::ObsSpace as Space>::Element, <Ve::ActionSpace as Space>::Element, Ve::Constraint> {
         let mask: Tensor<1> = (1 - self.terminated.clone()) * (1 - self.truncated.clone());
         self.episode_rewards.inplace(|r| r * mask.clone());
         self.steps.inplace(|r| r * mask);

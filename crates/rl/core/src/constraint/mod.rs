@@ -1,5 +1,10 @@
 //! Action constraints for tabular rl
 
+use crate::constraint::deep::convert::ToBatchable;
+
+#[cfg(feature = "deep")]
+pub mod deep;
+
 /// Basic constraint trait
 pub trait Constraint: Clone + Copy {
     /// return the number of possible actions
@@ -50,6 +55,16 @@ impl<const D: usize> Constraint for DiscreteMask<D> {
     }
 }
 
+#[cfg(feature = "deep")]
+impl<const D: usize> ToBatchable for DiscreteMask<D> {
+    type Batched = crate::constraint::deep::discrete_constraint::DiscreteMask<2>;
+
+    fn to_batchable(self, device: &burn::prelude::Device) -> Self::Batched {
+        let data: Vec<bool> = self.0.into_iter().collect();
+        crate::constraint::deep::discrete_constraint::DiscreteMask::<2>(burn::prelude::Tensor::<1, burn::prelude::Bool>::from_bool(data.as_slice(), device).unsqueeze_dim(0))
+    }
+}
+
 /// No constraint
 #[derive(Debug, Clone, Copy)]
 pub struct Unconstrained<const D: usize>;
@@ -57,6 +72,15 @@ impl<const D: usize> Constraint for Unconstrained<D> {
     fn n_possible_actions(&self) -> usize { D }
     fn iter(&self) -> impl Iterator<Item = (usize, &bool)> + '_ { [true;D].iter().enumerate() }
     fn is_possible(&self, _: usize) -> bool { true }
+}
+
+#[cfg(feature = "deep")]
+impl<const D: usize> ToBatchable for Unconstrained<D> {
+    type Batched = crate::constraint::deep::Unconstrained;
+
+    fn to_batchable(self, _: &burn::prelude::Device) -> Self::Batched {
+        crate::constraint::deep::Unconstrained
+    }
 }
 
 #[cfg(test)]

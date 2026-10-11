@@ -1,7 +1,7 @@
 //! The action value trait
 
 use burn::prelude::*;
-use bake_rl_core::deep::constraint::discrete_constraint::DiscreteConstraint; 
+use bake_rl_core::constraint::deep::discrete_constraint::DiscreteConstraint; 
 use crate::net::network::Network;
 
 /// The action value trait.
