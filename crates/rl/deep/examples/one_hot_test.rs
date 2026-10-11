@@ -9,6 +9,7 @@ use bake::rl::deep::loss::LossFn;
 use bake::rl::env::deep::{tape::Tape, wrapper::sync_env::SynchronizedEnvironment};
 use bake::rl::env::collection::MaskedCliffWalkingConfig;
 
+use bake_rl_env::deep::VectorizedEnvironment;
 use bake_rl_env::wrapper::one_hot::OneHotEncodedEnvironmentConfig;
 use burn::prelude::*;
 use burn::optim::AdamConfig;
@@ -21,7 +22,7 @@ pub fn main() {
     device.seed(seed);
     let env = SynchronizedEnvironment::new(vec![OneHotEncodedEnvironmentConfig::new(MaskedCliffWalkingConfig::new())], &device);
     let state = Dqn{ gamma: 0.99, loss_fn: LossFn::MseLoss };
-    let mut online = MlpDiscreteQNet::new(&[48, 128, 84, 4], Relu, &device);
+    let mut online = MlpDiscreteQNet::new(&[env.obs_space().shape()[0], 128, 84, env.action_space().n()], Relu, &device);
     let mut target = online.clone();
     let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();

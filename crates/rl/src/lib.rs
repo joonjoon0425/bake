@@ -6,3 +6,6 @@ pub mod deep { pub use bake_rl_deep::*; }
 
 #[cfg(feature = "tabular")]
 pub mod tabular { pub use bake_rl_tabular::*; }
+
+#[cfg(feature = "gym")]
+pub mod gym { pub use bake_rl_env_gym::*; }

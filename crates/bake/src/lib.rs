@@ -4,6 +4,10 @@ pub mod scheduler { pub use bake_common::scheduler::*; }
 pub mod rl {
     pub mod env {
         pub use bake_rl::env::*;
+        #[cfg(feature = "rl-gym")]
+        pub mod gym {
+            pub use bake_rl::gym::*;
+        }
     }
 
     #[cfg(feature = "rl-tabular")]

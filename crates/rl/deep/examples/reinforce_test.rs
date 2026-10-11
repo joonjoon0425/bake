@@ -5,7 +5,7 @@ use bake::rl::deep::net::basic::MlpPolicy;
 use bake::rl::deep::algorithm::reinforce::Baseline;
 use bake::rl::deep::logger::MovingAvgLogger;
 
-use bake::rl::env::deep::{tape::Tape, wrapper::sync_env::SynchronizedEnvironment};
+use bake::rl::env::deep::{tape::Tape, wrapper::sync_env::SynchronizedEnvironment, VectorizedEnvironment};
 use bake::rl::env::collection::CartPoleConfig;
 
 use burn::optim::AdamConfig;
@@ -20,7 +20,7 @@ pub fn main() {
 
     let env = SynchronizedEnvironment::new(vec![CartPoleConfig::new()], &device);
     let state = Reinforce{ gamma: 0.99, c_e: 0.02, baseline: Baseline::Normalized };
-    let mut policy = MlpPolicy::new(&[4, 128, 2], Relu, &device);
+    let mut policy = MlpPolicy::new(&[env.obs_space().shape()[0], 128, env.action_space().n()], Relu, &device);
     let mut opt = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();

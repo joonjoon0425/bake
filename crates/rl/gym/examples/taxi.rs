@@ -5,7 +5,7 @@ use bake::rl::tabular::logger::MovingAvgLogger;
 use bake::rl::tabular::scheduler::{LinearScheduler, Scheduler};
 
 use bake::rl::env::{Environment, EnvironmentConfiguration, tape::Tape};
-use bake_rl_env_gym::env::taxi;
+use bake::rl::env::gym::taxi;
 
 pub fn main() {
     let state = QLearning { gamma: 0.99, alpha: 0.4 };
