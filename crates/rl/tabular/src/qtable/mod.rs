@@ -15,6 +15,7 @@ pub struct QTable {
 impl QTable {
     /// create a new QTable struct
     pub fn new(n_states: usize, n_actions: usize) -> Self {
+        // todo: add noisy initialization
         Self {
             n_states,
             n_actions,
