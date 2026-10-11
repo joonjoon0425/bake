@@ -154,7 +154,7 @@ impl CartPoleConfig {
 impl EnvironmentConfiguration for CartPoleConfig {
     type Env = CartPole;
     fn init(self) -> Self::Env {
-        let obs_space = ContinuousSpace::new([4], arr1(&[-f32::INFINITY]).into_dyn(), arr1(&[f32::INFINITY]).into_dyn());
+        let obs_space = ContinuousSpace::new([4], arr1(&[-f32::INFINITY; 4]).into_dyn(), arr1(&[f32::INFINITY; 4]).into_dyn());
         let action_space = DiscreteSpace::new(2);
         CartPole {
             x: 0.0,

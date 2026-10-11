@@ -4,7 +4,7 @@ use burn::prelude::*;
 use crate::space::{ContinuousSpace, Space, deep::convert::ToUnbatchedSpace};
 /// A tensor space which is continuous
 pub struct ContinuousTensorSpace<const D: usize = 2> {
-    shape: [usize; D],
+    shape: Vec<usize>,
     low: <Self as Space>::Element,
     high: <Self as Space>::Element,
     device: Device,
@@ -12,7 +12,7 @@ pub struct ContinuousTensorSpace<const D: usize = 2> {
 
 impl<const D: usize> ContinuousTensorSpace<D> {
     /// create a new tensor continuous space
-    pub fn new(shape: [usize; D], low: <Self as Space>::Element, high: <Self as Space>::Element) -> Self {
+    pub fn new(shape: Vec<usize>, low: <Self as Space>::Element, high: <Self as Space>::Element) -> Self {
         let device = low.device();
         Self { shape, low, high, device }
     }
@@ -57,7 +57,7 @@ macro_rules! unbatched {
 
             fn to_batchable(&self, data: <Self::UnbatchedSpace as Space>::Element) -> Self::Element {
                 let data: Vec<f32> = data.iter().copied().collect();
-                Tensor::<$db>::from_data(TensorData::new(data, self.shape()), &self.device).unsqueeze_dim(0)
+                Tensor::<$d>::from_data(TensorData::new(data, self.shape()), &self.device).unsqueeze_dim::<$db>(0)
             }
         }
     };

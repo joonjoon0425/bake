@@ -41,11 +41,11 @@ macro_rules! batched {
             
             fn batched_space(&self, device: &burn::prelude::Device) -> Self::BatchedSpace {
                 let low: Vec<f32> = self.low.iter().copied().collect();
-                let low = burn::prelude::Tensor::<$db>::from_data(burn::prelude::TensorData::new(low, self.shape()), device).unsqueeze_dim(0);
+                let low = burn::prelude::Tensor::<$d>::from_data(burn::prelude::TensorData::new(low, self.shape()), device).unsqueeze_dim::<$db>(0);
                 let high: Vec<f32> = self.high.iter().copied().collect();
-                let high = burn::prelude::Tensor::<$db>::from_data(burn::prelude::TensorData::new(high, self.shape()), device).unsqueeze_dim(0);
+                let high = burn::prelude::Tensor::<$d>::from_data(burn::prelude::TensorData::new(high, self.shape()), device).unsqueeze_dim::<$db>(0);
 
-                Self::BatchedSpace::new(self.shape().try_into().unwrap(), low, high)
+                Self::BatchedSpace::new(self.shape().to_vec(), low, high)
             }
 
             fn to_raw(&self, batch: <Self::BatchedSpace as Space>::Element) -> Self::Element {
