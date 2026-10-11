@@ -1,5 +1,5 @@
 //! greedy policy implementation
-use bake_rl_core::constraint::deep::discrete_constraint::DiscreteConstraint;
+use crate::constraint::discrete_constraint::DiscreteConstraint;
 use burn::prelude::*;
 
 use crate::{contract::basic::DiscreteActionValue, explore::Exploration};

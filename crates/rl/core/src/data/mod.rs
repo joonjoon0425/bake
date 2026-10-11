@@ -51,6 +51,3 @@ impl<C: Constraint> Transition<C> {
         self.extra.insert(key, value)
     }
 }
-
-#[cfg(feature = "deep")]
-pub mod deep;

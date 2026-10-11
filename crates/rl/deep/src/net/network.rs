@@ -1,6 +1,7 @@
 //! A common trait for user-implemented networks
 //! 
-use bake_rl_core::data::deep::Batchable;
+//! 
+use crate::data::Batchable;
 use burn::{module::ModuleDisplay, optim::{GradientsParams, ModuleOptimizer}, prelude::*};
 
 /// A common trait for user-implemented networks

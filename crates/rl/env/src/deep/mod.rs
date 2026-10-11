@@ -1,7 +1,7 @@
 //! A collection and basic trait for vectorized environments
 //! 
 use crate::space::Space;
-use bake_rl_core::data::deep::Batchable;
+use bake_rl_core::deep::data::Batchable;
 use burn::prelude::*;
 /// trait for Vectorized Environment
 pub trait VectorizedEnvironment {
@@ -28,8 +28,6 @@ pub trait VectorizedEnvironment {
     fn action_space(&self) -> &Self::ActionSpace;
 }
 
+pub mod space;
 pub mod tape;
-pub use tape::Tape;
-
 pub mod wrapper;
-pub use wrapper::*;

@@ -1,7 +1,7 @@
 //! traits for spaces which are convertible to Batchable element space
 //! # Warning
 //! - the spaces are convertible one by one
-use bake_rl_core::data::deep::Batchable;
+use bake_rl_core::deep::data::Batchable;
 use crate::space::Space;
 use burn::prelude::*;
 

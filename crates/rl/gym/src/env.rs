@@ -1,161 +1,84 @@
 //! Implementations of Gym environments
 use std::marker::PhantomData;
-use bake_rl_deep::{constraint::Unconstrained, env::Environment};
+use bake_rl_core::constraint::Unconstrained;
+use bake_rl_env::{Environment, EnvironmentConfiguration};
 use pyo3::{prelude::*, types::PyDict};
-use numpy::{PyArray1, prelude::*};
-use burn::prelude::*;
-use crate::info::*;
+use crate::space::GymSpace;
 
 /// A struct for Tabular Gymnasium environment
 /// - Uses one-hot encoding
-pub struct TabularGymnasiumEnvironment<I: TabularGymEnvInfo> {
+pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
     env: Py<PyAny>,
-    device: Device,
-    info: PhantomData<I>,
+
+    obs_space: ObsSpace,
+    action_space: ActionSpace,
 }
 
-impl<I: TabularGymEnvInfo> TabularGymnasiumEnvironment<I> {
-    /// create a new Gymnasium environment
-    pub fn new(seed: u64, device: &Device, kwargs: KwArgs) -> Self {
-        return Python::attach(|py| {
-            let gym = py.import("gymnasium").unwrap();
-            let kwargs = kwargs.kwargs.bind(py);
-            let env = gym.call_method("make", (I::name(), ), Some(&kwargs)).unwrap();
-            let kwargs = PyDict::new(py);
-            kwargs.set_item("seed", seed).unwrap();
-            env.call_method("reset", (), Some(&kwargs)).unwrap();
-            Self {
-                env: env.unbind(),
-                device: device.clone(),
-                info: PhantomData
-            }
-        });
-    }
+impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnvironment<ObsSpace, ActionSpace> {
+    type ObsSpace = ObsSpace;
+    type ActionSpace = ActionSpace;
+    type Constraint = Unconstrained<0>;
 
-    /// return the number of observations
-    pub fn n_obs(&self) -> usize { I::n_obs() }
-    /// return the number of actions
-    pub fn n_actions(&self) -> usize { I::n_actions() }
-}
-
-impl<I: TabularGymEnvInfo> Environment for TabularGymnasiumEnvironment<I> {
-    type Obs = Tensor<2>;
-    type Action = Tensor<1, Int>;
-    type Constraint = Unconstrained;
-
-    fn reset(&mut self) -> (Self::Obs, Self::Constraint) {
+    fn reset(&mut self) -> (<Self::ObsSpace as bake_rl_env::space::Space>::Element, Self::Constraint) {
         return Python::attach(|py| {
             let env = self.env.bind(py);
             let tuple = env.call_method1("reset", ()).unwrap();
             let (obs, _): (Bound<'_, PyAny>, Bound<'_, PyAny>) = tuple.extract().unwrap();
 
-            let obs = obs.extract::<i64>().unwrap();
-            let mut arr = vec![0f32; I::n_obs()];
-            arr[obs as usize] = 1f32;
-            let obs = Tensor::<1>::from_floats(arr.as_slice(), &self.device).unsqueeze_dim(0);
+            let obs = self.obs_space.from_py(&obs).unwrap();
             (obs, Unconstrained)
         });
     }
 
-    fn step(&mut self, action: Self::Action) -> ((Self::Obs, Self::Constraint), f32, bool, bool) {
+    fn step(&mut self, action: <Self::ActionSpace as bake_rl_env::space::Space>::Element) -> ((<Self::ObsSpace as bake_rl_env::space::Space>::Element, Self::Constraint), f32, bool, bool) {
         return Python::attach(|py| {
             let env = self.env.bind(py);
-            let action: i32 = action.into_scalar();
+            let action = self.action_space.to_py(py, action).unwrap();
             let tuple = env.call_method1("step", (action, )).unwrap();
             let (obs, reward, terminate, truncate, _) : (Bound<'_, PyAny>, f32, bool, bool, Bound<'_, PyAny>) = tuple.extract().unwrap();
-            let obs = obs.extract::<i64>().unwrap();
-            let mut arr = vec![0f32; I::n_obs()];
-            arr[obs as usize] = 1f32;
-            let obs = Tensor::<1>::from_floats(arr.as_slice(), &self.device).unsqueeze_dim(0);
+            let obs = self.obs_space.from_py(&obs).unwrap();
             ((obs, Unconstrained), reward, terminate, truncate)
         });
     }
 
-    fn device(&self) -> Device {
-        self.device.clone()
+    fn obs_space(&self) -> &Self::ObsSpace {
+        &self.obs_space
     }
+
+    fn action_space(&self) -> &Self::ActionSpace {
+        &self.action_space
+    }
+
 }
 
-/// A struct for Discrete Action Gymnasium environment
-pub struct DiscreteGymnasiumEnvironment<const O: usize, I: DiscreteGymEnvInfo<O>> {
-    env: Py<PyAny>,
-    device: Device,
-    info: PhantomData<I>,
-}
-
-impl<const O: usize, I: DiscreteGymEnvInfo<O>> DiscreteGymnasiumEnvironment<O, I> {
-    /// create a new Gymnasium environment
-    pub fn new(seed: u64, device: &Device, kwargs: KwArgs) -> Self {
-        return Python::attach(|py| {
-            let gym = py.import("gymnasium").unwrap();
-            let kwargs = kwargs.kwargs.bind(py);
-            let env = gym.call_method("make", (I::name(), ), Some(&kwargs)).unwrap();
-            let kwargs = PyDict::new(py);
-            kwargs.set_item("seed", seed).unwrap();
-            env.call_method("reset", (), Some(&kwargs)).unwrap();
-            Self {
-                env: env.unbind(),
-                device: device.clone(),
-                info: PhantomData
-            }
-        });
-    }
-    /// return the shape of observation
-    pub fn obs_shape(&self) -> [usize; O] { I::obs_shape() }
-    /// return the number of actions
-    pub fn n_actions(&self) -> usize { I::n_actions() }
-}
-
-impl<const O: usize, I: DiscreteGymEnvInfo<O>> Environment for DiscreteGymnasiumEnvironment<O, I> {
-    type Obs = Tensor<O>;
-    type Action = Tensor<1, Int>;
-    type Constraint = Unconstrained;
-
-    fn reset(&mut self) -> (Self::Obs, Self::Constraint) {
-        return Python::attach(|py| {
-            let env = self.env.bind(py);
-            let tuple = env.call_method1("reset", ()).unwrap();
-            let (obs, _): (Bound<'_, PyAny>, Bound<'_, PyAny>) = tuple.extract().unwrap();
-            let arr = obs.cast_into::<PyArray1<f32>>().unwrap().readonly().as_array().to_vec();
-            let obs: Tensor<O> = Tensor::<1>::from_floats(arr.as_slice(), &self.device).reshape(I::obs_shape());
-            (obs, Unconstrained)
-        })
-    }
-
-    fn step(&mut self, action: Self::Action) -> ((Self::Obs, Self::Constraint), f32, bool, bool) {
-        return Python::attach(|py| {
-            let env = self.env.bind(py);
-            let action: i32 = action.into_scalar();
-            let tuple = env.call_method1("step", (action, )).unwrap();
-            let (obs, reward, terminate, truncate, _) : (Bound<'_, PyAny>, f32, bool, bool, Bound<'_, PyAny>) = tuple.extract().unwrap();
-            let arr = obs.cast_into::<PyArray1<f32>>().unwrap().readonly().as_array().to_vec();
-            let obs: Tensor<O> = Tensor::<1>::from_floats(arr.as_slice(), &self.device).reshape(I::obs_shape());
-            ((obs, Unconstrained), reward, terminate, truncate)
-        })
-    }
-
-    fn device(&self) -> Device {
-        self.device.clone()
-    }
-}
-
-/// A configuration for kwargs
-pub struct KwArgs {
+/// configuration struct for gymnasium environment
+pub struct GymnasiumEnvironmentConfig<ObsSpace: GymSpace, ActionSpace: GymSpace> {
     /// keyward arguments
     pub kwargs: Py<PyDict>,
+    name: &'static str,
+    seed: usize,
+    info: PhantomData<(ObsSpace, ActionSpace)>
 }
 
-impl KwArgs {
-    /// create a new environment config for kwargs of Gymnasium environment
-    pub fn new() -> Self {
+impl<ObsSpace: GymSpace, ActionSpace: GymSpace> GymnasiumEnvironmentConfig<ObsSpace, ActionSpace> {
+    /// create a new environment config for Gymnasium environment
+    pub fn new(name: &'static str) -> Self {
         return Python::attach(|py| {
             let kwargs = PyDict::new(py);
-            Self { kwargs: kwargs.unbind() }
+            Self { kwargs: kwargs.unbind(), info: PhantomData, name, seed: 12 }
         });
+    }
+
+    /// set seed
+    /// # Default
+    /// - 12
+    pub fn seed(mut self, seed: usize) -> Self {
+        self.seed = seed;
+        self
     }
 
     /// add a new kwarg
-    pub fn add<V>(self, kw: &'static str, arg: V) -> Self 
+    pub fn kwarg<V>(self, kw: &'static str, arg: V) -> Self 
     where 
         V: for<'py> IntoPyObject<'py>,
     {
@@ -167,23 +90,49 @@ impl KwArgs {
     }
 }
 
+impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfiguration for GymnasiumEnvironmentConfig<ObsSpace, ActionSpace> {
+    type Env = GymnasiumEnvironment<ObsSpace, ActionSpace>;
+    
+    fn init(self) -> Self::Env {
+        return Python::attach(|py| {
+            let gym = py.import("gymnasium").unwrap();
+            let kwargs = self.kwargs.bind(py);
+            let env = gym.call_method("make", (self.name, ), Some(&kwargs)).unwrap();
+            let kwargs = PyDict::new(py);
+            kwargs.set_item("seed", self.seed).unwrap();
+            env.call_method("reset", (), Some(&kwargs)).unwrap();
+
+            let obs_space = env.call_method0("observation_space").unwrap();
+            let obs_space = ObsSpace::from_gym(&obs_space).unwrap();
+
+            let action_space = env.call_method0("action_space").unwrap();
+            let action_space = ActionSpace::from_gym(&action_space).unwrap();
+            GymnasiumEnvironment {
+                env: env.unbind(),
+                obs_space,
+                action_space,
+            }
+        });
+    }
+}
+
 pub mod cartpole;
-pub use cartpole::GymCartPole;
+pub use cartpole::cartpole;
 
-pub mod acrobot;
-pub use acrobot::GymAcrobot;
+// pub mod acrobot;
+// pub use acrobot::GymAcrobot;
 
-pub mod lunarlander;
-pub use lunarlander::GymLunarLander;
+// pub mod lunarlander;
+// pub use lunarlander::GymLunarLander;
 
-pub mod mountaincar;
-pub use mountaincar::GymMountainCar;
+// pub mod mountaincar;
+// pub use mountaincar::GymMountainCar;
 
-pub mod taxi;
-pub use taxi::GymTaxi;
+// pub mod taxi;
+// pub use taxi::GymTaxi;
 
-pub mod cliffwalking;
-pub use cliffwalking::GymCliffWalking;
+// pub mod cliffwalking;
+// pub use cliffwalking::GymCliffWalking;
 
-pub mod frozenlake;
-pub use frozenlake::GymFrozenLake;
+// pub mod frozenlake;
+// pub use frozenlake::GymFrozenLake;

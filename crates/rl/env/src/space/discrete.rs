@@ -16,11 +16,11 @@ impl DiscreteSpace {
 impl Space for DiscreteSpace { type Element = usize; }
 
 #[cfg(feature = "deep")]
-impl crate::space::deep::convert::ToBatchedSpace for DiscreteSpace {
-    type BatchedSpace = crate::space::deep::discrete::DiscreteTensorSpace;
+impl crate::deep::space::convert::ToBatchedSpace for DiscreteSpace {
+    type BatchedSpace = crate::deep::space::discrete::DiscreteTensorSpace;
 
     fn batched_space(&self, device: &burn::prelude::Device) -> Self::BatchedSpace {
-        crate::space::deep::discrete::DiscreteTensorSpace::new(self.n(), device)
+        crate::deep::space::discrete::DiscreteTensorSpace::new(self.n(), device)
     }
 
     fn to_raw(&self, batch: <Self::BatchedSpace as Space>::Element) -> Self::Element {

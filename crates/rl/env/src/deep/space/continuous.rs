@@ -1,7 +1,8 @@
 //! contiuous space
 
 use burn::prelude::*;
-use crate::space::{ContinuousSpace, Space, deep::convert::ToUnbatchedSpace};
+use crate::space::{ContinuousSpace, Space};
+use crate::deep::space::convert::ToUnbatchedSpace;
 /// A tensor space which is continuous
 pub struct ContinuousTensorSpace<const D: usize = 2> {
     shape: Vec<usize>,

@@ -2,7 +2,8 @@
 //! 
 use burn::prelude::*;
 
-use crate::space::{DiscreteSpace, Space, deep::convert::ToUnbatchedSpace};
+use crate::space::{DiscreteSpace, Space};
+use crate::deep::space::convert::ToUnbatchedSpace;
 
 /// A tensor space which is discrete
 pub struct DiscreteTensorSpace {

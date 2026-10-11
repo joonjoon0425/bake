@@ -3,7 +3,7 @@
 use std::marker::PhantomData;
 use burn::prelude::*;
 use crate::{buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, SamplerConfig, uniform::UniformSamplerConfig}};
-use bake_rl_core::data::deep::{Batch, Batchable};
+use crate::data::{Batch, Batchable};
 
 /// Replay buffer implementation
 pub struct ReplayBuffer<S: Sampler, Obs: Batchable, Action: Batchable, Constraint: Batchable> {

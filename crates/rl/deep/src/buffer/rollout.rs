@@ -1,6 +1,6 @@
 //! Rollout buffer for on-policy methods
 //! 
-use bake_rl_core::data::deep::{Batch, Batchable};
+use crate::data::{Batch, Batchable};
 /// Rollout buffer implementation. Currently uses AoS (Array of Structures)
 pub struct RolloutBuffer<Obs: Batchable, Action: Batchable, Constraint: Batchable> {
     batch: Vec<Batch<Obs, Action, Constraint>>,

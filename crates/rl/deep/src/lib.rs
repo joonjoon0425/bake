@@ -31,10 +31,10 @@ pub mod macros {
 
 pub mod data {
     //! re-exportation of bake_rl_core::deep::data
-    pub use bake_rl_core::data::deep::*;
+    pub use bake_rl_core::deep::data::*;
 }
 
 pub mod constraint {
     //! re-exportation of bake_rl_core::deep::constraint
-    pub use bake_rl_core::constraint::deep::*;
+    pub use bake_rl_core::deep::constraint::*;
 }

@@ -1,6 +1,6 @@
 //! epsilon-greedy policy
 //!
-use bake_rl_core::constraint::deep::discrete_constraint::DiscreteConstraint;
+use crate::constraint::discrete_constraint::DiscreteConstraint;
 use burn::{Tensor, tensor::{Distribution, Int}};
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 

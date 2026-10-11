@@ -1,11 +1,11 @@
 //! A Synchronized Vector Environment Wrapper
 use bake_rl_core::constraint::Constraint;
-use bake_rl_core::constraint::deep::convert::ToBatchable;
-use bake_rl_core::data::deep::Batchable;
+use bake_rl_core::deep::constraint::convert::ToBatchable;
+use bake_rl_core::deep::data::Batchable;
 use crate::space::Space;
-use crate::space::deep::convert::{ToBatchedSpace, ToUnbatchedSpace};
+use crate::deep::space::convert::{ToBatchedSpace, ToUnbatchedSpace};
 use crate::{Environment, EnvironmentConfiguration};
-use crate::vectorized::VectorizedEnvironment;
+use crate::deep::VectorizedEnvironment;
 use burn::prelude::*;
 /// A Synchronized Vector Environment Wrapper implementation for Non-vectorized environments
 pub struct SynchronizedEnvironment<E>
@@ -100,7 +100,7 @@ where E: Environment<ObsSpace: ToBatchedSpace, ActionSpace: ToBatchedSpace, Cons
 #[cfg(test)]
 mod tests {
     use burn::prelude::*;
-    use crate::{collection::CartPoleConfig, vectorized::{VectorizedEnvironment, wrapper::sync_env::SynchronizedEnvironment}};
+    use crate::{collection::CartPoleConfig, deep::{VectorizedEnvironment, wrapper::sync_env::SynchronizedEnvironment}};
 
     #[test]
     fn env_does_run_test() {

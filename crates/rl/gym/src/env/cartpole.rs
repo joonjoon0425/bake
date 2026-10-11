@@ -1,15 +1,10 @@
 //! CartPole-v1
 //! 
 
-use crate::{env::DiscreteGymnasiumEnvironment, info::DiscreteGymEnvInfo};
-/// CartPole-v1
-#[derive(Debug, Clone, Copy)]
-pub struct CartPoleInfo;
-impl DiscreteGymEnvInfo<2> for CartPoleInfo {
-    fn name() -> &'static str { "CartPole-v1" }
-    fn obs_shape() -> [usize; 2] { [1, 4] }
-    fn n_actions() -> usize { 2 }
-}
+use bake_rl_env::space::{ContinuousSpace, DiscreteSpace};
+use crate::env::GymnasiumEnvironmentConfig;
 
 /// CartPole-v1
-pub type GymCartPole = DiscreteGymnasiumEnvironment<2, CartPoleInfo>;
+pub fn cartpole() -> GymnasiumEnvironmentConfig<ContinuousSpace, DiscreteSpace> {
+    GymnasiumEnvironmentConfig::new("CartPole-v1")
+}

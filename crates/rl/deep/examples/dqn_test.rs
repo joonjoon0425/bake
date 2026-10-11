@@ -6,7 +6,7 @@ use bake::rl::deep::net::basic::MlpDiscreteQNet;
 use bake::rl::deep::algorithm::Dqn;
 use bake::rl::deep::loss::LossFn;
 
-use bake::rl::env::vectorized::{Tape, sync_env::SynchronizedEnvironment};
+use bake::rl::env::deep::{tape::Tape, wrapper::sync_env::SynchronizedEnvironment};
 use bake::rl::env::collection::CartPoleConfig;
 
 use burn::prelude::*;

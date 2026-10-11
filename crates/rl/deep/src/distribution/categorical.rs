@@ -1,7 +1,7 @@
 //! Categorial distribution implementation
 use burn::{Tensor, tensor::{Int, activation::log_softmax}};
 use crate::distribution::{Distribution, PossibleConstraint};
-use bake_rl_core::constraint::deep::{Unconstrained, discrete_constraint::{DiscreteConstraint, DiscreteMask}};
+use crate::constraint::{Unconstrained, discrete_constraint::{DiscreteConstraint, DiscreteMask}};
 
 #[derive(Debug, Clone)]
 /// A Categorical distribution

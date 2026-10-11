@@ -36,8 +36,8 @@ impl<const D: usize> Space for ContinuousSpace<D> {
 #[cfg(feature = "deep")]
 macro_rules! batched {
     ($d:literal => $db:literal) => {
-        impl crate::space::deep::convert::ToBatchedSpace for ContinuousSpace<$d> {
-            type BatchedSpace = crate::space::deep::continuous::ContinuousTensorSpace<$db>;
+        impl crate::deep::space::convert::ToBatchedSpace for ContinuousSpace<$d> {
+            type BatchedSpace = crate::deep::space::continuous::ContinuousTensorSpace<$db>;
             
             fn batched_space(&self, device: &burn::prelude::Device) -> Self::BatchedSpace {
                 let low: Vec<f32> = self.low.iter().copied().collect();

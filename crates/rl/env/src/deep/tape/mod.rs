@@ -1,6 +1,7 @@
-//! A `Tape` struct for Vectorized Environment
-use crate::{space::Space, vectorized::VectorizedEnvironment};
-use bake_rl_core::data::deep::{Batch, extras::ExtraContainer};
+//! A `Tape` for deep rl environments
+//! 
+use crate::{space::Space, deep::VectorizedEnvironment};
+use bake_rl_core::deep::data::{Batch, extras::ExtraContainer};
 use burn::prelude::*;
 
 /// A `VecTape` struct for vectorized environment

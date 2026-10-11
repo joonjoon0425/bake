@@ -1,6 +1,6 @@
 //! Strategies for exploration
 //! 
-use bake_rl_core::constraint::deep::discrete_constraint::DiscreteConstraint;
+use crate::constraint::discrete_constraint::DiscreteConstraint;
 use crate::contract::basic::DiscreteActionValue;
 use burn::prelude::*;
 /// A trait which all exploration strategies must implement

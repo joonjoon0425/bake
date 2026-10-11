@@ -1,11 +1,10 @@
-use bake_deep::contract::basic::Policy;
-use bake_deep::distribution::Distribution;
-use bake_deep::logger::MovingAvgLogger;
-use bake_deep::{
+use bake::rl::deep::contract::basic::Policy;
+use bake::rl::deep::distribution::Distribution;
+use bake::rl::deep::logger::MovingAvgLogger;
+use bake::rl::deep::{
     algorithm::{a2c::A2C, advantage_estimator::AdvantageEstimator},
     loss::LossFn,
     buffer::RolloutBuffer,
-    env::Tape,
     net::basic::MlpSeparatedActorCritic,
 };
 use bake_gym::env::{GymCartPole, KwArgs};

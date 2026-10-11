@@ -16,7 +16,7 @@ pub trait Environment {
     type ActionSpace: Space;
     /// the constraint of which the environment produces
     type Constraint;
-
+    
     /// reset the environment
     fn reset(&mut self) -> (<Self::ObsSpace as Space>::Element, Self::Constraint);
     /// take one step and returns the tuple ((obs, constraint), reward, terminated, truncated)
@@ -37,4 +37,4 @@ pub trait EnvironmentConfiguration {
 }
 
 #[cfg(feature = "deep")]
-pub mod vectorized;
+pub mod deep;

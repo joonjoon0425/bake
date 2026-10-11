@@ -9,7 +9,7 @@ use bake::rl::deep::{
     net::basic::MlpSeparatedActorCritic
 };
 
-use bake::rl::env::vectorized::{Tape, sync_env::SynchronizedEnvironment};
+use bake::rl::env::deep::{tape::Tape, wrapper::sync_env::SynchronizedEnvironment};
 use bake::rl::env::collection::CartPoleConfig;
 
 use burn::{nn::activation::ActivationConfig::Relu, optim::RmsPropConfig, prelude::*};

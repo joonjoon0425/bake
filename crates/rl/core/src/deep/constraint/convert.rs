@@ -1,6 +1,6 @@
 //! convert between tensor constraint and raw discrete constraint
 
-use crate::data::deep::Batchable;
+use crate::deep::data::Batchable;
 use burn::prelude::*;
 
 /// convert to batchable type

@@ -5,7 +5,7 @@ use bake::rl::deep::net::basic::MlpPolicy;
 use bake::rl::deep::algorithm::reinforce::Baseline;
 use bake::rl::deep::logger::MovingAvgLogger;
 
-use bake::rl::env::vectorized::{Tape, sync_env::SynchronizedEnvironment};
+use bake::rl::env::deep::{tape::Tape, wrapper::sync_env::SynchronizedEnvironment};
 use bake::rl::env::collection::CartPoleConfig;
 
 use burn::optim::AdamConfig;
