@@ -20,7 +20,7 @@ impl CliffWalking {
 }
 
 impl Environment for CliffWalking {
-    type Constraint = Unconstrained<4>;
+    type Constraint = Unconstrained;
     type ObsSpace = DiscreteSpace;
     type ActionSpace = DiscreteSpace;
 

@@ -17,7 +17,7 @@ pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
 impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnvironment<ObsSpace, ActionSpace> {
     type ObsSpace = ObsSpace;
     type ActionSpace = ActionSpace;
-    type Constraint = Unconstrained<6>;
+    type Constraint = Unconstrained;
 
     fn reset(&mut self) -> (<Self::ObsSpace as bake_rl_env::space::Space>::Element, Self::Constraint) {
         return Python::attach(|py| {

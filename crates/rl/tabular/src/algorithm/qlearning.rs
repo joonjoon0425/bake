@@ -15,7 +15,7 @@ pub struct QLearning {
 impl QLearning {
     /// update the qtable with given state, using Q-Learning algorithm
     pub fn update<C: Constraint>(state: &QLearning, qtable: &mut QTable, t: Transition<C>) {
-        let target = t.reward + state.gamma * (if t.terminated { 0f32 } else { qtable.qvalues(t.next_obs).max(t.next_constraint) });
+        let target = t.reward + state.gamma * (if t.terminated { 0f32 } else { t.next_constraint.apply(qtable.qvalues_as_vec(t.next_obs)).max() });
         let qvalue = qtable.qvalues(t.obs)[t.action];
         qtable.qvalues_mut(t.obs)[t.action] += state.alpha * (target - qvalue);
     }

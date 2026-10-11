@@ -24,7 +24,7 @@ pub fn main() {
     logger.register("steps", 20);
 
     for count in 0..=total_steps {
-        let action = exploration.sample(&qtable, tape.obs, tape.constraint);
+        let action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
         let t = tape.step(action);
         QLearning::update(&state, &mut qtable, t);
 
@@ -46,7 +46,7 @@ pub fn main() {
     for _ in 0..5 {
         let (mut obs, mut constraint) = env.reset();
         loop {
-            let action = exploration.sample(&qtable, obs, constraint);
+            let action = exploration.sample(qtable.qvalues_as_vec(obs), constraint);
             let ((next_obs, next_constraint), _, terminated, truncated) = env.step(action);
             obs = next_obs;
             constraint = next_constraint;

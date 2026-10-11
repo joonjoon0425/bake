@@ -73,7 +73,7 @@ impl CartPole {
 impl Environment for CartPole {
     type ObsSpace = ContinuousSpace;
     type ActionSpace = DiscreteSpace;
-    type Constraint = Unconstrained<2>;
+    type Constraint = Unconstrained;
 
     fn reset(&mut self) -> (ArrayD<f32>, Self::Constraint) {
         let mut sample = || self.rng.random_range(-INIT_RANGE..INIT_RANGE);

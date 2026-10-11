@@ -21,7 +21,7 @@ pub fn main() {
     logger.register("steps", 20);
 
     for count in 0..=total_steps {
-        let action = exploration.sample(&qtable, tape.obs, tape.constraint);
+        let action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
         let t = tape.step(action);
         QLearning::update(&state, &mut qtable, t);
 

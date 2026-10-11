@@ -28,7 +28,7 @@ pub fn tree_backup<C: Constraint, E: Exploration>(qtable: &QTable, target_policy
         let constraint = transition.constraint;
         let action = transition.action;
         let qvalues = qtable.qvalues(obs);
-        target = t[i - 1].reward + gamma * (qtable.expectation(target_policy, obs, constraint) + target_policy.prob(qtable, obs, action, constraint) * (target - qvalues[action]))
+        target = t[i - 1].reward + gamma * (qtable.expectation(target_policy, obs, constraint) + target_policy.prob(qtable.qvalues_as_vec(obs), action, constraint) * (target - qvalues[action]))
     }
     target
 }

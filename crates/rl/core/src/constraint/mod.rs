@@ -5,14 +5,10 @@ use crate::deep::constraint::convert::ToBatchable;
 
 /// Basic constraint trait
 pub trait Constraint: Clone + Copy {
+    /// apply the mask and return the result
+    fn apply(&self, qvalue: Vec<f32>) -> Vec<f32>;
     /// return the number of possible actions
-    fn n_possible_actions(&self) -> usize;
-    
-    /// returns the iterator of pair of mask and action as tuple (usize, &bool)
-    fn iter(&self) -> impl Iterator<Item = (usize, &bool)> + '_;
-
-    /// return true if given action is possible; else return false
-    fn is_possible(&self, action: usize) -> bool;
+    fn n_possible_actions(&self) -> Option<usize>;
 }
 
 /// Discrete constraint
@@ -39,17 +35,16 @@ impl<const D: usize> DiscreteMask<D> {
 }
 
 impl<const D: usize> Constraint for DiscreteMask<D> {
-    fn n_possible_actions(&self) -> usize {
-        self.0.iter().filter(|&&a| a).count()
+    fn apply(&self, mut qvalue: Vec<f32>) -> Vec<f32> {
+        assert!(qvalue.len() == D, "The number of action and the length of given qvalue does not matches");
+        for i in 0..D {
+            qvalue[i] = -1e9;
+        }
+        qvalue
     }
 
-    fn iter(&self) -> impl Iterator<Item = (usize, &bool)> + '_ {
-        self.0.iter().enumerate()
-    }
-
-    fn is_possible(&self, action: usize) -> bool {
-        assert!(action < D);
-        self.0[action]
+    fn n_possible_actions(&self) -> Option<usize> {
+        Some(self.0.iter().filter(|p| **p).count())
     }
 }
 
@@ -65,15 +60,14 @@ impl<const D: usize> ToBatchable for DiscreteMask<D> {
 
 /// No constraint
 #[derive(Debug, Clone, Copy)]
-pub struct Unconstrained<const D: usize>;
-impl<const D: usize> Constraint for Unconstrained<D> {
-    fn n_possible_actions(&self) -> usize { D }
-    fn iter(&self) -> impl Iterator<Item = (usize, &bool)> + '_ { [true;D].iter().enumerate() }
-    fn is_possible(&self, _: usize) -> bool { true }
+pub struct Unconstrained;
+impl Constraint for Unconstrained {
+    fn apply(&self, qvalue: Vec<f32>) -> Vec<f32> { qvalue }
+    fn n_possible_actions(&self) -> Option<usize> { None }
 }
 
 #[cfg(feature = "deep")]
-impl<const D: usize> ToBatchable for Unconstrained<D> {
+impl ToBatchable for Unconstrained {
     type Batched = crate::deep::constraint::Unconstrained;
 
     fn to_batchable(self, _: &burn::prelude::Device) -> Self::Batched {
@@ -87,22 +81,18 @@ mod tests {
 
     #[test]
     fn n_possible_actions_test() {
+        let qvalue = vec![1., -1., 4., -5.];
         let c = DiscreteMask::from_bool([true, false, false, true]);
-        assert!(c.n_possible_actions() == 2);
-    }
-
-    #[test]
-    fn possible_actions_test() {
-        let c = DiscreteMask::from_bool([true, true, false, true, false, true]);
-        for (a, p) in c.iter() {
-            if *p { assert!(a != 2 && a != 4) }
-        }
+        let qvalue = c.apply(qvalue);
+        assert!(qvalue[1] == -1e9);
+        assert!(qvalue[3] == -1e9);
     }
 
     #[test]
     #[should_panic]
-    fn invalid_action_test() {
+    fn invalid_length_test() {
+        let qvalue = vec![1.];
         let c = DiscreteMask::from_bool([true, true, false, false, true]);
-        c.is_possible(5);
+        c.apply(qvalue);
     }
 }

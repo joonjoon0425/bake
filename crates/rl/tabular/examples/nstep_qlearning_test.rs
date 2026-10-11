@@ -24,8 +24,8 @@ pub fn main() {
     logger.register("steps", 20);
 
     for count in 0..=total_steps {
-        let action = exploration.sample(&qtable, tape.obs, tape.constraint);
-        let b_log_prob = exploration.prob(&qtable, tape.obs, action, tape.constraint).ln();
+        let action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
+        let b_log_prob = exploration.prob(qtable.qvalues_as_vec(tape.obs), action, tape.constraint).ln();
         let mut t = tape.step(action);
         t.insert("b_log_prob", b_log_prob);
         window.push(t);

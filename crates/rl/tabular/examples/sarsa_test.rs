@@ -20,10 +20,10 @@ pub fn main() {
     logger.register("reward", 20);
     logger.register("steps", 20);
     
-    let mut action = exploration.sample(&qtable, tape.obs, tape.constraint);
+    let mut action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
     for count in 0..=total_steps {
         let mut t = tape.step(action);
-        action = exploration.sample(&qtable, tape.obs, tape.constraint);
+        action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
         t.insert("next_action", action as f32);
         Sarsa::update(&state, &mut qtable, t);
         
@@ -31,7 +31,7 @@ pub fn main() {
             logger.push_single("reward", tape.episode_reward, None);
             logger.push_single("steps", tape.steps as f32, None);
             tape.reset();
-            action = exploration.sample(&qtable, tape.obs, tape.constraint);
+            action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
         }
 
         if count % 10000 == 0 {

@@ -7,7 +7,7 @@ use rand::rngs::SmallRng;
 
 use crate::explore::Exploration;
 use bake_rl_core::constraint::Constraint;
-use crate::qtable::{QTable, QValues};
+use crate::qtable::QValues;
 /// boltzmann exploration strategy implementation
 /// - chooses action using q values as logits for categorical distribution
 pub struct Boltzmann {
@@ -30,29 +30,23 @@ impl Boltzmann {
 }
 
 impl Exploration for Boltzmann {
-    fn sample<C: Constraint>(&mut self, qtable: &QTable, obs: usize, constraint: C) -> usize {
-        let mut values = qtable.qvalues_as_vec(obs);
-        let vmax = values.max(constraint);
-        for (a, &p) in constraint.iter() {
-            if p {
-                values[a] = ((values[a] - vmax) / self.temp).exp();
-            } else {
-                values[a] = 0f32;
-            }
+    fn sample<C: Constraint>(&mut self, qvalues: Vec<f32>, constraint: C) -> usize {
+        let mut qvalues = constraint.apply(qvalues);
+        let vmax = qvalues.max();
+        for qvalue in &mut qvalues {
+            *qvalue = ((*qvalue - vmax) / self.temp).exp();
         }
-        let weighted_index = WeightedIndex::new(values).unwrap();
+        let weighted_index = WeightedIndex::new(qvalues).unwrap();
         weighted_index.sample(&mut self.rng)
     }
 
-    fn prob<C: Constraint>(&self, qtable: &QTable, obs: usize, action: usize, constraint: C) -> f32 {
-        let values = qtable.qvalues(obs);
-        let vmax = values.max(constraint);
-        let numerator = ((values[action] - vmax) / self.temp).exp();
+    fn prob<C: Constraint>(&self, qvalues: Vec<f32>,action: usize, constraint: C) -> f32 {
+        let qvalues = constraint.apply(qvalues);
+        let vmax = qvalues.max();
+        let numerator = ((qvalues[action] - vmax) / self.temp).exp();
         let mut denominator = 0f32;
-        for (a, &p) in constraint.iter() {
-            if p {
-                denominator += ((values[a] - vmax) / self.temp).exp();
-            }
+        for qvalue in qvalues {
+            denominator += ((qvalue - vmax) / self.temp).exp();
         }
         numerator / denominator
     }
@@ -76,7 +70,7 @@ mod tests {
         let qtable = QTable::new(1, 4);
 
         for _ in 0..1000 {
-            let action = e.sample(&qtable, 0, c.clone());
+            let action = e.sample(qtable.qvalues_as_vec(0), c.clone());
             assert!(action != 3);
         }
     }

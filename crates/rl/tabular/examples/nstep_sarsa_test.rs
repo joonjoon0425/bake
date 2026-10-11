@@ -21,10 +21,10 @@ pub fn main() {
     logger.register("reward", 20);
     logger.register("steps", 20);
     
-    let mut action = exploration.sample(&qtable, tape.obs, tape.constraint);
+    let mut action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
     for count in 0..=total_steps {
         let mut t = tape.step(action);
-        action = exploration.sample(&qtable, tape.obs, tape.constraint);
+        action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
         t.insert("next_action", action as f32);
         window.push(t);
         if window.len() >= state.n {
@@ -41,7 +41,7 @@ pub fn main() {
             for t in window.drain() {
                 NStepSarsa::update(&state, &mut qtable, t);
             }
-            action = exploration.sample(&qtable, tape.obs, tape.constraint);
+            action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
         }
 
         if count % 10000 == 0 {

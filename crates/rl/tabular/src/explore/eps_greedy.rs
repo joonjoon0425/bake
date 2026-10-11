@@ -5,7 +5,7 @@ use rand::rngs::SmallRng;
 
 use crate::explore::Exploration;
 use bake_rl_core::constraint::Constraint;
-use crate::qtable::{QTable, QValues};
+use crate::qtable::QValues;
 /// epsilon greedy exploration strategy implementation
 /// - exploits with probability `1 - eps` and explores with probability `eps`,
 pub struct EpsGreedy {
@@ -28,23 +28,26 @@ impl EpsGreedy {
 }
 
 impl Exploration for EpsGreedy {
-    fn sample<C: Constraint>(&mut self, qtable: &QTable, obs: usize, constraint: C) -> usize {
+    fn sample<C: Constraint>(&mut self, qvalues: Vec<f32>, constraint: C) -> usize {
         if self.rng.random_range(0.0..1.0) < self.eps {
-            let n = constraint.n_possible_actions();
-            let k = self.rng.random_range(0..n);
-            constraint.iter().filter_map(|(a, p)| if *p { Some(a) } else { None }).nth(k).unwrap()
+            let n = qvalues.len();
+            let r = (0..n).into_iter().map(|_| self.rng.random_range(0.0..1.0) ).collect();
+            let r = constraint.apply(r);
+            r.argmax()
         } else {
-            let values = qtable.qvalues(obs);
-            let indices = values.argmaxes(constraint);
-            let random = self.rng.random_range(0..indices.len());
-            indices[random]
+            let qvalues = constraint.apply(qvalues);
+            let index = qvalues.argmax();
+            index
         }
     }
 
-    fn prob<C: Constraint>(&self, qtable: &QTable, obs: usize, action: usize, constraint: C) -> f32 {
-        let qvalues = qtable.qvalues(obs);
-        let indices = qvalues.argmaxes(constraint);
-        if indices.contains(&action) { (1. - self.eps) / indices.len() as f32 + self.eps / constraint.n_possible_actions() as f32 } else { self.eps / constraint.n_possible_actions() as f32 }
+    fn prob<C: Constraint>(&self, qvalues: Vec<f32>, action: usize, constraint: C) -> f32 {
+        let qvalues = constraint.apply(qvalues);
+        let index = qvalues.argmax();
+        let n_possible_actions = constraint.n_possible_actions().unwrap_or_else(|| {
+            qvalues.len()
+        });
+        if index == action { (1. - self.eps) + self.eps / n_possible_actions as f32 } else { self.eps / n_possible_actions as f32 }
     }
 }
 
@@ -71,7 +74,7 @@ mod tests {
         let qtable = QTable::new(1, 4);
 
         for _ in 0..1000 {
-            let action = e.sample(&qtable, 0, c.clone());
+            let action = e.sample(qtable.qvalues_as_vec(0), c.clone());
             assert!(action != 3);
         }
     }

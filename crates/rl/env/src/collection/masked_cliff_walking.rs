@@ -175,7 +175,7 @@ mod tests {
         let (obs, constraint) = env.reset();
 
         for _ in 0..1000 {
-            let action = exploration.sample(&qtable, obs, constraint);
+            let action = exploration.sample(qtable.qvalues_as_vec(obs), constraint);
             assert!(action != 2 && action != 0);
         }
     }

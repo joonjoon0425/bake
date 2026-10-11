@@ -1,14 +1,13 @@
 //! Strategies for exploration
 //! 
 use bake_rl_core::constraint::Constraint;
-use crate::qtable::QTable;
 
 /// A basic trait for all exploration strategies
 pub trait Exploration {
     /// Computes a probability of given action to happen in given state
-    fn prob<C: Constraint>(&self, qtable: &QTable, obs: usize, action: usize, constraint: C) -> f32;
+    fn prob<C: Constraint>(&self, qvalue: Vec<f32>, action: usize, constraint: C) -> f32;
     /// Picks an action from given action values, with constraint if available
-    fn sample<C: Constraint>(&mut self, qtable: &QTable, obs: usize, constraint: C) -> usize;
+    fn sample<C: Constraint>(&mut self, qvalue: Vec<f32>, constraint: C) -> usize;
 }
 
 pub mod greedy;
