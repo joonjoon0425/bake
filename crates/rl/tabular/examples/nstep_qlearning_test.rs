@@ -1,5 +1,4 @@
 use bake::rl::tabular::algorithm::NStepQLearning;
-use bake::rl::tabular::qtable::QTable;
 use bake::rl::tabular::explore::EpsGreedy;
 use bake::rl::tabular::buffer::window::WindowBuffer;
 use bake::rl::tabular::explore::Exploration;
@@ -7,11 +6,12 @@ use bake::rl::tabular::explore::Exploration;
 use bake::rl::env::{Environment, EnvironmentConfiguration, collection::CliffWalkingConfig, tape::Tape};
 use bake::rl::tabular::logger::MovingAvgLogger;
 use bake::rl::tabular::scheduler::{LinearScheduler, Scheduler};
+use bake_rl_tabular::qtable::QTableConfig;
 
 pub fn main() {
     let state = NStepQLearning { n: 3, gamma: 0.99, alpha: 0.02 };
     let env = CliffWalkingConfig::new().init();
-    let mut qtable = QTable::new(env.obs_space().n(), env.action_space().n());
+    let mut qtable = QTableConfig::new(env.obs_space().n(), env.action_space().n()).init();
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;

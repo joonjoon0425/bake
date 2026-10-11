@@ -53,7 +53,7 @@ impl Exploration for EpsGreedy {
 
 #[cfg(test)]
 mod tests {
-    use crate::{explore::{EpsGreedy, Exploration}, qtable::QTable};
+    use crate::{explore::{EpsGreedy, Exploration}, qtable::QTableConfig};
     use bake_rl_core::constraint::DiscreteMask;
     #[test]
     #[should_panic]
@@ -71,7 +71,7 @@ mod tests {
     fn constraint_test() {
         let c = DiscreteMask::from_bool([true, true, true, false]);
         let mut e = EpsGreedy::new(1, 1.0);
-        let qtable = QTable::new(1, 4);
+        let qtable = QTableConfig::new(1, 4).init();
 
         for _ in 0..1000 {
             let action = e.sample(qtable.qvalues_as_vec(0), c.clone());

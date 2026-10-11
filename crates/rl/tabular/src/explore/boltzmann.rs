@@ -54,7 +54,7 @@ impl Exploration for Boltzmann {
 
 #[cfg(test)]
 mod tests {
-    use crate::{explore::{Boltzmann, Exploration}, qtable::QTable};
+    use crate::{explore::{Boltzmann, Exploration}, qtable::QTableConfig};
     use bake_rl_core::constraint::DiscreteMask;
 
     #[test]
@@ -67,7 +67,7 @@ mod tests {
     fn constraint_test() {
         let c = DiscreteMask::from_bool([true, true, true, false]);
         let mut e = Boltzmann::new(1, 1000f32);
-        let qtable = QTable::new(1, 4);
+        let qtable = QTableConfig::new(1, 4).init();
 
         for _ in 0..1000 {
             let action = e.sample(qtable.qvalues_as_vec(0), c.clone());

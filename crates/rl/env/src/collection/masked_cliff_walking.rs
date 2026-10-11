@@ -103,7 +103,7 @@ impl EnvironmentConfiguration for MaskedCliffWalkingConfig {
 #[cfg(test)]
 mod tests {
     use crate::{{Environment, EnvironmentConfiguration}, collection::MaskedCliffWalkingConfig};
-    use bake_rl_tabular::{explore::{EpsGreedy, Exploration}, qtable::QTable};
+    use bake_rl_tabular::{explore::{EpsGreedy, Exploration}, qtable::QTableConfig};
 
     #[test]
     #[should_panic]
@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn masking() {
-        let qtable = QTable::new(48, 4);
+        let qtable = QTableConfig::new(48, 4).init();
         let mut exploration = EpsGreedy::new(1, 1.0);
 
         let mut env = MaskedCliffWalkingConfig::new().init();

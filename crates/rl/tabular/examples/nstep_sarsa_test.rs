@@ -1,5 +1,5 @@
 use bake::rl::tabular::algorithm::NStepSarsa;
-use bake::rl::tabular::qtable::QTable;
+use bake::rl::tabular::qtable::QTableConfig;
 use bake::rl::tabular::explore::{EpsGreedy, Exploration};
 use bake::rl::tabular::logger::MovingAvgLogger;
 use bake::rl::tabular::scheduler::{LinearScheduler, Scheduler};
@@ -9,7 +9,7 @@ use bake::rl::env::{Environment, EnvironmentConfiguration, collection::MaskedCli
 pub fn main() {
     let state = NStepSarsa { n: 1, gamma: 0.99, alpha: 0.4 };
     let env = MaskedCliffWalkingConfig::new().init();
-    let mut qtable = QTable::new(env.obs_space().n(), env.action_space().n());
+    let mut qtable = QTableConfig::new(env.obs_space().n(), env.action_space().n()).init();
     let mut exploration = EpsGreedy::new(12, 1.0);
     
     let total_steps = 100000;
