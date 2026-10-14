@@ -1,10 +1,4 @@
-[package]
-name = "bake-rl"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
-repository.workspace = true
+
 
 [dependencies]
 bake-rl-deep = { workspace = true, optional = true }

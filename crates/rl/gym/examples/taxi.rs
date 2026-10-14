@@ -9,9 +9,7 @@ use bake::rl::env::gym::taxi;
 
 pub fn main() {
     let state = QLearning { gamma: 0.99, alpha: 0.4 };
-    let env = taxi().init();
-    println!("{}", env.obs_space().n());
-    println!("{}", env.action_space().n());
+    let env = taxi().kwarg("fickle_passenger", true).init();
     let mut qtable = QTableConfig::new(env.obs_space().n(), env.action_space().n()).init();
     let mut exploration = EpsGreedy::new(12, 1.0);
     
@@ -42,15 +40,14 @@ pub fn main() {
     }
 
     // evaluation
-    let mut env = taxi().kwarg("render_mode", "human").init();
+    let env = taxi().kwarg("fickle_passenger", true).kwarg("render_mode", "human").init();
+    let mut tape = Tape::new(env);
     for _ in 0..5 {
-        let (mut obs, mut constraint) = env.reset();
+        tape.reset();
         loop {
-            let action = exploration.sample(qtable.qvalues_as_vec(obs), constraint);
-            let ((next_obs, next_constraint), _, terminated, truncated) = env.step(action);
-            obs = next_obs;
-            constraint = next_constraint;
-            if terminated || truncated { break; }
+            let action = exploration.sample(qtable.qvalues_as_vec(tape.obs), tape.constraint);
+            tape.step(action);
+            if tape.done() { break; }
         }
     }
 }
