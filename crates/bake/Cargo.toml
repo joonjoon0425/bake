@@ -8,10 +8,7 @@ repository.workspace = true
 
 [dependencies]
 bake-common.workspace = true
-bake-rl = { workspace = true, default-features = false }
+bake-rl = { workspace = true }
 
 [features]
-rl-tabular = ["bake-rl/tabular"]
-rl-deep = ["bake-rl/deep"]
 rl-gym = ["bake-rl/gym"]
-rl-full = ["rl-tabular", "rl-deep", "rl-gym"]

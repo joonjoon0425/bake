@@ -1,12 +1,10 @@
 [workspace]
 resolver = "3"
 members = [
-    "crates/*",
-    "crates/rl",
-    "crates/rl/core",
-    "crates/rl/tabular",
-    "crates/rl/deep",
-    "crates/rl/env",
+    "crates/bake",
+    "crates/bake-rl",
+    "crates/bake-macros",
+    "crates/bake-common"
     ]
 
 [workspace.package]
@@ -20,12 +18,7 @@ repository = "https://github.com/joonjoon0425/bake"
 bake = { path = "crates/bake" }
 bake-common = { path = "crates/bake-common" }
 bake-macros = { path = "crates/bake-macros" }
-bake-rl = { path = "crates/rl", default-features = false }
-bake-rl-deep = { path = "crates/rl/deep" }
-bake-rl-tabular = { path = "crates/rl/tabular" }
-bake-rl-env = { path = "crates/rl/env" }
-bake-rl-env-gym = { path = "crates/rl/gym" }
-bake-rl-core = { path = "crates/rl/core" }
+bake-rl = { path = "crates/bake-rl" }
 ndarray = "0.17.2"
 
 burn = { version = "0.22.0", features = ["flex", "linalg"] }

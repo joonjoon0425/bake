@@ -1,0 +1,1 @@
+//! contracts which the algorithms requires

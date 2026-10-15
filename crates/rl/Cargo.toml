@@ -1,5 +1,5 @@
 [package]
-name = "bake-rl"
+name = ""
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
