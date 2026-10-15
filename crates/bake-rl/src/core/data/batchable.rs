@@ -3,9 +3,7 @@
 use core::ops::Range;
 use std::ops::IndexMut;
 
-use burn::{
-    Tensor, tensor::{Bool, Int, Device},
-};
+use burn::prelude::*;
 
 use crate::core::constraint::Unconstrained;
 

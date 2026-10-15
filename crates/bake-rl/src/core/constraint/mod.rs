@@ -1,7 +1,7 @@
 //! constraint traits and implementations
 
 pub mod discrete;
+pub use discrete::DiscreteConstraint;
 
-/// Unconstrained constraint
-#[derive(Debug, Clone, Copy)]
-pub struct Unconstrained;
+mod unconstrained;
+pub use unconstrained::Unconstrained;
