@@ -1,7 +1,10 @@
 use crate::core::{data::Batchable, env::space::Space};
 use burn::prelude::*;
 
-/// `VectorEnvironment` trait which all vector environments must implement
+/// `VectorEnvironment` trait which all vectorized environments must implement
+/// - For custom non-vetorized environment, implement `Environment` trait
+///     - You can easily make vectorized environment using the non-vectorized environment, whose space implements `ToBatchedSpace` trait, via the `SynchronizedVectorEnvironment` wrapper.
+///     - But note that it can be slower than the environment which was implemented using `VectorEnvironment` trait, since `SynchronizedVectorEnvironment` moves the data across host and device.
 pub trait VectorEnvironment {
     /// type of observation space
     type ObsSpace: Space<Element: Batchable>;

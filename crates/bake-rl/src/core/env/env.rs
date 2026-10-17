@@ -3,10 +3,10 @@
 use crate::core::env::space::{Space, to_batched::ToBatched};
 
 /// `Environment` trait which all non-vectorized environments must implement
-/// # Warning
-/// - If you are using `burn::Tensor` for observation space, action and reward, the environment must have a batch dimension for its outputs (obs, action, constraint, reward, except for the flags), even if it is implemented as non-vectorized environment
-/// - This is due to the fixed rank of `burn`'s `Tensor`s.
-/// - Otherwise, batch dimension is not required
+/// - For custom non-vetorized environment, implement this trait
+///     - If you use `Space` struct which implements `ToBatchedSpace` trait, your environment can be easily used as vectorized environment via the `SynchronizedVectorEnvironment` wrapper.
+///     - But note that it can be slower than the environment which was implemented using `VectorEnvironment` trait, since `SynchronizedVectorEnvironment` moves the data across host and device.
+/// - For custom vetorized environment, implement `VectorEnvironment` trait
 pub trait Environment {
     /// type of observation space
     type ObsSpace: Space;
