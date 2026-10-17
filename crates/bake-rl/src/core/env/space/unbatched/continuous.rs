@@ -5,6 +5,7 @@ use ndarray::{Array, Dim};
 use crate::core::env::space::Space;
 
 /// single continuous space
+#[derive(Clone)]
 pub struct SingleContinuousSpace<const D: usize> {
     shape: Vec<usize>,
     low: <Self as Space>::Element,

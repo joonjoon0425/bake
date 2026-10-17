@@ -3,7 +3,7 @@
 //! 
 
 /// `Space` trait for specifying the properties of element
-pub trait Space {
+pub trait Space: Clone {
     /// Element type
     type Element: Clone + 'static;
 }

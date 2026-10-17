@@ -3,6 +3,7 @@
 use crate::core::env::space::Space;
 
 /// single discrete space
+#[derive(Debug, Clone)]
 pub struct SingleDiscreteSpace {
     n: usize,
 }

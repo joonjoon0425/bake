@@ -4,6 +4,7 @@ use crate::core::env::space::Space;
 use burn::prelude::*;
 
 /// Discrete space
+#[derive(Debug, Clone)]
 pub struct DiscreteSpace {
     n: usize,
 }

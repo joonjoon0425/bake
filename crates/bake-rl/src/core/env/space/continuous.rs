@@ -4,6 +4,7 @@ use crate::core::env::space::Space;
 use burn::prelude::*;
 
 /// Continuous space
+#[derive(Debug, Clone)]
 pub struct ContinuousSpace<const D: usize> {
     shape: Vec<usize>,
     low: <Self as Space>::Element,
