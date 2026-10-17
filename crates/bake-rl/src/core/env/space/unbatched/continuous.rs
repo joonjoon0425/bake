@@ -4,16 +4,17 @@ use ndarray::{Array, Dim};
 
 use crate::core::env::space::Space;
 
+/// single continuous space
 pub struct SingleContinuousSpace<const D: usize> {
-    shape: [usize; D],
+    shape: Vec<usize>,
     low: <Self as Space>::Element,
     high: <Self as Space>::Element
 }
 
 impl<const D: usize> SingleContinuousSpace<D> {
     /// create a new continuous space
-    pub fn new(shape: [usize; D], low: <Self as Space>::Element, high: <Self as Space>::Element) -> Self {
-        Self { shape, low, high }
+    pub fn new(shape: &[usize], low: <Self as Space>::Element, high: <Self as Space>::Element) -> Self {
+        Self { shape: shape.try_into().unwrap(), low, high }
     }
     /// return the shape
     pub fn shape(&self) -> &[usize] {

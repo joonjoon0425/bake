@@ -12,7 +12,7 @@ pub trait VectorEnvironment {
     /// type of reward
     type Reward: Batchable;
     /// type of additional information, which is returned every `step` and `reset`
-    type Info;
+    type Info: Clone;
 
     /// return the observation space
     fn obs_space(&self) -> &Self::ObsSpace;
@@ -27,9 +27,6 @@ pub trait VectorEnvironment {
     fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info);
     /// return the number of environments
     fn n_envs(&self) -> usize;
-
-    /// create a new configuration
-    fn config() -> impl VectorizedEnvironmentConfig;
 }
 
 /// configuration trait for `VectorizedEnvironment`

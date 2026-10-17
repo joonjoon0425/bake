@@ -4,27 +4,38 @@ use crate::core::{
     data::Batchable,
     env::space::{
         ContinuousSpace, DiscreteSpace, Space,
-        switch::{ToBatched, ToUnBatched},
         unbatched::{continuous::SingleContinuousSpace, discrete::SingleDiscreteSpace}
     }
 };
+use ndarray::{Array, Dim};
 use burn::prelude::*;
-pub trait ToBatchedSpace: Space {
+/// `Space` can be converted to `Space` whose elements are `Batchable`
+pub trait ToBatchedSpace: Space + Sized {
+    /// `Batchable` `Space`
     type BatchedSpace: Space<Element: Batchable>;
-
+    /// create a batch from given unbatched elements
     fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space>::Element;
+    /// create unbatched elements from batch
     fn unbatch(bundle: <Self::BatchedSpace as Space>::Element) -> Vec<Self::Element>;
+    /// create a batched space from unbatched spaces
+    fn to_batched_space(spaces: Vec<Self>, device: &Device) -> Self::BatchedSpace;
 }
 
 impl ToBatchedSpace for SingleDiscreteSpace {
     type BatchedSpace = DiscreteSpace;
 
-    fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space>::Element {
-        ToBatched::batch(bundle, device)
+    fn batch(bundle: Vec<Self::Element>, device: &Device) -> Tensor<1, Int> {
+        Tensor::from_ints(bundle.as_slice(), device)
     }
 
     fn unbatch(bundle: <Self::BatchedSpace as Space>::Element) -> Vec<Self::Element> {
-        ToUnBatched::unbatch(bundle)
+        let vec: Vec<u64> = bundle.try_into_vec_as().unwrap();
+        let vec = vec.into_iter().map(|u| u as usize).collect();
+        vec
+    }
+
+    fn to_batched_space(spaces: Vec<Self>, _: &Device) -> Self::BatchedSpace {
+        DiscreteSpace::new(spaces[0].n())
     }
 }
 
@@ -34,11 +45,42 @@ macro_rules! batch_continuous_space {
             type BatchedSpace = ContinuousSpace<{$d + 1}>;
 
             fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space>::Element {
-                ToBatched::batch(bundle, device)
+                let n = bundle.len();
+                let shape = bundle[0].shape();
+                let n_elem: usize = shape.iter().product();
+                let mut buf = Vec::with_capacity(n_elem * n);
+                for a in &bundle {
+                    match a.as_slice() {
+                        Some(s) => buf.extend_from_slice(s),
+                        None => buf.extend(a.iter().copied()),
+                    }
+                }
+                let final_shape: Vec<_> = [n].iter().chain(shape.iter()).map(|f| *f).collect();
+                Tensor::from_data(TensorData::new(buf, final_shape), device)
             }
 
             fn unbatch(bundle: <Self::BatchedSpace as Space>::Element) -> Vec<Self::Element> {
-                ToUnBatched::unbatch(bundle)
+                let shape = bundle.shape();
+                let v: Vec<f32> = bundle.try_into_vec_as().unwrap();
+                let per_env = shape.iter().skip(1).product();
+                let single: Vec<usize> = shape.iter().skip(1).copied().collect();
+                let single = single.try_into().unwrap();
+                let items: Vec<_> = v
+                    .chunks(per_env)
+                    .map(|c| Array::from_shape_vec(Dim::<[usize; $d]>(single), c.to_vec()).unwrap())
+                    .collect();
+                items
+            }
+
+            fn to_batched_space(spaces: Vec<Self>, device: &Device) -> Self::BatchedSpace {
+                let shape = spaces[0].shape().clone();
+                let n = spaces.len();
+                let shape: Vec<usize> = [n].iter().chain(shape.iter()).map(|f| *f).collect();
+                let lows: Vec<<Self as Space>::Element> = spaces.iter().map(|space| space.low().clone()).collect();
+                let highs: Vec<<Self as Space>::Element> = spaces.iter().map(|space| space.high().clone()).collect();
+                let lows = Self::batch(lows, device);
+                let highs = Self::batch(highs, device);
+                Self::BatchedSpace::new(&shape, lows, highs)
             }
         }
     };

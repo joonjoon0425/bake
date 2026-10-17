@@ -14,6 +14,6 @@ pub use discrete::DiscreteSpace;
 pub mod continuous;
 pub use continuous::ContinuousSpace;
 
-pub(crate) mod switch;
+pub mod to_batched;
 
 pub mod unbatched;

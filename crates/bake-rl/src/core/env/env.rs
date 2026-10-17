@@ -1,6 +1,6 @@
 //! Trait for environment
 
-use crate::core::env::space::{Space, switch::ToBatched};
+use crate::core::env::space::{Space, to_batched::ToBatched};
 
 /// `Environment` trait which all non-vectorized environments must implement
 /// # Warning
@@ -17,7 +17,7 @@ pub trait Environment {
     /// type of reward
     type Reward: ToBatched;
     /// type of additional information, which is returned every `step` and `reset`
-    type Info;
+    type Info: Clone;
 
     /// return the observation space
     fn obs_space(&self) -> &Self::ObsSpace;
@@ -28,9 +28,6 @@ pub trait Environment {
     fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info);
     /// take one step and returns the tuple ((obs, constraint), reward, terminated, truncated, information)
     fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info);
-
-    /// return a new configuration struct
-    fn config() -> impl EnvironmentConfig<Environment = Self>;
 }
 
 /// the configuration trait for environments
