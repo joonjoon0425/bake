@@ -92,6 +92,10 @@ where
         let infos= self.latest_info.clone();
         ((obss, constraints), rewards, terminated, truncated, infos)
     }
+
+    fn device(&self) -> Device {
+        self.device.clone()
+    }
 }
 
 /// configuration for `SynchronizedVectorEnvironment`

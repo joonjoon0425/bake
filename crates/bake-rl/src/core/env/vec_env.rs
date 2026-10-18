@@ -30,6 +30,8 @@ pub trait VectorEnvironment {
     fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info);
     /// return the number of environments
     fn n_envs(&self) -> usize;
+    /// return the device
+    fn device(&self) -> Device;
 }
 
 /// configuration trait for `VectorizedEnvironment`
