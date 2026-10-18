@@ -73,7 +73,12 @@ impl<E: VectorEnvironment> Tape<E> {
             truncated
         };
         
-        if self.autoreset { self.reset(Some(done)) };
+        if self.autoreset {
+            // later, change this so that the synchronized vector environment holds an alredy-batched observation and constraints
+            if done.clone().any().into_scalar::<bool>() {
+                self.reset(Some(done))
+            }
+        };
 
         batch
     }

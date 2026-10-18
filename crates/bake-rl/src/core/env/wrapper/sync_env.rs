@@ -8,9 +8,9 @@ pub struct SynchronizedVectorEnvironment<E: Environment<ObsSpace: ToBatchedSpace
     envs: Vec<E>,
     obs_space: <E::ObsSpace as ToBatchedSpace>::BatchedSpace,
     action_space: <E::ActionSpace as ToBatchedSpace>::BatchedSpace,
-    latest_obs: Vec<<E::ObsSpace as Space>::Element>,
-    latest_constraint: Vec<E::Constraint>,
-    latest_info: Vec<E::Info>,
+    latest_obs: Option<Vec<<E::ObsSpace as Space>::Element>>,
+    latest_constraint: Option<Vec<E::Constraint>>,
+    latest_info: Option<Vec<E::Info>>,
     device: Device
 }
 
@@ -44,24 +44,31 @@ where
 
                 for idx in mask.iter().enumerate().filter(|(_, b)| **b).map(|(u, _)| u) {
                     let ((obs, constraint), info) = self.envs[idx].reset();
-                    self.latest_obs[idx] = obs;
-                    self.latest_constraint[idx] = constraint;
-                    self.latest_info[idx] = info;
+                    self.latest_obs.as_mut().unwrap()[idx] = obs;
+                    self.latest_constraint.as_mut().unwrap()[idx] = constraint;
+                    self.latest_info.as_mut().unwrap()[idx] = info;
                 }
-                let obss = E::ObsSpace::batch(self.latest_obs.clone(), &self.device);
-                let constraints = E::Constraint::batch(self.latest_constraint.clone(), &self.device);
-                ((obss, constraints), self.latest_info.clone())
+                let obss = E::ObsSpace::batch(self.latest_obs.clone().unwrap(), &self.device);
+                let constraints = E::Constraint::batch(self.latest_constraint.clone().unwrap(), &self.device);
+                ((obss, constraints), self.latest_info.clone().unwrap())
             }
             None => {
+                let mut latest_obs = Vec::with_capacity(self.n_envs());
+                let mut latest_constraint = Vec::with_capacity(self.n_envs());
+                let mut latest_info = Vec::with_capacity(self.n_envs());
+                
                 for idx in 0..self.n_envs() {
-                    let ((obs, constraint), info) = self.envs[idx].reset();
-                    self.latest_obs[idx] = obs;
-                    self.latest_constraint[idx] = constraint;
-                    self.latest_info[idx] = info;
+                    let ((obs, constraint), info) = self.envs[idx].reset();    
+                    latest_obs[idx] = obs;
+                    latest_constraint[idx] = constraint;
+                    latest_info[idx] = info;
                 }
-                let obss = E::ObsSpace::batch(self.latest_obs.clone(), &self.device);
-                let constraints = E::Constraint::batch(self.latest_constraint.clone(), &self.device);
-                ((obss, constraints), self.latest_info.clone())
+                self.latest_obs = Some(latest_obs.clone());
+                self.latest_constraint = Some(latest_constraint.clone());
+                self.latest_info = Some(latest_info.clone());
+                let obss = E::ObsSpace::batch(latest_obs, &self.device);
+                let constraints = E::Constraint::batch(latest_constraint, &self.device);
+                ((obss, constraints), latest_info)
             }
         }
         
@@ -76,9 +83,9 @@ where
         for i in 0..n_envs {
             let action = actions[i].clone();
             let ((obs, constraint), reward, term, trunc, info) = self.envs[i].step(action);
-            self.latest_obs[i] = obs;
-            self.latest_constraint[i] = constraint;
-            self.latest_info[i] = info;
+            self.latest_obs.as_mut().unwrap()[i] = obs;
+            self.latest_constraint.as_mut().unwrap()[i] = constraint;
+            self.latest_info.as_mut().unwrap()[i] = info;
             rewards.push(reward);
             terminated.push(term);
             truncated.push(trunc);
@@ -87,10 +94,10 @@ where
         let terminated = Tensor::from_bool(terminated.as_slice(), &self.device);
         let truncated = Tensor::from_bool(truncated.as_slice(), &self.device);
 
-        let obss = E::ObsSpace::batch(self.latest_obs.clone(), &self.device);
-        let constraints = E::Constraint::batch(self.latest_constraint.clone(), &self.device);
+        let obss = E::ObsSpace::batch(self.latest_obs.clone().unwrap(), &self.device);
+        let constraints = E::Constraint::batch(self.latest_constraint.clone().unwrap(), &self.device);
         let infos= self.latest_info.clone();
-        ((obss, constraints), rewards, terminated, truncated, infos)
+        ((obss, constraints), rewards, terminated, truncated, infos.unwrap())
     }
 
     fn device(&self) -> Device {
@@ -106,6 +113,14 @@ where
     configs: Vec<C>
 }
 
+impl<C> SynchronizedVectorEnvironmentConfig<C> 
+where
+    C: EnvironmentConfig<Environment: Environment<ObsSpace: ToBatchedSpace, ActionSpace: ToBatchedSpace>>
+{
+    /// create a new `SynchronizedVectorEnvironmentConfig` from given configurations
+    pub fn new(configs: Vec<C>) -> Self { Self { configs } }
+}
+
 impl<C> VectorizedEnvironmentConfig for SynchronizedVectorEnvironmentConfig<C>
 where
     C: EnvironmentConfig<Environment: Environment<ObsSpace: ToBatchedSpace, ActionSpace: ToBatchedSpace>>
@@ -113,17 +128,7 @@ where
     type Environment = SynchronizedVectorEnvironment<C::Environment>;
 
     fn init(self, device: &Device) -> Self::Environment {
-        let mut envs: Vec<<C as EnvironmentConfig>::Environment> = self.configs.into_iter().map(|c| c.init()).collect();
-        let n_envs = envs.len();
-        let mut obss = Vec::with_capacity(n_envs);
-        let mut constraints = Vec::with_capacity(n_envs);
-        let mut infos = Vec::with_capacity(n_envs);
-        for env in &mut envs {
-            let ((obs, constraint), info) = env.reset();
-            obss.push(obs);
-            constraints.push(constraint);
-            infos.push(info);
-        }
+        let envs: Vec<<C as EnvironmentConfig>::Environment> = self.configs.into_iter().map(|c| c.init()).collect();
         let obs_spaces: Vec<_> = envs.iter().map(|env| env.obs_space().clone()).collect();
         let obs_space = <C::Environment as Environment>::ObsSpace::to_batched_space(obs_spaces, device);
         let action_spaces: Vec<_> = envs.iter().map(|env| env.action_space().clone()).collect();
@@ -132,9 +137,9 @@ where
         Self::Environment {
             envs,
             device: device.clone(),
-            latest_obs: obss,
-            latest_constraint: constraints,
-            latest_info: infos,
+            latest_obs: None,
+            latest_constraint: None,
+            latest_info: None,
             obs_space,
             action_space
         }
