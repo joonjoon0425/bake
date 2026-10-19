@@ -5,7 +5,7 @@ use crate::core::{constraint::Unconstrained, data::batchable::Batchable};
 
 /// discrete constraint for discrete action spaces
 pub trait DiscreteConstraint: Batchable {
-    /// Fill the given `values` with `fill_value` where mask is true
+    /// Fill the given `values` with `fill_value` where mask is false
     fn apply(self, values: Tensor<2>, fill_value: f32) -> Tensor<2>;
     /// Compute the mean, considering the constraints. squeezes last dimension
     fn mean_dim(self, values: Tensor<2>) -> Tensor<1>;
@@ -43,7 +43,7 @@ impl DiscreteConstraint for Unconstrained {
     fn mean_dim(self, values: Tensor<2>) -> Tensor<1> { values.mean_dim(1).squeeze_dim(1) }
     fn n_possible_actions(&self) -> Option<Tensor<1, Int>> { None }
     fn is_possible(&self, action: Tensor<1, Int>) -> Tensor<1, Bool> {
-        let n_actions = action.shape()[1];
+        let n_actions = action.shape()[0];
         Tensor::from_bool(vec![true; n_actions].as_slice(), &action.device())
     }
 }

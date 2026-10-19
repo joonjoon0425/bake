@@ -59,9 +59,9 @@ where
                 
                 for idx in 0..self.n_envs() {
                     let ((obs, constraint), info) = self.envs[idx].reset();    
-                    latest_obs[idx] = obs;
-                    latest_constraint[idx] = constraint;
-                    latest_info[idx] = info;
+                    latest_obs.push(obs);
+                    latest_constraint.push(constraint);
+                    latest_info.push(info);
                 }
                 self.latest_obs = Some(latest_obs.clone());
                 self.latest_constraint = Some(latest_constraint.clone());

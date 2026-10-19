@@ -426,6 +426,7 @@ dependencies = [
  "ndarray 0.17.2",
  "pyo3",
  "pyo3-build-config",
+ "rand 0.10.3",
 ]
 
 [[package]]

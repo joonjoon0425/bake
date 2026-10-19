@@ -1,6 +1,6 @@
 //! A trait for switching unbatched element to batched element
 
-use crate::core::data::Batchable;
+use crate::core::{constraint::Unconstrained, data::Batchable};
 use burn::prelude::*;
 use ndarray::{Array, Dim};
 /// The type can be turned into `Batchable`
@@ -9,6 +9,11 @@ pub trait ToBatched: Clone + Send + Sync + Sized + 'static {
     type Batched: Batchable;// + ToUnBatched<UnBatched = Self>;
     /// convert to `Self::Batched`
     fn batch(bundle: Vec<Self>, device: &Device) -> Self::Batched;
+}
+
+impl ToBatched for Unconstrained {
+    type Batched = Unconstrained;
+    fn batch(_: Vec<Self>, _: &Device) -> Self::Batched { Unconstrained }
 }
 
 impl ToBatched for f32 {

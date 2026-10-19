@@ -8,6 +8,7 @@ repository.workspace = true
 
 [dependencies]
 burn = { workspace = true }
+rand = { workspace = true }
 pyo3 = { workspace = true, optional = true }
 bake-macros = { workspace = true }
 ndarray = { workspace = true }
