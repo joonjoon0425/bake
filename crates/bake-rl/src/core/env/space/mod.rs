@@ -2,9 +2,10 @@
 //! - The `Space` corresponds to the `space` of Farama Foundation's `gymnasium`.
 //! 
 
-/// `Space` trait for specifying the properties of element
-pub trait Space: Clone {
-    /// Element type
+use crate::core::Marker;
+
+/// `Space` trait for specifying the properties of observation space and action space
+pub trait Space<M: Marker>{
     type Element: Clone + 'static;
 }
 

@@ -1,4 +1,4 @@
-use crate::core::{data::Batchable, env::space::Space};
+use crate::core::{Burn, data::Batchable, env::space::Space};
 use burn::prelude::*;
 
 /// `VectorEnvironment` trait which all vectorized environments must implement
@@ -7,9 +7,9 @@ use burn::prelude::*;
 ///     - But note that it can be slower than the environment which was implemented using `VectorEnvironment` trait, since `SynchronizedVectorEnvironment` moves the data across host and device.
 pub trait VectorEnvironment {
     /// type of observation space
-    type ObsSpace: Space<Element: Batchable>;
+    type ObsSpace: Space<Burn>;
     /// type of action space
-    type ActionSpace: Space<Element: Batchable>;
+    type ActionSpace: Space<Burn>;
     /// type of constraint
     type Constraint: Batchable;
     /// type of reward
@@ -25,9 +25,9 @@ pub trait VectorEnvironment {
     /// reset the environments, according to given mask. If `None` was given, resets all environments
     /// - 0: does not reset
     /// - 1: reset
-    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info);
+    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as Space<Burn>>::Element, Self::Constraint), Self::Info);
     /// take one step and returns the tuple ((obs, constraint), reward, terminated, truncated, information)
-    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info);
+    fn step(&mut self, action: <Self::ActionSpace as Space<Burn>>::Element) -> ((<Self::ObsSpace as Space<Burn>>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info);
     /// return the number of environments
     fn n_envs(&self) -> usize;
     /// return the device

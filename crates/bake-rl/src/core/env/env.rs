@@ -1,6 +1,6 @@
 //! Trait for environment
 
-use crate::core::env::space::{Space, to_batched::ToBatched};
+use crate::core::{NdArray, env::space::{Space, to_batched::ToBatched}};
 
 /// `Environment` trait which all non-vectorized environments must implement
 /// - For custom non-vetorized environment, implement this trait
@@ -9,9 +9,9 @@ use crate::core::env::space::{Space, to_batched::ToBatched};
 /// - For custom vetorized environment, implement `VectorEnvironment` trait
 pub trait Environment {
     /// type of observation space
-    type ObsSpace: Space;
+    type ObsSpace: Space<NdArray>;
     /// type of action space
-    type ActionSpace: Space;
+    type ActionSpace: Space<NdArray>;
     /// type of constraint
     type Constraint: ToBatched;
     /// type of reward
@@ -25,9 +25,9 @@ pub trait Environment {
     fn action_space(&self) -> &Self::ActionSpace;
 
     /// reset the environment and return the tuple ((obs, constraint), information)
-    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info);
+    fn reset(&mut self) -> ((<Self::ObsSpace as Space<NdArray>>::Element, Self::Constraint), Self::Info);
     /// take one step and returns the tuple ((obs, constraint), reward, terminated, truncated, information)
-    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info);
+    fn step(&mut self, action: <Self::ActionSpace as Space<NdArray>>::Element) -> ((<Self::ObsSpace as Space<NdArray>>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info);
 }
 
 /// the configuration trait for environments
