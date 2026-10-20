@@ -57,7 +57,7 @@ pub struct CartPole {
     mask: <Self as Environment>::Constraint,
 
     obs_space: ContinuousSpace<2, Single>,
-    action_space: DiscreteSpace,
+    action_space: DiscreteSpace<Single>,
 }
  
 impl CartPole {
@@ -74,7 +74,7 @@ impl CartPole {
  
 impl Environment for CartPole {
     type ObsSpace = ContinuousSpace<2, Single>;
-    type ActionSpace = DiscreteSpace;
+    type ActionSpace = DiscreteSpace<Single>;
     type Constraint = Unconstrained;
     type Reward = f32;
     type Info = ();

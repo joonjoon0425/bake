@@ -17,8 +17,8 @@ pub trait Repr: std::fmt::Debug + Copy {
     type Int : Clone + 'static;
     /// boolean type
     type Bool : Clone + 'static;
-    /// usize type
-    type Usize : Clone + 'static;
+    /// index (usize) type
+    type Index : Clone + 'static;
 }
 
 /// marker for deep rl
@@ -33,7 +33,7 @@ impl Repr for Vector {
     type Int = Tensor<1, Int>;
     type Bool = Tensor<1, Bool>;
 
-    type Usize = Tensor<1, Int>;
+    type Index = Tensor<1, Int>;
 }
 
 /// marker for tabular, linear rl, without batch
@@ -48,7 +48,7 @@ impl Repr for Single {
     type Int = i64;
     type Bool = bool;
 
-    type Usize = usize;
+    type Index = usize;
 }
 
 pub mod buffer;

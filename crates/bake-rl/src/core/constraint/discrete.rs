@@ -1,7 +1,6 @@
 //! discrete constraint
 
 use burn::prelude::*;
-use ndarray::Array2;
 use crate::core::{Vector, Repr, Single, constraint::Unconstrained};
 
 /// discrete constraint for discrete action spaces
@@ -11,9 +10,9 @@ pub trait DiscreteConstraint<M: Repr> {
     /// Compute the mean, considering the constraints. squeezed after reduction
     fn mean_dim(self, values: M::FloatArray<2>) -> M::Float;
     /// return the possible number of actions
-    fn n_possible_actions(&self) -> Option<M::Int>;
+    fn n_possible_actions(&self) -> Option<M::Index>;
     /// returns if the given action is possible
-    fn is_possible(&self, action: M::Int) -> M::Bool;
+    fn is_possible(&self, action: M::Index) -> M::Bool;
 }
 
 /// implementation for tensor mask
@@ -52,8 +51,8 @@ impl DiscreteConstraint<Vector> for Unconstrained {
 impl DiscreteConstraint<Single> for Unconstrained {
     fn apply(self, values: <Single as Repr>::FloatArray<2>, _: f32) -> <Single as Repr>::FloatArray<2> { values }
     fn mean_dim(self, values: <Single as Repr>::FloatArray<2>) -> <Single as Repr>::Float { values.mean_axis(ndarray::Axis(1)).unwrap().to_vec()[0] }
-    fn n_possible_actions(&self) -> Option<<Single as Repr>::Int> { None }
-    fn is_possible(&self, _: <Single as Repr>::Int) -> <Single as Repr>::Bool { true }
+    fn n_possible_actions(&self) -> Option<<Single as Repr>::Index> { None }
+    fn is_possible(&self, _: <Single as Repr>::Index) -> <Single as Repr>::Bool { true }
 }
 
 #[cfg(test)]

@@ -19,8 +19,8 @@ pub trait ToBatchedSpace: Space<Single> + Sized {
     fn to_batched_space(spaces: Vec<Self>, device: &Device) -> Self::BatchedSpace;
 }
 
-impl ToBatchedSpace for DiscreteSpace {
-    type BatchedSpace = DiscreteSpace;
+impl ToBatchedSpace for DiscreteSpace<Single> {
+    type BatchedSpace = DiscreteSpace<Vector>;
 
     fn batch(bundle: Vec<Self::Element>, device: &Device) -> Tensor<1, Int> {
         Tensor::from_ints(bundle.as_slice(), device)
@@ -32,8 +32,9 @@ impl ToBatchedSpace for DiscreteSpace {
         vec
     }
 
-    fn to_batched_space(spaces: Vec<Self>, _: &Device) -> Self::BatchedSpace {
-        DiscreteSpace::new(spaces[0].n())
+    fn to_batched_space(spaces: Vec<Self>, device: &Device) -> Self::BatchedSpace {
+        let n = spaces[0].n().clone();
+        DiscreteSpace::new(Tensor::from_ints(vec![n; spaces.len()].as_slice(), device))
     }
 }
 

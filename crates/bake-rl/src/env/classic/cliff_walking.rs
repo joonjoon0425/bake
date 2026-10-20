@@ -1,5 +1,6 @@
 //! Cliff Walking
 
+use crate::core::Single;
 use crate::core::env::space::DiscreteSpace;
 use crate::core::env::{Environment, EnvironmentConfig};
 use crate::core::constraint::Unconstrained;
@@ -11,8 +12,8 @@ use crate::core::constraint::Unconstrained;
 /// - When the agent meets a cliff, the agent is moved back to the start position with reward of -100
 pub struct CliffWalking {
     pos: (usize, usize),
-    obs_space: DiscreteSpace,
-    action_space: DiscreteSpace,
+    obs_space: DiscreteSpace<Single>,
+    action_space: DiscreteSpace<Single>,
 }
 
 impl CliffWalking {
@@ -21,8 +22,8 @@ impl CliffWalking {
 
 impl Environment for CliffWalking {
     type Constraint = Unconstrained;
-    type ObsSpace = DiscreteSpace;
-    type ActionSpace = DiscreteSpace;
+    type ObsSpace = DiscreteSpace<Single>;
+    type ActionSpace = DiscreteSpace<Single>;
     type Info = ();
     type Reward = f32;
 
