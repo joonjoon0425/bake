@@ -129,10 +129,10 @@ where
 
     fn init(self, device: &Device) -> Self::Environment {
         let envs: Vec<<C as EnvironmentConfig>::Environment> = self.configs.into_iter().map(|c| c.init()).collect();
-        let obs_spaces: Vec<_> = envs.iter().map(|env| env.obs_space().clone()).collect();
-        let obs_space = <C::Environment as Environment>::ObsSpace::to_batched_space(obs_spaces, device);
-        let action_spaces: Vec<_> = envs.iter().map(|env| env.action_space().clone()).collect();
-        let action_space = <C::Environment as Environment>::ActionSpace::to_batched_space(action_spaces, device);
+        let obs_space = envs[0].obs_space().clone();
+        let obs_space = <C::Environment as Environment>::ObsSpace::to_batched_space(obs_space, device);
+        let action_space = envs[0].action_space().clone();
+        let action_space = <C::Environment as Environment>::ActionSpace::to_batched_space(action_space, device);
 
         Self::Environment {
             envs,

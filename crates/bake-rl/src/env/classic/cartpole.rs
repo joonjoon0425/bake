@@ -57,7 +57,7 @@ pub struct CartPole {
     mask: <Self as Environment>::Constraint,
 
     obs_space: ContinuousSpace<2, Single>,
-    action_space: DiscreteSpace<Single>,
+    action_space: DiscreteSpace,
 }
  
 impl CartPole {
@@ -74,7 +74,7 @@ impl CartPole {
  
 impl Environment for CartPole {
     type ObsSpace = ContinuousSpace<2, Single>;
-    type ActionSpace = DiscreteSpace<Single>;
+    type ActionSpace = DiscreteSpace;
     type Constraint = Unconstrained;
     type Reward = f32;
     type Info = ();
@@ -159,7 +159,7 @@ impl CartPoleConfig {
 impl EnvironmentConfig for CartPoleConfig {
     type Environment = CartPole;
     fn init(self) -> Self::Environment {
-        let obs_space = ContinuousSpace::new(&[4], arr2(&[[-f32::INFINITY; 4]]), arr2(&[[f32::INFINITY; 4]]));
+        let obs_space = ContinuousSpace::new(&[1, 4], arr2(&[[-f32::INFINITY; 4]]), arr2(&[[f32::INFINITY; 4]]));
         let action_space = DiscreteSpace::new(2);
         CartPole {
             x: 0.0,

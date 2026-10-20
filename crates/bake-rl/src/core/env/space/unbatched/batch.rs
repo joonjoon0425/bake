@@ -15,12 +15,12 @@ pub trait ToBatchedSpace: Space<Single> + Sized {
     fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space<Vector>>::Element;
     /// create unbatched elements from batch
     fn unbatch(bundle: <Self::BatchedSpace as Space<Vector>>::Element) -> Vec<Self::Element>;
-    /// create a batched space from unbatched spaces
-    fn to_batched_space(spaces: Vec<Self>, device: &Device) -> Self::BatchedSpace;
+    /// create a batched space from unbatched space
+    fn to_batched_space(space: Self, device: &Device) -> Self::BatchedSpace;
 }
 
-impl ToBatchedSpace for DiscreteSpace<Single> {
-    type BatchedSpace = DiscreteSpace<Vector>;
+impl ToBatchedSpace for DiscreteSpace {
+    type BatchedSpace = DiscreteSpace;
 
     fn batch(bundle: Vec<Self::Element>, device: &Device) -> Tensor<1, Int> {
         Tensor::from_ints(bundle.as_slice(), device)
@@ -32,9 +32,9 @@ impl ToBatchedSpace for DiscreteSpace<Single> {
         vec
     }
 
-    fn to_batched_space(spaces: Vec<Self>, device: &Device) -> Self::BatchedSpace {
-        let n = spaces[0].n().clone();
-        DiscreteSpace::new(Tensor::from_ints(vec![n; spaces.len()].as_slice(), device))
+    fn to_batched_space(space: Self, _: &Device) -> Self::BatchedSpace {
+        let n = space.n().clone();
+        DiscreteSpace::new(n)
     }
 }
 
@@ -45,7 +45,7 @@ macro_rules! batch_continuous_space {
 
             fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space<Vector>>::Element {
                 let n = bundle.len();
-                let shape = bundle[0].shape();
+                let mut shape: Vec<usize> = bundle[0].shape().try_into().unwrap();
                 let n_elem: usize = shape.iter().product();
                 let mut buf = Vec::with_capacity(n_elem * n);
                 for a in &bundle {
@@ -54,15 +54,16 @@ macro_rules! batch_continuous_space {
                         None => buf.extend(a.iter().copied()),
                     }
                 }
-                let final_shape: Vec<_> = [n].iter().chain(shape.iter()).map(|f| *f).collect();
-                Tensor::from_data(TensorData::new(buf, final_shape), device)
+                shape[0] = n;
+                Tensor::from_data(TensorData::new(buf, shape), device)
             }
 
             fn unbatch(bundle: <Self::BatchedSpace as Space<Vector>>::Element) -> Vec<Self::Element> {
                 let shape = bundle.shape();
                 let v: Vec<f32> = bundle.try_into_vec_as().unwrap();
                 let per_env = shape.iter().skip(1).product();
-                let single: Vec<usize> = shape.iter().skip(1).copied().collect();
+                let mut single: Vec<usize> = shape.iter().copied().collect();
+                single[0] = 1;
                 let single = single.try_into().unwrap();
                 let items: Vec<_> = v
                     .chunks(per_env)
@@ -71,14 +72,12 @@ macro_rules! batch_continuous_space {
                 items
             }
 
-            fn to_batched_space(spaces: Vec<Self>, device: &Device) -> Self::BatchedSpace {
-                let mut shape: Vec<_> = spaces[0].shape().try_into().unwrap();
-                let n = spaces.len();
-                shape[0] = n;
-                let lows: Vec<<Self as Space<Single>>::Element> = spaces.iter().map(|space| space.low().clone()).collect();
-                let highs: Vec<<Self as Space<Single>>::Element> = spaces.iter().map(|space| space.high().clone()).collect();
-                let lows = Self::batch(lows, device);
-                let highs = Self::batch(highs, device);
+            fn to_batched_space(space: Self, device: &Device) -> Self::BatchedSpace {
+                let shape: Vec<_> = space.shape().try_into().unwrap();
+                let low = space.low().clone();
+                let high = space.high().clone();
+                let lows = Self::batch(vec![low], device);
+                let highs = Self::batch(vec![high], device);
                 Self::BatchedSpace::new(&shape, lows, highs)
             }
         }

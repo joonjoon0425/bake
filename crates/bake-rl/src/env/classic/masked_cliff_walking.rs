@@ -1,12 +1,12 @@
 //! Cliff Walking with masks at the boundaries
-use crate::core::{Single, env::{Environment, EnvironmentConfig, space::DiscreteSpace}};
+use crate::core::env::{Environment, EnvironmentConfig, space::DiscreteSpace};
 /// CliffWalking with mask implementation
 /// - All feature are same but on the boundary, the agent receives an mask.
 /// - The agent won't be able to go left from the left boundary, right at right boundary, and so on.
 pub struct MaskedCliffWalking {
     pos: (usize, usize),
-    obs_space: DiscreteSpace<Single>,
-    action_space: DiscreteSpace<Single>,
+    obs_space: DiscreteSpace,
+    action_space: DiscreteSpace,
 }
 
 impl MaskedCliffWalking {
@@ -18,8 +18,8 @@ impl MaskedCliffWalking {
 
 impl Environment for MaskedCliffWalking {
     type Constraint = Vec<bool>;
-    type ObsSpace = DiscreteSpace<Single>;
-    type ActionSpace = DiscreteSpace<Single>;
+    type ObsSpace = DiscreteSpace;
+    type ActionSpace = DiscreteSpace;
     type Reward = f32;
     type Info = ();
 

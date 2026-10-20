@@ -2,7 +2,8 @@
 
 use crate::core::{constraint::Unconstrained, data::Batchable};
 use burn::prelude::*;
-use ndarray::{Array, Dim};
+// use ndarray::{Array, Dim};
+
 /// The type can be turned into `Batchable`
 pub trait ToBatched: Clone + Send + Sync + Sized + 'static {
     /// the `Batchable` type of which the `Vec<Self>` is converted to
@@ -42,34 +43,34 @@ impl ToBatched for Vec<bool> {
     }
 }
 
-macro_rules! batch_ndarray {
-    ($d:literal) => {
-        impl ToBatched for Array<f32, Dim<[usize; $d]>> {
-            type Batched = Tensor<{$d + 1}>;
+// macro_rules! batch_ndarray {
+//     ($d:literal) => {
+//         impl ToBatched for Array<f32, Dim<[usize; $d]>> {
+//             type Batched = Tensor<{$d + 1}>;
 
-            fn batch(bundle: Vec<Self>, device: &Device) -> Self::Batched {
-                let n = bundle.len();
-                let shape = bundle[0].shape();
-                let n_elem: usize = shape.iter().product();
-                let mut buf = Vec::with_capacity(n_elem * n);
-                for a in &bundle {
-                    match a.as_slice() {
-                        Some(s) => buf.extend_from_slice(s),
-                        None => buf.extend(a.iter().copied()),
-                    }
-                }
-                let final_shape: Vec<_> = [n].iter().chain(shape.iter()).map(|f| *f).collect();
-                Tensor::from_data(TensorData::new(buf, final_shape), device)
-            }
-        }
-    };
-    ($($d:literal),* $(,)?) => {
-        $(
-            batch_ndarray!($d);
-        )*
-    }
-}
-batch_ndarray!(1, 2, 3, 4, 5, 6);
+//             fn batch(bundle: Vec<Self>, device: &Device) -> Self::Batched {
+//                 let n = bundle.len();
+//                 let shape = bundle[0].shape();
+//                 let n_elem: usize = shape.iter().product();
+//                 let mut buf = Vec::with_capacity(n_elem * n);
+//                 for a in &bundle {
+//                     match a.as_slice() {
+//                         Some(s) => buf.extend_from_slice(s),
+//                         None => buf.extend(a.iter().copied()),
+//                     }
+//                 }
+//                 let final_shape: Vec<_> = [n].iter().chain(shape.iter()).map(|f| *f).collect();
+//                 Tensor::from_data(TensorData::new(buf, final_shape), device)
+//             }
+//         }
+//     };
+//     ($($d:literal),* $(,)?) => {
+//         $(
+//             batch_ndarray!($d);
+//         )*
+//     }
+// }
+// batch_ndarray!(1, 2, 3, 4, 5, 6);
 // macro_rules! unbatch_ndarray {
 //     ($d:literal) => {
 //         impl ToUnBatched for Tensor<{$d + 1}> {
