@@ -1,14 +1,14 @@
 //! The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
 //! - Especially useful for vector environments
 //! 
-use crate::core::{Burn, data::Batch, env::{VectorEnvironment, space::Space}};
+use crate::core::{Vector, data::Batch, env::{VectorEnvironment, space::Space}};
 use burn::prelude::*;
 /// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
 /// - Especially useful for vector environments
 pub struct Tape<E: VectorEnvironment> {
     env: E,
     /// current observation
-    pub obs: <E::ObsSpace as Space<Burn>>::Element,
+    pub obs: <E::ObsSpace as Space<Vector>>::Element,
     /// current constraint
     pub constraint: E::Constraint,
     /// `true` if the environment has terminated or truncated
@@ -53,7 +53,7 @@ impl<E: VectorEnvironment> Tape<E> {
     }
     /// take one step and returns the transition and info
     /// - if `autoreset = true`, during the `step`, terminated or truncated environments are automatically reset
-    pub fn step(&mut self, action: <E::ActionSpace as Space<Burn>>::Element) -> Batch<<E::ObsSpace as Space<Burn>>::Element, <E::ActionSpace as Space<Burn>>::Element, E::Constraint, E::Reward> {
+    pub fn step(&mut self, action: <E::ActionSpace as Space<Vector>>::Element) -> Batch<<E::ObsSpace as Space<Vector>>::Element, <E::ActionSpace as Space<Vector>>::Element, E::Constraint, E::Reward> {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);

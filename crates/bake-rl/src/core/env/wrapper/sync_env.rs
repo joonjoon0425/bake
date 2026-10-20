@@ -1,6 +1,6 @@
 //! Synchronized vector environment wrapper
 
-use crate::core::{Burn, NdArray, env::{Environment, EnvironmentConfig, VectorEnvironment, VectorizedEnvironmentConfig, space::{Space, to_batched::ToBatched, unbatched::batch::ToBatchedSpace}}};
+use crate::core::{Vector, Single, env::{Environment, EnvironmentConfig, VectorEnvironment, VectorizedEnvironmentConfig, space::{Space, to_batched::ToBatched, unbatched::batch::ToBatchedSpace}}};
 use burn::prelude::*;
 
 /// vectorize non-vector environment in a synchronized way 
@@ -8,7 +8,7 @@ pub struct SynchronizedVectorEnvironment<E: Environment<ObsSpace: ToBatchedSpace
     envs: Vec<E>,
     obs_space: <E::ObsSpace as ToBatchedSpace>::BatchedSpace,
     action_space: <E::ActionSpace as ToBatchedSpace>::BatchedSpace,
-    latest_obs: Option<Vec<<E::ObsSpace as Space<NdArray>>::Element>>,
+    latest_obs: Option<Vec<<E::ObsSpace as Space<Single>>::Element>>,
     latest_constraint: Option<Vec<E::Constraint>>,
     latest_info: Option<Vec<E::Info>>,
     device: Device
@@ -36,7 +36,7 @@ where
         self.envs.len()
     }
 
-    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as Space<Burn>>::Element, Self::Constraint), Self::Info) {
+    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as Space<Vector>>::Element, Self::Constraint), Self::Info) {
         match mask {
             Some(mask) => {
                 let mask = mask.try_into_vec_as::<bool>().unwrap();
@@ -74,7 +74,7 @@ where
         
     }
 
-    fn step(&mut self, actions: <Self::ActionSpace as Space<Burn>>::Element) -> ((<Self::ObsSpace as Space<Burn>>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
+    fn step(&mut self, actions: <Self::ActionSpace as Space<Vector>>::Element) -> ((<Self::ObsSpace as Space<Vector>>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
         let n_envs = self.n_envs();
         let actions = E::ActionSpace::unbatch(actions);
         let mut rewards = Vec::with_capacity(n_envs);

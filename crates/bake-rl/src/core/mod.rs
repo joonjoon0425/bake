@@ -3,18 +3,28 @@
 
 /// the marker trait
 /// - for unified representation
-pub trait Marker {
+pub trait Repr: std::fmt::Debug + Copy {
+    /// float array type, with fixed rank
     type FloatArray<const D: usize> : Clone + 'static;
+    /// integer array type, with fixed rank
     type IntArray<const D: usize> : Clone + 'static;
+    /// boolean array type, with fixed rank
     type BoolArray<const D: usize> : Clone + 'static;
 
+    /// float type
     type Float : Clone + 'static;
+    /// integer type
     type Int : Clone + 'static;
+    /// boolean type
     type Bool : Clone + 'static;
+    /// usize type
+    type Usize : Clone + 'static;
 }
 
-pub struct Burn;
-impl Marker for Burn {
+/// marker for deep rl
+#[derive(Debug, Clone, Copy)]
+pub struct Vector;
+impl Repr for Vector {
     type FloatArray<const D: usize> = Tensor<D>;
     type IntArray<const D: usize> = Tensor<D, Int>;
     type BoolArray<const D: usize> = Tensor<D, Bool>;
@@ -22,17 +32,23 @@ impl Marker for Burn {
     type Float = Tensor<1>;
     type Int = Tensor<1, Int>;
     type Bool = Tensor<1, Bool>;
+
+    type Usize = Tensor<1, Int>;
 }
 
-pub struct NdArray;
-impl Marker for NdArray {
+/// marker for tabular, linear rl, without batch
+#[derive(Debug, Clone, Copy)]
+pub struct Single;
+impl Repr for Single {
     type FloatArray<const D: usize> = Array<f32, Dim<[usize; D]>>;
     type IntArray<const D: usize> = Array<i64, Dim<[usize; D]>>;
     type BoolArray<const D: usize> = Array<bool, Dim<[usize; D]>>;
 
     type Float = f32;
-    type Int = i32;
+    type Int = i64;
     type Bool = bool;
+
+    type Usize = usize;
 }
 
 pub mod buffer;

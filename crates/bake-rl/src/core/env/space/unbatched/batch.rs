@@ -1,20 +1,20 @@
 //! convert the spaces into batched space
 
 use crate::core::{
-    Burn, NdArray, env::space::{
+    Vector, Single, data::Batchable, env::space::{
         ContinuousSpace, DiscreteSpace, Space,
     }
 };
 use ndarray::{Array, Dim};
 use burn::prelude::*;
 /// `Space` can be converted to `Space` whose elements are `Batchable`
-pub trait ToBatchedSpace: Space<NdArray> + Sized {
+pub trait ToBatchedSpace: Space<Single> + Sized {
     /// `Batchable` `Space`
-    type BatchedSpace: Space<Burn>;
+    type BatchedSpace: Space<Vector, Element: Batchable>;
     /// create a batch from given unbatched elements
-    fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space<Burn>>::Element;
+    fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space<Vector>>::Element;
     /// create unbatched elements from batch
-    fn unbatch(bundle: <Self::BatchedSpace as Space<Burn>>::Element) -> Vec<Self::Element>;
+    fn unbatch(bundle: <Self::BatchedSpace as Space<Vector>>::Element) -> Vec<Self::Element>;
     /// create a batched space from unbatched spaces
     fn to_batched_space(spaces: Vec<Self>, device: &Device) -> Self::BatchedSpace;
 }
@@ -26,9 +26,9 @@ impl ToBatchedSpace for DiscreteSpace {
         Tensor::from_ints(bundle.as_slice(), device)
     }
 
-    fn unbatch(bundle: <Self::BatchedSpace as Space<Burn>>::Element) -> Vec<Self::Element> {
+    fn unbatch(bundle: <Self::BatchedSpace as Space<Vector>>::Element) -> Vec<Self::Element> {
         let vec: Vec<u64> = bundle.try_into_vec_as().unwrap();
-        let vec = vec.into_iter().map(|u| u as i32).collect();
+        let vec = vec.into_iter().map(|u| u as usize).collect();
         vec
     }
 
@@ -39,10 +39,10 @@ impl ToBatchedSpace for DiscreteSpace {
 
 macro_rules! batch_continuous_space {
     ($d:literal) => {
-        impl ToBatchedSpace for ContinuousSpace<$d, NdArray> {
-            type BatchedSpace = ContinuousSpace<$d, Burn>;
+        impl ToBatchedSpace for ContinuousSpace<$d, Single> {
+            type BatchedSpace = ContinuousSpace<$d, Vector>;
 
-            fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space<Burn>>::Element {
+            fn batch(bundle: Vec<Self::Element>, device: &Device) -> <Self::BatchedSpace as Space<Vector>>::Element {
                 let n = bundle.len();
                 let shape = bundle[0].shape();
                 let n_elem: usize = shape.iter().product();
@@ -57,7 +57,7 @@ macro_rules! batch_continuous_space {
                 Tensor::from_data(TensorData::new(buf, final_shape), device)
             }
 
-            fn unbatch(bundle: <Self::BatchedSpace as Space<Burn>>::Element) -> Vec<Self::Element> {
+            fn unbatch(bundle: <Self::BatchedSpace as Space<Vector>>::Element) -> Vec<Self::Element> {
                 let shape = bundle.shape();
                 let v: Vec<f32> = bundle.try_into_vec_as().unwrap();
                 let per_env = shape.iter().skip(1).product();
@@ -74,8 +74,8 @@ macro_rules! batch_continuous_space {
                 let mut shape: Vec<_> = spaces[0].shape().try_into().unwrap();
                 let n = spaces.len();
                 shape[0] = n;
-                let lows: Vec<<Self as Space<NdArray>>::Element> = spaces.iter().map(|space| space.low().clone()).collect();
-                let highs: Vec<<Self as Space<NdArray>>::Element> = spaces.iter().map(|space| space.high().clone()).collect();
+                let lows: Vec<<Self as Space<Single>>::Element> = spaces.iter().map(|space| space.low().clone()).collect();
+                let highs: Vec<<Self as Space<Single>>::Element> = spaces.iter().map(|space| space.high().clone()).collect();
                 let lows = Self::batch(lows, device);
                 let highs = Self::batch(highs, device);
                 Self::BatchedSpace::new(&shape, lows, highs)

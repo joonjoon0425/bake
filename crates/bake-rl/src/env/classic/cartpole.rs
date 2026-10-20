@@ -5,10 +5,11 @@
 //! so the mask is always all-true; it exists only so that mask-aware networks
 //! (e.g. dueling) can be exercised on an unmasked task.
 use rand::{RngExt, SeedableRng, rngs::StdRng};
+use crate::core::Single;
 use crate::core::constraint::Unconstrained;
+use crate::core::env::space::ContinuousSpace;
+use crate::core::env::space::DiscreteSpace;
 use crate::core::env::space::Space;
-use crate::core::env::space::unbatched::continuous::SingleContinuousSpace;
-use crate::core::env::space::unbatched::discrete::SingleDiscreteSpace;
 use ndarray::prelude::*;
 
 use crate::core::env::Environment;
@@ -55,14 +56,14 @@ pub struct CartPole {
     /// so this avoids rebuilding it on every step.
     mask: <Self as Environment>::Constraint,
 
-    obs_space: SingleContinuousSpace<1>,
-    action_space: SingleDiscreteSpace,
+    obs_space: ContinuousSpace<2, Single>,
+    action_space: DiscreteSpace,
 }
  
 impl CartPole {
     /// Build the observation tensor from the current state.
-    fn obs(&self) -> Array1<f32> {
-            arr1(&[self.x, self.x_dot, self.theta, self.theta_dot])
+    fn obs(&self) -> Array2<f32> {
+            arr2(&[[self.x, self.x_dot, self.theta, self.theta_dot]])
     }
  
     /// Whether the current state is outside the failure thresholds.
@@ -72,13 +73,13 @@ impl CartPole {
 }
  
 impl Environment for CartPole {
-    type ObsSpace = SingleContinuousSpace<1>;
-    type ActionSpace = SingleDiscreteSpace;
+    type ObsSpace = ContinuousSpace<2, Single>;
+    type ActionSpace = DiscreteSpace;
     type Constraint = Unconstrained;
     type Reward = f32;
     type Info = ();
 
-    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), ()) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as Space<Single>>::Element, Self::Constraint), ()) {
         let mut sample = || self.rng.random_range(-INIT_RANGE..INIT_RANGE);
  
         self.x = sample();
@@ -90,7 +91,7 @@ impl Environment for CartPole {
         ((self.obs(), self.mask.clone()), ())
     }
  
-    fn step(&mut self, action: usize) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), f32, bool, bool, ()) {
+    fn step(&mut self, action: usize) -> ((<Self::ObsSpace as Space<Single>>::Element, Self::Constraint), f32, bool, bool, ()) {
         debug_assert!(
             (0..N_ACTIONS).contains(&action),
             "action out of range: {action}"
@@ -158,8 +159,8 @@ impl CartPoleConfig {
 impl EnvironmentConfig for CartPoleConfig {
     type Environment = CartPole;
     fn init(self) -> Self::Environment {
-        let obs_space = SingleContinuousSpace::new(&[4], arr1(&[-f32::INFINITY; 4]), arr1(&[f32::INFINITY; 4]));
-        let action_space = SingleDiscreteSpace::new(2);
+        let obs_space = ContinuousSpace::new(&[4], arr2(&[[-f32::INFINITY; 4]]), arr2(&[[f32::INFINITY; 4]]));
+        let action_space = DiscreteSpace::new(2);
         CartPole {
             x: 0.0,
             x_dot: 0.0,

@@ -1,14 +1,15 @@
 //! discrete constraint
 
 use burn::prelude::*;
-use crate::core::{Burn, Marker, NdArray, constraint::Unconstrained};
+use ndarray::Array2;
+use crate::core::{Vector, Repr, Single, constraint::Unconstrained};
 
 /// discrete constraint for discrete action spaces
-pub trait DiscreteConstraint<M: Marker> {
+pub trait DiscreteConstraint<M: Repr> {
     /// Fill the given `values` with `fill_value` where mask is false
     fn apply(self, values: M::FloatArray<2>, fill_value: f32) -> M::FloatArray<2>;
     /// Compute the mean, considering the constraints. squeezed after reduction
-    fn mean_dim(self, values: M::FloatArray<2>) -> M::FloatArray<1>;
+    fn mean_dim(self, values: M::FloatArray<2>) -> M::Float;
     /// return the possible number of actions
     fn n_possible_actions(&self) -> Option<M::Int>;
     /// returns if the given action is possible
@@ -16,7 +17,7 @@ pub trait DiscreteConstraint<M: Marker> {
 }
 
 /// implementation for tensor mask
-impl DiscreteConstraint<Burn> for Tensor<2, Bool> {
+impl DiscreteConstraint<Vector> for Tensor<2, Bool> {
     fn apply(self, values: Tensor<2>, fill_value: f32) -> Tensor<2> {
         values.mask_fill(self.bool_not(), fill_value)
     }
@@ -38,7 +39,7 @@ impl DiscreteConstraint<Burn> for Tensor<2, Bool> {
 }
 
 /// implementation for `Unconstrained`
-impl DiscreteConstraint<Burn> for Unconstrained {
+impl DiscreteConstraint<Vector> for Unconstrained {
     fn apply(self, values: Tensor<2>, _: f32) -> Tensor<2> { values }
     fn mean_dim(self, values: Tensor<2>) -> Tensor<1> { values.mean_dim(1).squeeze_dim(1) }
     fn n_possible_actions(&self) -> Option<Tensor<1, Int>> { None }
@@ -48,11 +49,11 @@ impl DiscreteConstraint<Burn> for Unconstrained {
     }
 }
 
-impl DiscreteConstraint<NdArray> for Unconstrained {
-    fn apply(self, values: <NdArray as Marker>::FloatArray<2>, _: f32) -> <NdArray as Marker>::FloatArray<2> { values }
-    fn mean_dim(self, values: <NdArray as Marker>::FloatArray<2>) -> <NdArray as Marker>::FloatArray<1> { values.mean_axis(ndarray::Axis(1)).unwrap() }
-    fn n_possible_actions(&self) -> Option<<NdArray as Marker>::Int> { None }
-    fn is_possible(&self, _: <NdArray as Marker>::Int) -> <NdArray as Marker>::Bool { true }
+impl DiscreteConstraint<Single> for Unconstrained {
+    fn apply(self, values: <Single as Repr>::FloatArray<2>, _: f32) -> <Single as Repr>::FloatArray<2> { values }
+    fn mean_dim(self, values: <Single as Repr>::FloatArray<2>) -> <Single as Repr>::Float { values.mean_axis(ndarray::Axis(1)).unwrap().to_vec()[0] }
+    fn n_possible_actions(&self) -> Option<<Single as Repr>::Int> { None }
+    fn is_possible(&self, _: <Single as Repr>::Int) -> <Single as Repr>::Bool { true }
 }
 
 #[cfg(test)]

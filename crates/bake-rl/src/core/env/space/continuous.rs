@@ -1,19 +1,19 @@
 //! Space for continuous elements
 
-use crate::core::{Marker, env::space::Space};
+use crate::core::{Repr, env::space::Space};
 
 /// Continuous space
 /// - E: element type
 ///     - `burn::Tensor`
 ///     - `ndarray::Array`
 #[derive(Debug, Clone)]
-pub struct ContinuousSpace<const D: usize, M: Marker> {
+pub struct ContinuousSpace<const D: usize, M: Repr> {
     shape: Vec<usize>,
     low: M::FloatArray<D>,
     high: M::FloatArray<D>,
 }
 
-impl<const D: usize, M: Marker> ContinuousSpace<D, M> {
+impl<const D: usize, M: Repr> ContinuousSpace<D, M> {
     /// create a new continuous space, with `burn::Tensor<D>` element
     pub fn new(shape: &[usize], low: M::FloatArray<D>, high: M::FloatArray<D>) -> Self {
         Self { shape: shape.try_into().unwrap(), low, high }
@@ -32,6 +32,6 @@ impl<const D: usize, M: Marker> ContinuousSpace<D, M> {
     }
 }
 
-impl<const D: usize, M: Marker> Space<M> for ContinuousSpace<D, M> {
+impl<const D: usize, M: Repr> Space<M> for ContinuousSpace<D, M> {
     type Element = M::FloatArray<D>;
 }
