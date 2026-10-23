@@ -47,22 +47,41 @@ pub trait WithBatchDim: Sized {
     /// - When the given data is bigger in the first batch dimension
     ///     - [7, 1, 3] cannot be assign_inplaced by [9, 1, 3] 
     fn assign_inplace(&mut self, data: Self, idx: usize);
-    /// make zeros with given batch dimensions which has shape of given data
-    fn zeros_like(batch_shape: Vec<usize>, data: &Self, device: &Device) -> Self;
+    /// make zeros with given capacity, which has shape of given data
+    fn zeros_like(capacity: usize, data: &Self) -> Self;
 }
 
 fn resolve_negative_index(n_dims: usize, mut dim: isize) -> usize {
     if dim >= n_dims as isize { panic!("Given dim >= n_dims") }
 
-    while 0 <= dim && dim < n_dims as isize {
+    while dim < 0 as isize {
         dim += n_dims as isize
     }
 
     dim as usize
 }
 
-fn n_batch(shape: &BatchShape) -> usize {
+fn n_batch(shape: &[usize]) -> usize {
     shape.iter().product()
+}
+
+fn check_batch_dim<T: WithBatchDim>(data: &[T]) -> bool {
+    let fst_shape = data[0].batch_shape();
+    data.iter().all(|d| fst_shape == d.batch_shape())
+}
+
+fn check_batch_dim_except<T: WithBatchDim>(data: &[T], dim: usize) -> bool {
+    let fst_shape = data[0].batch_shape();
+    data.iter().all(
+        |d|{
+            for (i, d_dim) in d.batch_shape().iter().enumerate() {
+                if i != dim {
+                    if *d_dim != fst_shape[i] { return false }
+                }
+            }
+            return true
+        }
+    )
 }
 
 mod batch_dim_impl;
