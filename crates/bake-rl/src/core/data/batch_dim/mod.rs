@@ -84,4 +84,6 @@ fn check_batch_dim_except<T: WithBatchDim>(data: &[T], dim: usize) -> bool {
 }
 
 mod batch_dim_impl;
-pub use batch_dim_impl::BatchTensor;
+pub use batch_dim_impl::{BatchTensor, BatchEmpty};
+
+pub mod ops;

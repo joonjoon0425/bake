@@ -4,9 +4,20 @@ use crate::core::data::batch_dim::{BatchShape, WithBatchDim, check_batch_dim, ch
 
 /// `Unconstrained` or any empty struct with batch dimension
 /// - I may change return type of `batch_size()` into `Option` and delete this struct
+#[derive(Debug, Clone)]
 pub struct BatchEmpty<T> {
     shape: BatchShape,
-    _p: PhantomData<T>
+    _p: PhantomData<fn() -> T>
+}
+
+impl<T> BatchEmpty<T> {
+    /// create a new `BatchEmpty<T>` struct with empty batch dimension
+    pub fn new() -> Self {
+        Self {
+            shape: vec![],
+            _p: PhantomData
+        }
+    }
 }
 
 impl<T> WithBatchDim for BatchEmpty<T> {
