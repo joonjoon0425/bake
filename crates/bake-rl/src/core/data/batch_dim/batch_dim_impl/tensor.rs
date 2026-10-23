@@ -94,7 +94,6 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
 
     fn slice(self, dim: isize, range: std::range::Range<usize>) -> Self {
         let (shape, dim) = check_slice(self.shape, dim, range).unwrap();
-        let dim = resolve_negative_index(shape.len(), dim);
         let mut dims = self.t.dims();
         let n_features: usize = dims[1..].iter().product();
 
@@ -102,12 +101,10 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
         let k = shape[dim];
         let res = n_batch(&shape[dim + 1..]) * n_features;
 
-        let k_final = range.iter().len();
-        shape[dim] = k_final;
         dims[0] = n_batch(&shape);
         let t = self.t
             .reshape([out, k , res])
-            .narrow(1, range.start, k_final)
+            .narrow(1, range.start, range.end - range.start)
             .reshape(dims);
 
         Self {
@@ -117,8 +114,7 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
     }
 
     fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
-        let mut shape = self.shape.clone();
-        let dim = resolve_negative_index(shape.len(), dim);
+        let (shape, dim) = check_select(self.shape, dim, idx.clone()).unwrap();
         let mut dims = self.t.dims();
         let n_features: usize = dims[1..].iter().product();
 
@@ -126,8 +122,6 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
         let k = shape[dim];
         let res = n_batch(&shape[dim + 1..]) * n_features;
 
-        let k_final = idx.dims()[0];
-        shape[dim] = k_final;
         dims[0] = n_batch(&shape);
 
         let t = self.t
@@ -161,7 +155,8 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
 mod tests {
     use burn::prelude::*;
     use burn::tensor::kind::Basic;
-    use crate::core::data::batch_dim::{BatchShape, BatchTensor, n_batch, WithBatchDim};
+    use crate::core::data::batch_dim::{BatchShape, BatchTensor, WithBatchDim};
+    use crate::core::data::batch_dim::ops::n_batch;
     fn d() -> Device { Device::default() }
 
     fn bt<const D: usize, K: Basic>(shape: BatchShape) -> BatchTensor<D, K> {

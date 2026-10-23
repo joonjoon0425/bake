@@ -44,7 +44,7 @@ pub fn n_batch(shape: &[usize]) -> usize {
 
 /// checks if reshape is valid
 pub fn check_reshape(from: &BatchShape, to: &BatchShape) -> bool {
-    let m = from.into_iter().product::<usize>();
+    let m = from.iter().product::<usize>();
     let n = to.iter().product::<usize>();
     
     m == n
