@@ -93,12 +93,12 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
     }
 
     fn slice(self, dim: isize, range: std::range::Range<usize>) -> Self {
-        let (shape, dim) = check_slice(self.shape, dim, range).unwrap();
+        let (shape, dim) = check_slice(self.shape.clone(), dim, range).unwrap();
         let mut dims = self.t.dims();
         let n_features: usize = dims[1..].iter().product();
 
         let out = n_batch(&shape[..dim]);
-        let k = shape[dim];
+        let k = self.shape[dim];
         let res = n_batch(&shape[dim + 1..]) * n_features;
 
         dims[0] = n_batch(&shape);
@@ -114,12 +114,12 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
     }
 
     fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
-        let (shape, dim) = check_select(self.shape, dim, idx.clone()).unwrap();
+        let (shape, dim) = check_select(self.shape.clone(), dim, idx.clone()).unwrap();
         let mut dims = self.t.dims();
         let n_features: usize = dims[1..].iter().product();
 
         let out = n_batch(&shape[..dim]);
-        let k = shape[dim];
+        let k = self.shape[dim];
         let res = n_batch(&shape[dim + 1..]) * n_features;
 
         dims[0] = n_batch(&shape);
