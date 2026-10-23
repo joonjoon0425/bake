@@ -1,6 +1,7 @@
 use burn::{prelude::*, tensor::kind::Basic};
 
-use crate::core::data::batch_dim::{BatchShape, WithBatchDim, check_batch_dim, check_batch_dim_except, n_batch, resolve_negative_index};
+use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
+use crate::core::data::batch_dim::ops::*;
 
 /// `burn::Tensor`, with batch dimension
 #[derive(Debug, Clone)]
@@ -27,49 +28,37 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
     }
 
     fn reshape(self, shape: BatchShape) -> Self {
-        let m = self.shape.into_iter().product::<usize>();
-        let n = shape.iter().product::<usize>();
-
-        if m != n { panic!("Invalid shape was given for reshape operation") }
-
+        assert!(check_reshape(&self.shape, &shape), "invalid shape given");
         Self {
             shape,
             ..self
         }
     }
 
-    fn squeeze(mut self, dim: isize) -> Self {
-        let dim = resolve_negative_index(self.shape.len(), dim);
-
-        if self.shape[dim] != 1 { panic!("The dimension is not 1") }
-        self.shape.remove(dim);
-        self
+    fn squeeze(self, dim: isize) -> Self {
+        let (shape, _) = check_squeeze(self.shape, dim).unwrap();
+        Self {
+            shape,
+            ..self
+        }
     }
 
-    fn unsqueeze(mut self, dim: isize) -> Self {
-        let dim = resolve_negative_index(self.shape.len() + 1, dim);
-
-        self.shape.insert(dim, 1);
-
-        self
+    fn unsqueeze(self, dim: isize) -> Self {
+        let (shape, _) = check_unsqueeze(self.shape, dim).unwrap();
+        Self {
+            shape,
+            ..self
+        }
     }
 
     fn assign_inplace(&mut self, data: Self, idx: usize) {
-        assert_eq!(&data.shape[1..], &self.shape[1..], "batch dims except axis 0 must match");
-        assert!(idx + data.shape[0] <= self.shape[0], "out of range");
-        
-        let row = n_batch(&self.shape[1..]);
+        let row = check_assign_inplace(&self.shape, &data.shape, idx.clone()).unwrap();
         let k = data.shape[0];
         self.t.inplace(|a| a.slice_assign((idx * row)..(idx + k) * row, data.t));
     }
 
     fn stack(dat: Vec<Self>) -> Self {
-        assert!(!dat.is_empty(), "Given data vector is empty");
-        assert!(check_batch_dim(&dat), "The batch dimension does not matches");
-
-        let n = dat.len();
-        let mut shape = dat[0].shape.clone();
-        shape.insert(0, n);
+        let shape = check_stack(&dat).unwrap();
         let inner = dat.into_iter().map(|d| d.t).collect();
         let stacked = Tensor::cat(inner, 0);
         Self {
@@ -79,32 +68,24 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
     }
 
     fn cat(dat: Vec<Self>, dim: isize) -> Self {
+        let (shape, dim) = check_cat(dim, &dat).unwrap();
         assert!(!dat.is_empty(), "The given data is empty");
 
-        let mut shape = dat[0].shape.clone();
         let mut dims = dat[0].t.dims();
         let n_features: usize = dims[1..].iter().product();
-
-        let dim = resolve_negative_index(shape.len(), dim);
-        assert!(check_batch_dim_except(&dat, dim), "The batch dimension does not matches");
 
         // fold
         let out = n_batch(&shape[..dim]);
         let res = n_batch(&shape[dim + 1..]) * n_features;
-        let mut k_final = 0;
-
         let t_vec = dat.into_iter().map(
             |d| {
                 let k = d.shape[dim];
-                k_final += k;
                 d.t.reshape([out, k, res])
             }
         ).collect();
-
-        shape[dim] = k_final;
         dims[0] = n_batch(&shape);
+
         let concatanated = Tensor::cat(t_vec, 1).reshape(dims);
-        
         Self {
             shape,
             t: concatanated
@@ -112,7 +93,7 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
     }
 
     fn slice(self, dim: isize, range: std::range::Range<usize>) -> Self {
-        let mut shape = self.shape.clone();
+        let (shape, dim) = check_slice(self.shape, dim, range).unwrap();
         let dim = resolve_negative_index(shape.len(), dim);
         let mut dims = self.t.dims();
         let n_features: usize = dims[1..].iter().product();

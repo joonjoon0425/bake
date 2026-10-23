@@ -51,38 +51,6 @@ pub trait WithBatchDim: Sized {
     fn zeros_like(capacity: usize, data: &Self) -> Self;
 }
 
-fn resolve_negative_index(n_dims: usize, dim: isize) -> usize {
-    let n = n_dims as isize;
-    let d = if dim < 0 { dim + n } else { dim };
-    assert!(0 <= d && d < n, "dim {dim} out of range for {n_dims} dims");
-    d as usize
-}
-
-fn n_batch(shape: &[usize]) -> usize {
-    shape.iter().product()
-}
-
-fn check_batch_dim<T: WithBatchDim>(data: &[T]) -> bool {
-    let fst_shape = data[0].batch_shape();
-    data.iter().all(|d| fst_shape == d.batch_shape())
-}
-
-fn check_batch_dim_except<T: WithBatchDim>(data: &[T], dim: usize) -> bool {
-    let fst_shape = data[0].batch_shape();
-    data.iter().all(
-        |d|{
-            if d.batch_shape().len() != fst_shape.len() { return false }
-
-            for (i, d_dim) in d.batch_shape().iter().enumerate() {
-                if i != dim {
-                    if *d_dim != fst_shape[i] { return false }
-                }
-            }
-            return true
-        }
-    )
-}
-
 mod batch_dim_impl;
 pub use batch_dim_impl::{BatchTensor, BatchEmpty};
 

@@ -1,6 +1,7 @@
 //! shape operation function and helper functions
 
-use crate::core::data::batch_dim::{BatchShape, WithBatchDim, n_batch};
+use burn::prelude::*;
+use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
 
 /// resolve the negative index; returns None if index is out of range
 pub fn resolve_negative_index(n_dims: usize, dim: isize) -> Result<usize, String> {
@@ -36,8 +37,13 @@ pub fn check_batch_dim_except<T: WithBatchDim>(data: &[T], dim: usize) -> bool {
     )
 }
 
+/// compute the flattened batch size
+pub fn n_batch(shape: &[usize]) -> usize {
+    shape.iter().product()
+}
+
 /// checks if reshape is valid
-pub fn check_reshape(from: BatchShape, to: BatchShape) -> bool {
+pub fn check_reshape(from: &BatchShape, to: &BatchShape) -> bool {
     let m = from.into_iter().product::<usize>();
     let n = to.iter().product::<usize>();
     
@@ -46,27 +52,27 @@ pub fn check_reshape(from: BatchShape, to: BatchShape) -> bool {
 
 /// checks if squeeze is valid
 /// # Return
-/// - if squeeze is valid, return squeezed shape
+/// - if squeeze is valid, return squeezed shape and the resolved dim
 /// - else return `Err`
-pub fn check_squeeze(mut shape: BatchShape, dim: isize) -> Result<BatchShape, String> {
+pub fn check_squeeze(mut shape: BatchShape, dim: isize) -> Result<(BatchShape, usize), String> {
     let dim = resolve_negative_index(shape.len(), dim)?;
     if shape[dim] != 1 {
         Err("shape[dim] != 1".into())
     }
     else {
         shape.remove(dim);
-        Ok(shape)
+        Ok((shape, dim))
     }
 }
 
 /// checks if unsqueeze is valid
 /// # Return
-/// - if unsqeeuze is valid, return the unsqeezed shape
+/// - if unsqeeuze is valid, return the unsqeezed shape and the resolved dim
 /// - if not, return `Err`
-pub fn check_unsqueeze(mut shape: BatchShape, dim: isize) -> Result<BatchShape, String> {
+pub fn check_unsqueeze(mut shape: BatchShape, dim: isize) -> Result<(BatchShape, usize), String> {
     let dim = resolve_negative_index(shape.len() + 1, dim)?;
     shape.insert(dim, 1);
-    Ok(shape)
+    Ok((shape, dim))
 }
 
 /// checks if stack is possible
@@ -88,9 +94,9 @@ pub fn check_stack<T: WithBatchDim>(data_ref: &[T]) -> Result<BatchShape, String
 
 /// checks if cat is possible
 /// # Return
-/// - if cat is possible, return the catanated shape
+/// - if cat is possible, return the catanated shape and resolved dim
 /// - if not, return Err
-pub fn check_cat<T: WithBatchDim>(dim: isize, data_ref: &[T]) -> Result<BatchShape, String> {
+pub fn check_cat<T: WithBatchDim>(dim: isize, data_ref: &[T]) -> Result<(BatchShape, usize), String> {
     if data_ref.is_empty() {
         Err("Given data vector is empty".into())
     } else {
@@ -104,16 +110,16 @@ pub fn check_cat<T: WithBatchDim>(dim: isize, data_ref: &[T]) -> Result<BatchSha
             k_final += d.batch_shape()[dim];
         }
         shape[dim] = k_final;
-        Ok(shape)
+        Ok((shape, dim))
     }
 }
 
 /// check if assign_inplace is possible
 /// # Return
-/// - if possible, return the total batch size (product of all batch dimensions);
-///   use it for finding out the one-dimensional index
+/// - if possible, return the total batch size, omitting the first dimension (product of all batch dimensions except axis 0);
+///     - useful for flattened batch dimensions
 /// - else return `Err`
-pub fn check_assign_inplace(dst: BatchShape, src: BatchShape, idx: usize) -> Result<usize, String> {
+pub fn check_assign_inplace(dst: &BatchShape, src: &BatchShape, idx: usize) -> Result<usize, String> {
     if dst[1..] != src[1..] {
         Err("batch dims except axis 0 must match".into())
     } else if idx + src[0] > dst[0] {
@@ -121,4 +127,24 @@ pub fn check_assign_inplace(dst: BatchShape, src: BatchShape, idx: usize) -> Res
     } else {
         Ok(n_batch(&dst[1..]))
     }
+}
+
+/// check if slice is possible
+/// # Return
+/// - if possible, return the sliced batch shape and resolved dim
+/// - else return `Err`
+pub fn check_slice(mut shape: BatchShape, dim: isize, range: std::range::Range<usize>) -> Result<(BatchShape, usize), String> {
+    let dim = resolve_negative_index(shape.len(), dim)?;
+    shape[dim] = range.end - range.start;
+    Ok((shape, dim))
+}
+
+/// check if select is possible
+/// # Return
+/// - if possible, return the selected batch shape and resolved dim
+/// - else return `Err`
+pub fn check_select(mut shape: BatchShape, dim: isize, idx: Tensor<1, Int>) -> Result<(BatchShape, usize), String> {
+    let dim = resolve_negative_index(shape.len(), dim)?;
+    shape[dim] = idx.shape()[0];
+    Ok((shape, dim))
 }
