@@ -3,6 +3,7 @@ use burn::{prelude::*, tensor::kind::Basic};
 use crate::core::data::batch_dim::{BatchShape, WithBatchDim, check_batch_dim, check_batch_dim_except, n_batch, resolve_negative_index};
 
 /// `burn::Tensor`, with batch dimension
+#[derive(Debug, Clone)]
 pub struct BatchTensor<const D: usize, K: Basic = Float> {
     shape: BatchShape,
     t: Tensor<D, K>,
@@ -172,5 +173,30 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
             shape,
             t
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use burn::prelude::*;
+    use burn::tensor::kind::Basic;
+    use crate::core::data::batch_dim::{BatchShape, BatchTensor, n_batch, WithBatchDim};
+    fn d() -> Device { Device::default() }
+
+    fn bt<const D: usize, K: Basic>(shape: BatchShape) -> BatchTensor<D, K> {
+        let mut s = [2; D];
+        let n = n_batch(&shape);
+        s[0] = n;
+        let t = Tensor::ones(s, &d());
+        BatchTensor {
+            shape,
+            t
+        }
+    }
+
+    #[test]
+    fn reshape() {
+        let bt = bt::<2, Float>(vec![2, 3]);
+        bt.reshape(vec![3, 2]);
     }
 }

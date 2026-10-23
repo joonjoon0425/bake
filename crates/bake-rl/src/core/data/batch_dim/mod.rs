@@ -9,7 +9,7 @@ pub type BatchShape = Vec<usize>;
 /// trait implementing the batch dimensions
 /// # Warning
 /// - The element must be endomorphic after stack, reshape, slice...
-/// - The element implementing this struct must have first dimension as its batch dimension, and it must be 1-dimensional;
+/// - The element implementing this struct must have first dimension as its 'total' batch dimension, the batch dimensions are flattened into that dimension;
 /// - For example, if `burn::Tensor<2>` implements this, the `WithBatchDim::stack` operation won't really create a new axis; it actually concatenate along the first dimension
 /// - But logically, since this creates a new dimension, its internal representation of batch dimension would change from empty to [n].
 pub trait WithBatchDim: Sized {
