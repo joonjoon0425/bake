@@ -8,7 +8,7 @@ pub fn resolve_negative_index(n_dims: usize, dim: isize) -> Result<usize, String
     let n = n_dims as isize;
     let d = if dim < 0 { dim + n } else { dim };
     if !(0 <= d && d < n) {
-        Err("dim {dim} out of range for {n_dims} dims".into())
+        Err(format!("dim {dim} out of range for {n_dims} dims"))
     } else {
         Ok(d as usize)
     }
@@ -135,8 +135,12 @@ pub fn check_assign_inplace(dst: &BatchShape, src: &BatchShape, idx: usize) -> R
 /// - else return `Err`
 pub fn check_slice(mut shape: BatchShape, dim: isize, range: std::range::Range<usize>) -> Result<(BatchShape, usize), String> {
     let dim = resolve_negative_index(shape.len(), dim)?;
-    shape[dim] = range.end - range.start;
-    Ok((shape, dim))
+    if range.start > range.end || range.end > shape[dim] {
+        Err(format!("range {}..{} out of bounds for axis {dim} of size {}", range.start, range.end, shape[dim]))
+    } else {
+        shape[dim] = range.end - range.start;
+        Ok((shape, dim))
+    }
 }
 
 /// check if select is possible

@@ -14,3 +14,6 @@ pub mod env;
 pub mod deep;
 pub mod linear;
 pub mod tabular;
+
+/// re-exportation
+extern crate self as bake_rl;

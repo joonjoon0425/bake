@@ -4,6 +4,7 @@ use proc_macro::TokenStream;
 use syn::{DeriveInput, ItemImpl, parse_macro_input};
 
 mod batchable;
+mod batch_dim;
 mod utils;
 mod discrete_action_value;
 
@@ -23,6 +24,15 @@ mod qnet;
 pub fn derive_batchable(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
     batchable::expand(&ast)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
+
+/// derive `WithBatchDim`
+#[proc_macro_derive(WithBatchDim)]
+pub fn derive_with_batch_dim(input: TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(input as DeriveInput);
+    batch_dim::expand(&ast)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
