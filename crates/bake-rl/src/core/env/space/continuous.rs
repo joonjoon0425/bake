@@ -14,7 +14,7 @@ pub struct ContinuousSpace<const D: usize, M: Repr> {
 }
 
 impl<const D: usize, M: Repr> ContinuousSpace<D, M> {
-    /// create a new continuous space, with `burn::Tensor<D>` element
+    /// create a new continuous space, with 
     pub fn new(shape: &[usize], low: M::Array<D, Float>, high: M::Array<D, Float>) -> Self {
         Self { shape: shape.try_into().unwrap(), low, high }
     }

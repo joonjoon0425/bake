@@ -58,14 +58,14 @@ pub struct CartPole {
     /// so this avoids rebuilding it on every step.
     mask: <Self as Environment<Single>>::Constraint,
 
-    obs_space: ContinuousSpace<2, Single>,
+    obs_space: ContinuousSpace<1, Single>,
     action_space: DiscreteSpace,
 }
  
 impl CartPole {
     /// Build the observation tensor from the current state.
     fn obs(&self) -> ArrayD<f32> {
-            arr2(&[[self.x, self.x_dot, self.theta, self.theta_dot]]).into_dyn()
+            arr1(&[self.x, self.x_dot, self.theta, self.theta_dot]).into_dyn()
     }
  
     /// Whether the current state is outside the failure thresholds.
@@ -75,7 +75,7 @@ impl CartPole {
 }
  
 impl Environment<Single> for CartPole {
-    type ObsSpace = ContinuousSpace<2, Single>;
+    type ObsSpace = ContinuousSpace<1, Single>;
     type ActionSpace = DiscreteSpace;
     type Constraint = Unconstrained;
     type Reward = f32;
@@ -161,7 +161,7 @@ impl CartPoleConfig {
 impl EnvironmentConfig<Single> for CartPoleConfig {
     type Environment = CartPole;
     fn init(self) -> Self::Environment {
-        let obs_space = ContinuousSpace::new(&[1, 4], arr2(&[[-f32::INFINITY; 4]]).into_dyn(), arr2(&[[f32::INFINITY; 4]]).into_dyn());
+        let obs_space = ContinuousSpace::new(&[1, 4], arr1(&[-f32::INFINITY; 4]).into_dyn(), arr1(&[f32::INFINITY; 4]).into_dyn());
         let action_space = DiscreteSpace::new(2);
         CartPole {
             x: 0.0,
