@@ -1,7 +1,6 @@
 //! A trait for batch dimension; the element implementing this trait can have batch dimension, and has some common operations related to batch
 
 use std::range::Range;
-use burn::prelude::*;
 
 /// the type of batch dimension shape
 pub type BatchShape = Vec<usize>;
@@ -38,8 +37,6 @@ pub trait WithBatchDim: Sized {
     fn unsqueeze(self, dim: isize) -> Self;
     /// slice along given axis, with given range; supports negative index for `dim`
     fn slice(self, dim: isize, range: Range<usize>) -> Self;
-    /// gather the elements of batches of given dimension, with given indices; supports negative index for `dim`
-    fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self;
     /// assign in-place the given batch, starting from the given index of given batch dimension;
     /// # Panics
     /// - When the batch dimensions other than the first (axis 0) does not matches;
@@ -51,7 +48,20 @@ pub trait WithBatchDim: Sized {
     fn zeros_like(capacity: usize, data: &Self) -> Self;
 }
 
+pub trait BatchIndex: Clone { fn n(&self) -> usize; }
+impl BatchIndex for burn::prelude::Tensor<1, burn::prelude::Int> { fn n(&self) -> usize { self.dims()[0] } }
+impl BatchIndex for Vec<usize> { fn n(&self) -> usize { self.len() } }
+pub trait BatchSelect<I: BatchIndex> : WithBatchDim {
+    /// gather the elements of batches of given dimension, with given indices; supports negative index for `dim`
+    fn select(self, dim: isize, idx: I) -> Self;
+}
+
 mod batch_dim_impl;
-pub use batch_dim_impl::{BatchTensor, BatchEmpty};
+pub use batch_dim_impl::{
+    BatchTensor,
+    BatchEmpty,
+    BatchArray,
+    BatchScalar,
+};
 pub mod ops;
 pub mod convert;

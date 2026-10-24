@@ -1,7 +1,7 @@
 use burn::{prelude::*, tensor::kind::Basic};
 
 use crate::core::data::batch_dim::convert::{AttachBatchDim, DetachBatchDim};
-use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
+use crate::core::data::batch_dim::{BatchSelect, BatchShape, WithBatchDim};
 use crate::core::data::batch_dim::ops::*;
 
 /// `burn::Tensor`, with batch dimension
@@ -123,6 +123,23 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
         }
     }
 
+    fn zeros_like(capacity: usize, data: &Self) -> Self {
+        let mut shape = data.t.shape();
+        shape[0] = shape[0] * capacity;
+
+        let t = Tensor::zeros(shape, &data.t.device());
+
+        let mut shape = data.shape.clone();
+        shape.insert(0, capacity);
+
+        Self {
+            shape,
+            t
+        }
+    }
+}
+
+impl<const D: usize, K: Basic> BatchSelect<Tensor<1, Int>> for BatchTensor<D, K> {
     fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
         let (shape, dim) = check_select(self.shape.clone(), dim, idx.clone()).unwrap();
         let mut dims = self.t.dims();
@@ -138,21 +155,6 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
             .reshape([out, k , res])
             .select(1, idx)
             .reshape(dims);
-
-        Self {
-            shape,
-            t
-        }
-    }
-
-    fn zeros_like(capacity: usize, data: &Self) -> Self {
-        let mut shape = data.t.shape();
-        shape[0] = shape[0] * capacity;
-
-        let t = Tensor::zeros(shape, &data.t.device());
-
-        let mut shape = data.shape.clone();
-        shape.insert(0, capacity);
 
         Self {
             shape,

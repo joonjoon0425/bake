@@ -11,5 +11,7 @@ pub use batch_dim::{
     BatchTensor,
     BatchEmpty,
     BatchShape,
+    BatchArray,
+    BatchScalar,
     WithBatchDim,
 };

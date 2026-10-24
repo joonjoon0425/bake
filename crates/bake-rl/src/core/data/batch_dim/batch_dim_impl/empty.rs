@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
+use crate::core::data::batch_dim::{BatchIndex, BatchSelect, BatchShape, WithBatchDim};
 use crate::core::data::batch_dim::ops::*;
 
 /// `Unconstrained` or any empty struct with batch dimension
@@ -81,19 +81,21 @@ impl<T> WithBatchDim for BatchEmpty<T> {
             _p: PhantomData
         }
     }
-
-    fn select(self, dim: isize, idx: burn::prelude::Tensor<1, burn::prelude::Int>) -> Self {
-        let (shape, _) = check_select(self.shape, dim, idx).unwrap();
-        Self {
-            shape,
-            _p: PhantomData
-        }
-    }
     
     fn zeros_like(capacity: usize, data: &Self) -> Self {
         let mut shape = data.shape.clone();
         shape.insert(0, capacity);
 
+        Self {
+            shape,
+            _p: PhantomData
+        }
+    }
+}
+
+impl<T, I: BatchIndex> BatchSelect<I> for BatchEmpty<T> {
+    fn select(self, dim: isize, idx: I) -> Self {
+        let (shape, _) = check_select(self.shape, dim, idx).unwrap();
         Self {
             shape,
             _p: PhantomData
