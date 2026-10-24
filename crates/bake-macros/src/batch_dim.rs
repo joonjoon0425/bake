@@ -25,7 +25,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
     let field_tys: Vec<Type> = fields.iter().map(|f| f.ty.clone()).collect();
     let first = field_idents[0].clone();
     let bufs: Vec<Ident> = field_idents.iter().map(|i| format_ident!("__f_{}", i)).collect();
-
+    let first_buf = bufs[0].clone();
     // for BatchSelect
     let mut g = ast.generics.clone();
     g.params.push(parse_quote!(__I: ::bake_rl::core::data::batch_dim::BatchIndex));
@@ -39,7 +39,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
     
     Ok(quote! {
         impl #impl_generics ::bake_rl::core::data::batch_dim::WithBatchDim for #name #ty_generics #where_clause {
-            fn batch_shape(&self) -> &::bake_rl::core::data::batch_dim::BatchShape {
+            fn batch_shape(&self) -> ::bake_rl::core::data::batch_dim::BatchShape {
                 self.#first.batch_shape()
             }
 
@@ -77,6 +77,15 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
                 Self {
                     #(#field_idents: ::bake_rl::core::data::batch_dim::WithBatchDim::stack(#bufs), )*
                 }
+            }
+
+            fn unstack(self) -> Vec<Self> {
+                #(let mut #bufs = ::bake_rl::core::data::batch_dim::WithBatchDim::unstack(self.#field_idents); )*
+                let __n = #first_buf.len();
+                #(assert_eq!(#bufs.len(), __n, "unstack: field length mismatch"); )*
+
+                #(let mut #bufs = #bufs.into_iter(); )*
+                (0..__n).map(|_| Self { #(#field_idents: #bufs.next().unwrap(), )* }).collect()
             }
             
             fn cat(dat: Vec<Self>, dim: isize) -> Self {

@@ -4,7 +4,7 @@ use ndarray::ArrayD;
 
 use crate::core::data::batch_dim::convert::AttachBatchDim;
 
-pub trait ElementKind: Basic { type Kind: AttachBatchDim; }
+pub trait ElementKind: Basic + Clone + 'static { type Kind: AttachBatchDim + Default + Clone + 'static; }
 impl ElementKind for Float { type Kind = f32; }
 impl ElementKind for Int { type Kind = i64; }
 impl ElementKind for Bool { type Kind = bool; }
@@ -13,10 +13,12 @@ impl ElementKind for Bool { type Kind = bool; }
 /// - for unified representation
 pub trait Repr: std::fmt::Debug + Copy {
     /// multi-dimensional array type
-    type Array<const D: usize, K: ElementKind> : AttachBatchDim;
+    type Array<const D: usize, K: ElementKind> : AttachBatchDim + Clone + 'static;
     /// scalar type
-    type Scalar<K: ElementKind> : AttachBatchDim;
+    type Scalar<K: ElementKind> : AttachBatchDim + Clone + 'static;
     /// index (usize) type
+    type Index : Clone + 'static;
+    /// indices type
     type Indices : Clone + 'static;
 
     /// device type
@@ -29,6 +31,7 @@ pub struct Vector;
 impl Repr for Vector {
     type Array<const D: usize, K: ElementKind> = Tensor<D, K>;
     type Scalar<K: ElementKind> = Tensor<1, K>;
+    type Index = Tensor<1, Int>;
     type Indices = Tensor<1, Int>;
     type Device = Device;
 }
@@ -39,6 +42,7 @@ pub struct Single;
 impl Repr for Single {
     type Array<const D: usize, K: ElementKind> = ArrayD<K::Kind>;
     type Scalar<K: ElementKind> = K::Kind;
+    type Index = usize;
     type Indices = Vec<usize>;
     type Device = ();
 }

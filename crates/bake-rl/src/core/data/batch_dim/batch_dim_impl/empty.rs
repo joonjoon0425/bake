@@ -30,8 +30,8 @@ impl<T> BatchEmpty<T> {
 }
 
 impl<T> WithBatchDim for BatchEmpty<T> {
-    fn batch_shape(&self) -> &BatchShape {
-        &self.shape
+    fn batch_shape(&self) -> BatchShape {
+        self.shape.clone()
     }
     fn reshape(self, shape: BatchShape) -> Self {
         assert!(check_reshape(&self.shape, &shape), "invalid shape given");
@@ -64,6 +64,17 @@ impl<T> WithBatchDim for BatchEmpty<T> {
             shape,
             _p: PhantomData
         }
+    }
+
+    fn unstack(mut self) -> Vec<Self> {
+        assert!(!self.shape.is_empty(), "unstack: BatchEmpty<T> has empty batch dimension");
+        let n = self.shape.remove(0);
+        let mut vec = Vec::with_capacity(n);
+        for _ in 0..n {
+            vec.push(BatchEmpty { shape: self.shape.clone(), _p: PhantomData })
+        }
+
+        vec
     }
     
     fn cat(dat: Vec<Self>, dim: isize) -> Self {
@@ -108,7 +119,7 @@ impl<T, I: BatchIndex> BatchSelect<I> for BatchEmpty<T> {
 #[cfg(test)]
 mod tests {
     use burn::prelude::*;
-    use crate::core::data::batch_dim::{BatchEmpty, BatchShape, WithBatchDim};
+    use crate::core::data::batch_dim::{BatchSelect, BatchEmpty, BatchShape, WithBatchDim};
 
     fn d() -> Device { Device::default() }
     fn be(shape: BatchShape) -> BatchEmpty<()> { BatchEmpty::<()>::with_empty_batch_dim().with_shape_for_test(shape) }

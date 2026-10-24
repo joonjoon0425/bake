@@ -18,5 +18,5 @@ impl DiscreteSpace {
 }
 
 impl<M: Repr> Space<M> for DiscreteSpace {
-    type Element = M::Indices;
+    type Element = M::Index;
 }

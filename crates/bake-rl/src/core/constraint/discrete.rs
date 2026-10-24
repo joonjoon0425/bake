@@ -1,6 +1,8 @@
 //! discrete constraint
 
 use burn::prelude::*;
+use ndarray::prelude::*;
+
 use crate::core::data::BatchEmpty;
 use crate::core::data::batch_dim::convert::DetachBatchDim;
 use crate::core::{Repr, Single, Vector};
@@ -46,14 +48,16 @@ impl DiscreteConstraint<Vector> for BatchTensor<2, Bool> {
     }
 
     fn is_possible(&self, action: BatchTensor<1, Int>) -> BatchTensor<1, Bool> {
-        let (mask, bs) = self.clone().detach_batch_dim();
-        mask.gather(1, action.unsqueeze_dim(1)).squeeze_dim(1).attach_batch_dim(bs)
+        let (mask, bs_mask) = self.clone().detach_batch_dim();
+        let (action, bs_value) = action.detach_batch_dim();
+        assert!(bs_mask == bs_value, "batch dimension does not matches");
+        mask.gather(1, action.unsqueeze_dim(1)).squeeze_dim(1).attach_batch_dim(bs_mask)
     }
 }
 
 /// implementation for `Unconstrained`
 impl DiscreteConstraint<Vector> for BatchEmpty<Unconstrained> {
-    fn apply(self, values: <<Vector as Repr>::Array<2, Float> as AttachBatchDim>::Attached, fill_value: f32) -> <<Vector as Repr>::Array<2, Float> as AttachBatchDim>::Attached {
+    fn apply(self, values: <<Vector as Repr>::Array<2, Float> as AttachBatchDim>::Attached, _: f32) -> <<Vector as Repr>::Array<2, Float> as AttachBatchDim>::Attached {
         values
     }
 
@@ -73,17 +77,22 @@ impl DiscreteConstraint<Vector> for BatchEmpty<Unconstrained> {
         None
     }
 }
+
 impl DiscreteConstraint<Single> for BatchEmpty<Unconstrained> {
-    fn apply(self, values: <<Single as Repr>::Array<2, Float> as AttachBatchDim>::Attached, fill_value: f32) -> <<Single as Repr>::Array<2, Float> as AttachBatchDim>::Attached {
+    fn apply(self, values: <<Single as Repr>::Array<2, Float> as AttachBatchDim>::Attached, _: f32) -> <<Single as Repr>::Array<2, Float> as AttachBatchDim>::Attached {
         values
     }
 
     fn mean_dim(self, values: <<Single as Repr>::Array<2, Float> as AttachBatchDim>::Attached) -> <<Single as Repr>::Array<1, Float> as AttachBatchDim>::Attached {
-        
+        let (t, bs) = values.detach_batch_dim();
+        let n = t.ndim() - 1;
+        t.mean_axis(Axis(n)).unwrap().attach_batch_dim(bs)
     }
 
     fn is_possible(&self, action: <<Single as Repr>::Scalar<Int> as AttachBatchDim>::Attached) -> <<Single as Repr>::Scalar<Bool> as AttachBatchDim>::Attached {
         let (t, bs) = action.detach_batch_dim();
+        let b = ArrayD::from_elem(t.shape(), true);
+        b.attach_batch_dim(bs)
     }
 
     fn n_possible_actions(&self) -> Option<<Single as Repr>::Scalar<Int>> {
@@ -93,16 +102,16 @@ impl DiscreteConstraint<Single> for BatchEmpty<Unconstrained> {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::constraint::discrete::DiscreteConstraint;
+    use crate::core::{constraint::discrete::DiscreteConstraint, data::batch_dim::convert::{AttachBatchDim, DetachBatchDim}};
     use burn::prelude::*;
 
     #[test]
     fn apply_test() {
         let device = Device::flex();
-        let t = Tensor::<2>::from_floats([[1f32, 2., 3., 4.], [1f32, 2., 3., 4.], [1f32, 2., 3., 4.]], &device);
-        let m = Tensor::<2, Bool>::from_bool([[true, true, false, true], [false, true, true, true], [true, true, false, false]], &device);
+        let t = Tensor::<2>::from_floats([[1f32, 2., 3., 4.], [1f32, 2., 3., 4.], [1f32, 2., 3., 4.]], &device).attach_batch_dim(vec![1]);
+        let m = Tensor::<2, Bool>::from_bool([[true, true, false, true], [false, true, true, true], [true, true, false, false]], &device).attach_batch_dim(vec![1]);
 
-        let t = m.apply(t, -1e9);
+        let (t, _) = m.apply(t, -1e9).detach_batch_dim();
         let ans = Tensor::<2>::from_floats([[1f32, 2., -1e9, 4.], [-1e9, 2., 3., 4.], [1f32, 2., -1e9, -1e9]], &device);
         assert!(t.equal(ans).all().into_scalar::<bool>())
     }
@@ -110,10 +119,10 @@ mod tests {
     #[test]
     fn mean_dim_test() {
         let device = Device::default();
-        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device);
-        let values = Tensor::<2>::from_floats([[1.0, 2.0, 3.0, 4.0], [-1.0, -2.0, -3.0, -4.0], [10.0, 20.0, 30.0, 40.0]], &device);
+        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![1]);
+        let values = Tensor::<2>::from_floats([[1.0, 2.0, 3.0, 4.0], [-1.0, -2.0, -3.0, -4.0], [10.0, 20.0, 30.0, 40.0]], &device).attach_batch_dim(vec![1]);
 
-        let mean: Vec<f32> = mask.mean_dim(values).into_data().try_into_vec().unwrap();
+        let mean: Vec<f32> = mask.mean_dim(values).detach_batch_dim().0.into_data().try_into_vec().unwrap();
         assert!(mean[0] == 3.0);
         assert!(mean[1] == -1.5);
         assert!(mean[2] == 70.0 / 3.0);
@@ -122,7 +131,7 @@ mod tests {
     #[test]
     fn n_possible_actions_test() {
         let device = Device::default();
-        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device);
+        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![1]);
         let n = mask.n_possible_actions().unwrap();
         let ans = Tensor::<1, Int>::from_ints([3, 2, 3], &device);
 
@@ -132,10 +141,10 @@ mod tests {
     #[test]
     fn possible_actions_test() {
         let device = Device::default();
-        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device);
-        let action_1 = Tensor::<1, Int>::from_ints([1, 0, 2], &device);
+        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![1]);
+        let action_1 = Tensor::<1, Int>::from_ints([1, 0, 2], &device).attach_batch_dim(vec![1]);
         let b = mask.is_possible(action_1);
         let ans = Tensor::from_bool([true, true, false], &device);
-        assert!(b.equal(ans).all().into_scalar::<bool>())
+        assert!(b.detach_batch_dim().0.equal(ans).all().into_scalar::<bool>())
     }
 }

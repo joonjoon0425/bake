@@ -13,7 +13,7 @@ pub type BatchShape = Vec<usize>;
 /// - But logically, since this creates a new dimension, its internal representation of batch dimension would change from empty to [n].
 pub trait WithBatchDim: Sized {
     /// return current batch shape
-    fn batch_shape(&self) -> &BatchShape;
+    fn batch_shape(&self) -> BatchShape;
     /// concatanate along the given batch dimension; supports negative indexing
     /// # Panics
     /// - When other batch dimension does not matches;
@@ -25,6 +25,8 @@ pub trait WithBatchDim: Sized {
     /// - When the batch dimension does not matches;
     ///     - for example, [2, 3; feature] and [2, 3; feature] would create [2, 2, 3; feature], but [1, 2; feature] and [3, 2; feature] would panic
     fn stack(dat: Vec<Self>) -> Self;
+    /// unstack itself along first batch dimension
+    fn unstack(self) -> Vec<Self>;
     /// reshape batch dimension
     fn reshape(self, shape: BatchShape) -> Self;
     /// squeeze batch dimension; supports negative index
@@ -61,7 +63,6 @@ pub use batch_dim_impl::{
     BatchTensor,
     BatchEmpty,
     BatchArray,
-    BatchScalar,
 };
 pub mod ops;
 pub mod convert;

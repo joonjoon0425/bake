@@ -1,7 +1,8 @@
 //! Categorical distribution
 
 use burn::tensor::activation::log_softmax;
-
+use burn::prelude::*;
+use crate::core::data::batch_dim::convert::{AttachBatchDim, DetachBatchDim};
 use crate::core::data::batch_dim::*;
 use crate::core::{Vector, distribution::{Distribution, PossibleConstraint}};
 use crate::core::constraint::DiscreteConstraint;
@@ -15,8 +16,8 @@ pub struct Categorical {
 impl Categorical {
     /// create a new `Categorical` distribution
     pub fn new(params: <Self as Distribution>::Params, constraint: impl DiscreteConstraint<Vector>) -> Self {
-        let logits = constraint.apply(params, -1e9);
-        let log_probs = log_softmax(logits.clone(), 1);
+        let (logits, bs) = constraint.apply(params, -1e9).detach_batch_dim();
+        let log_probs = log_softmax(logits, 1).attach_batch_dim(bs);
         Self {
             log_probs
         }
@@ -24,21 +25,30 @@ impl Categorical {
 }
 
 impl Distribution for Categorical {
-    type Sample = Tensor<1, Int>;
-    type Params = Tensor<2>;
+    type Sample = BatchTensor<1, Int>;
+    type Params = BatchTensor<2>;
 
     fn sample(&self) -> Self::Sample {
-        self.log_probs.clone().exp().categorical(1).squeeze_dim(1)
+        let (log_probs, bs) = self.log_probs.clone().detach_batch_dim();
+        log_probs.exp().categorical(1).squeeze_dim(1).attach_batch_dim(bs)
     }
+
     fn mode(&self) -> Self::Sample {
-        self.log_probs.clone().argmax(1).squeeze_dim(1)
+        let (log_probs, bs) = self.log_probs.clone().detach_batch_dim();
+        log_probs.argmax(1).squeeze_dim(1).attach_batch_dim(bs)
     }
-    fn log_probs(&self, action: Self::Sample) -> Tensor<1> {
-        self.log_probs.clone().gather(1, action.unsqueeze_dim(1)).squeeze_dim(1)
+
+    fn log_probs(&self, action: Self::Sample) -> BatchTensor<1> {
+        let (log_probs, bs) = self.log_probs.clone().detach_batch_dim();
+        let (action, abs) = action.detach_batch_dim();
+        assert!(bs == abs, "Categorical::log_probs: batch dimension does not matches");
+        log_probs.gather(1, action.unsqueeze_dim(1)).squeeze_dim(1).attach_batch_dim(bs)
     }
-    fn entropy(&self) -> Tensor<1> {
-        let probs = self.log_probs.clone().exp();
-        -(probs * self.log_probs.clone()).sum_dim(1).squeeze_dim(1)
+    
+    fn entropy(&self) -> BatchTensor<1> {
+        let (log_probs, bs) = self.log_probs.clone().detach_batch_dim();
+        let probs = log_probs.clone().exp();
+        (-probs * log_probs.clone()).sum_dim(1).squeeze_dim(1).attach_batch_dim(bs)
     }
 }
 

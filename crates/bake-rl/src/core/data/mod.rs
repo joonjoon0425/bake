@@ -12,6 +12,5 @@ pub use batch_dim::{
     BatchEmpty,
     BatchShape,
     BatchArray,
-    BatchScalar,
     WithBatchDim,
 };

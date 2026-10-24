@@ -33,8 +33,8 @@ impl<const D: usize, K: Basic> BatchTensor<D, K> {
 }
 
 impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
-    fn batch_shape(&self) -> &BatchShape {
-        &self.shape
+    fn batch_shape(&self) -> BatchShape {
+        self.shape.clone()
     }
 
     fn reshape(self, shape: BatchShape) -> Self {
@@ -75,6 +75,16 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
             shape,
             t: stacked
         }
+    }
+
+    fn unstack(self) -> Vec<Self> {
+        assert!(!self.shape.is_empty(), "The given BatchTensor does not have any batch dimension");
+        
+        let ts = self.t;
+        let bs = self.shape;
+        let row = n_batch(&bs[1..]);
+        let parts = ts.split(row, 0);
+        parts.into_iter().map(|t| BatchTensor { shape: bs[1..].to_vec(), t }).collect()
     }
 
     fn cat(dat: Vec<Self>, dim: isize) -> Self {
@@ -183,7 +193,7 @@ impl<const D: usize, K: Basic> DetachBatchDim for BatchTensor<D, K> {
 mod tests {
     use burn::prelude::*;
     use burn::tensor::kind::Basic;
-    use crate::core::data::batch_dim::{BatchShape, BatchTensor, WithBatchDim};
+    use crate::core::data::batch_dim::{BatchSelect, BatchShape, BatchTensor, WithBatchDim};
     use crate::core::data::batch_dim::ops::n_batch;
     fn d() -> Device { Device::default() }
 
