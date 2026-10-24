@@ -3,7 +3,7 @@
 use burn::prelude::*;
 use ndarray::prelude::*;
 
-use crate::core::data::BatchEmpty;
+use crate::core::data::{BatchEmpty, BatchScalar};
 use crate::core::data::batch_dim::convert::DetachBatchDim;
 use crate::core::{Repr, Single, Vector};
 use crate::core::constraint::Unconstrained;
@@ -90,9 +90,9 @@ impl DiscreteConstraint<Single> for BatchEmpty<Unconstrained> {
     }
 
     fn is_possible(&self, action: <<Single as Repr>::Scalar<Int> as AttachBatchDim>::Attached) -> <<Single as Repr>::Scalar<Bool> as AttachBatchDim>::Attached {
-        let (t, bs) = action.detach_batch_dim();
-        let b = ArrayD::from_elem(t.shape(), true);
-        b.attach_batch_dim(bs)
+        let (_, bs) = action.detach_batch_dim();
+        let b = ArrayD::from_elem(bs.clone(), true);
+        BatchScalar::Many(b.attach_batch_dim(bs))
     }
 
     fn n_possible_actions(&self) -> Option<<Single as Repr>::Scalar<Int>> {

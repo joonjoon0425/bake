@@ -4,9 +4,11 @@
 //! The action space is discrete with two actions (`0` = push left, `1` = push right),
 //! so the mask is always all-true; it exists only so that mask-aware networks
 //! (e.g. dueling) can be exercised on an unmasked task.
+use burn::tensor::Bool;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use crate::core::Single;
 use crate::core::constraint::Unconstrained;
+use crate::core::data::BatchScalar;
 use crate::core::env::space::ContinuousSpace;
 use crate::core::env::space::DiscreteSpace;
 use crate::core::env::space::Space;
@@ -54,7 +56,7 @@ pub struct CartPole {
     rng: StdRng,
     /// Pre-built all-true mask. Cloning a tensor clones a handle, not the buffer,
     /// so this avoids rebuilding it on every step.
-    mask: <Self as Environment>::Constraint,
+    mask: <Self as Environment<Single>>::Constraint,
 
     obs_space: ContinuousSpace<2, Single>,
     action_space: DiscreteSpace,
@@ -62,8 +64,8 @@ pub struct CartPole {
  
 impl CartPole {
     /// Build the observation tensor from the current state.
-    fn obs(&self) -> Array2<f32> {
-            arr2(&[[self.x, self.x_dot, self.theta, self.theta_dot]])
+    fn obs(&self) -> ArrayD<f32> {
+            arr2(&[[self.x, self.x_dot, self.theta, self.theta_dot]]).into_dyn()
     }
  
     /// Whether the current state is outside the failure thresholds.
@@ -72,7 +74,7 @@ impl CartPole {
     }
 }
  
-impl Environment for CartPole {
+impl Environment<Single> for CartPole {
     type ObsSpace = ContinuousSpace<2, Single>;
     type ActionSpace = DiscreteSpace;
     type Constraint = Unconstrained;
@@ -91,7 +93,7 @@ impl Environment for CartPole {
         ((self.obs(), self.mask.clone()), ())
     }
  
-    fn step(&mut self, action: usize) -> ((<Self::ObsSpace as Space<Single>>::Element, Self::Constraint), f32, bool, bool, ()) {
+    fn step(&mut self, action: usize) -> ((<Self::ObsSpace as Space<Single>>::Element, Self::Constraint), f32, BatchScalar<Bool>, BatchScalar<Bool>, ()) {
         debug_assert!(
             (0..N_ACTIONS).contains(&action),
             "action out of range: {action}"
@@ -120,8 +122,8 @@ impl Environment for CartPole {
         (
             (self.obs(), self.mask.clone()),
             1.0,
-            terminated,
-            truncated,
+            BatchScalar::One(terminated),
+            BatchScalar::One(truncated),
             ()
         )
     }
@@ -156,10 +158,10 @@ impl CartPoleConfig {
     } 
 }
 
-impl EnvironmentConfig for CartPoleConfig {
+impl EnvironmentConfig<Single> for CartPoleConfig {
     type Environment = CartPole;
     fn init(self) -> Self::Environment {
-        let obs_space = ContinuousSpace::new(&[1, 4], arr2(&[[-f32::INFINITY; 4]]), arr2(&[[f32::INFINITY; 4]]));
+        let obs_space = ContinuousSpace::new(&[1, 4], arr2(&[[-f32::INFINITY; 4]]).into_dyn(), arr2(&[[f32::INFINITY; 4]]).into_dyn());
         let action_space = DiscreteSpace::new(2);
         CartPole {
             x: 0.0,

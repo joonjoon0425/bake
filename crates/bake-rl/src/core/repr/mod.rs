@@ -2,9 +2,13 @@
 use burn::{prelude::*, tensor::kind::Basic};
 use ndarray::ArrayD;
 
-use crate::core::data::batch_dim::convert::AttachBatchDim;
+use crate::core::data::{BatchScalar, batch_dim::convert::AttachBatchDim};
 
-pub trait ElementKind: Basic + Clone + 'static { type Kind: AttachBatchDim + Default + Clone + 'static; }
+/// the Kind of element: float, int and bool
+pub trait ElementKind: Basic + Clone + 'static {
+    /// the element kind
+    type Kind: Default + Clone + Copy + 'static;
+}
 impl ElementKind for Float { type Kind = f32; }
 impl ElementKind for Int { type Kind = i64; }
 impl ElementKind for Bool { type Kind = bool; }
@@ -41,7 +45,7 @@ impl Repr for Vector {
 pub struct Single;
 impl Repr for Single {
     type Array<const D: usize, K: ElementKind> = ArrayD<K::Kind>;
-    type Scalar<K: ElementKind> = K::Kind;
+    type Scalar<K: ElementKind> = BatchScalar<K>;
     type Index = usize;
     type Indices = Vec<usize>;
     type Device = ();

@@ -2,7 +2,7 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{Repr, Vector, data::{WithBatchDim, batch_dim::convert::AttachBatchDim}, env::{BatchableEnvironment, Environment, EnvironmentConfig, VectorEnvironment, VectorizedEnvironmentConfig, space::Space}};
+use crate::core::{Repr, Vector, data::{WithBatchDim, batch_dim::convert::{AttachBatchDim, DetachBatchDim}}, env::{BatchableEnvironment, Environment, EnvironmentConfig, VectorEnvironment, VectorizedEnvironmentConfig, space::Space}};
 use burn::prelude::*;
 /// vectorize non-vector environment in a synchronized way 
 pub struct SynchronizedVectorEnvironment<R, E>
@@ -13,8 +13,8 @@ where
     envs: Vec<E>,
     obs_space: E::ObsSpace,
     action_space: E::ActionSpace,
-    latest_obs: Option<Vec<<E::ObsSpace as Space<R>>::Element>>,
-    latest_constraint: Option<Vec<E::Constraint>>,
+    latest_obs: Option<Vec<<<E::ObsSpace as Space<R>>::Element as AttachBatchDim>::Attached>>,
+    latest_constraint: Option<Vec<<E::Constraint as AttachBatchDim>::Attached>>,
     latest_info: Option<Vec<E::Info>>,
     device: Device
 }
@@ -51,12 +51,12 @@ where
 
                 for idx in mask.iter().enumerate().filter(|(_, b)| **b).map(|(u, _)| u) {
                     let ((obs, constraint), info) = self.envs[idx].reset();
-                    self.latest_obs.as_mut().unwrap()[idx] = obs;
-                    self.latest_constraint.as_mut().unwrap()[idx] = constraint;
+                    self.latest_obs.as_mut().unwrap()[idx] = obs.attach_batch_dim(vec![]);
+                    self.latest_constraint.as_mut().unwrap()[idx] = constraint.attach_batch_dim(vec![]);
                     self.latest_info.as_mut().unwrap()[idx] = info;
                 }
-                let obss = E::ObsSpace::batch(self.latest_obs.clone().unwrap(), &self.device);
-                let constraints = E::Constraint::batch(self.latest_constraint.clone().unwrap(), &self.device);
+                let obss = WithBatchDim::stack(self.latest_obs.clone().unwrap());
+                let constraints = WithBatchDim::stack(self.latest_constraint.clone().unwrap());
                 ((obss, constraints), self.latest_info.clone().unwrap())
             }
             None => {
@@ -66,15 +66,15 @@ where
                 
                 for idx in 0..self.n_envs() {
                     let ((obs, constraint), info) = self.envs[idx].reset();    
-                    latest_obs.push(obs);
-                    latest_constraint.push(constraint);
+                    latest_obs.push(obs.attach_batch_dim(vec![]));
+                    latest_constraint.push(constraint.attach_batch_dim(vec![]));
                     latest_info.push(info);
                 }
                 self.latest_obs = Some(latest_obs.clone());
                 self.latest_constraint = Some(latest_constraint.clone());
                 self.latest_info = Some(latest_info.clone());
-                let obss = E::ObsSpace::batch(latest_obs, &self.device);
-                let constraints = E::Constraint::batch(latest_constraint, &self.device);
+                let obss = WithBatchDim::stack(latest_obs);
+                let constraints = WithBatchDim::stack(latest_constraint);
                 ((obss, constraints), latest_info)
             }
         }
@@ -89,20 +89,20 @@ where
         let mut truncated = Vec::with_capacity(n_envs);
         for i in 0..n_envs {
             let action = actions[i].clone();
-            let ((obs, constraint), reward, term, trunc, info) = self.envs[i].step(action);
-            self.latest_obs.as_mut().unwrap()[i] = obs;
-            self.latest_constraint.as_mut().unwrap()[i] = constraint;
+            let ((obs, constraint), reward, term, trunc, info) = self.envs[i].step(action.detach_batch_dim().0);
+            self.latest_obs.as_mut().unwrap()[i] = obs.attach_batch_dim(vec![]);
+            self.latest_constraint.as_mut().unwrap()[i] = constraint.attach_batch_dim(vec![]);
             self.latest_info.as_mut().unwrap()[i] = info;
-            rewards.push(reward);
+            rewards.push(reward.attach_batch_dim(vec![]));
             terminated.push(term);
             truncated.push(trunc);
         }
-        let rewards = E::Reward::batch(rewards, &self.device);
-        let terminated = Tensor::from_bool(terminated.as_slice(), &self.device);
-        let truncated = Tensor::from_bool(truncated.as_slice(), &self.device);
+        let rewards = WithBatchDim::stack(rewards);
+        let terminated = Tensor::cat(terminated, 0);
+        let truncated = Tensor::cat(truncated, 0);
 
-        let obss = E::ObsSpace::batch(self.latest_obs.clone().unwrap(), &self.device);
-        let constraints = E::Constraint::batch(self.latest_constraint.clone().unwrap(), &self.device);
+        let obss = WithBatchDim::stack(self.latest_obs.clone().unwrap());
+        let constraints = WithBatchDim::stack(self.latest_constraint.clone().unwrap());
         let infos= self.latest_info.clone();
         ((obss, constraints), rewards, terminated, truncated, infos.unwrap())
     }
@@ -134,7 +134,8 @@ where
 impl<R, C> VectorizedEnvironmentConfig<R> for SynchronizedVectorEnvironmentConfig<R, C>
 where
     R: Repr,
-    C: EnvironmentConfig<R, Environment: BatchableEnvironment<R>>
+    C: EnvironmentConfig<R, Environment: BatchableEnvironment<R>>,
+    SynchronizedVectorEnvironment<R, C::Environment> : VectorEnvironment<R>,
 {
     type Environment = SynchronizedVectorEnvironment<R, C::Environment>;
 

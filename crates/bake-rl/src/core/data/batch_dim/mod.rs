@@ -11,7 +11,7 @@ pub type BatchShape = Vec<usize>;
 /// - The element implementing this struct must have first dimension as its 'total' batch dimension, the batch dimensions are flattened into that dimension;
 /// - For example, if `burn::Tensor<2>` implements this, the `WithBatchDim::stack` operation won't really create a new axis; it actually concatenate along the first dimension
 /// - But logically, since this creates a new dimension, its internal representation of batch dimension would change from empty to [n].
-pub trait WithBatchDim: Sized {
+pub trait WithBatchDim: Sized + Clone {
     /// return current batch shape
     fn batch_shape(&self) -> BatchShape;
     /// concatanate along the given batch dimension; supports negative indexing
@@ -50,9 +50,15 @@ pub trait WithBatchDim: Sized {
     fn zeros_like(capacity: usize, data: &Self) -> Self;
 }
 
-pub trait BatchIndex: Clone { fn n(&self) -> usize; }
+/// index type for each Repr
+pub trait BatchIndex: Clone {
+    /// return the length of index
+    fn n(&self) -> usize;
+}
 impl BatchIndex for burn::prelude::Tensor<1, burn::prelude::Int> { fn n(&self) -> usize { self.dims()[0] } }
 impl BatchIndex for Vec<usize> { fn n(&self) -> usize { self.len() } }
+
+/// trait for `select` of WithBatchDim
 pub trait BatchSelect<I: BatchIndex> : WithBatchDim {
     /// gather the elements of batches of given dimension, with given indices; supports negative index for `dim`
     fn select(self, dim: isize, idx: I) -> Self;
@@ -63,6 +69,7 @@ pub use batch_dim_impl::{
     BatchTensor,
     BatchEmpty,
     BatchArray,
+    BatchScalar,
 };
 pub mod ops;
 pub mod convert;

@@ -6,12 +6,12 @@ use crate::core::data::batch_dim::ops::*;
 /// `Unconstrained` or any empty struct with batch dimension
 /// - I may change return type of `batch_size()` into `Option` and delete this struct
 #[derive(Debug, Clone)]
-pub struct BatchEmpty<T> {
+pub struct BatchEmpty<T: Clone> {
     shape: BatchShape,
-    _p: PhantomData<fn() -> T>
+    _p: PhantomData<T>
 }
 
-impl<T> BatchEmpty<T> {
+impl<T: Clone> BatchEmpty<T> {
     /// create a new `BatchEmpty<T>` struct with empty batch dimension
     pub fn with_empty_batch_dim() -> Self {
         Self {
@@ -29,7 +29,7 @@ impl<T> BatchEmpty<T> {
     }
 }
 
-impl<T> WithBatchDim for BatchEmpty<T> {
+impl<T: Clone> WithBatchDim for BatchEmpty<T> {
     fn batch_shape(&self) -> BatchShape {
         self.shape.clone()
     }
@@ -104,7 +104,7 @@ impl<T> WithBatchDim for BatchEmpty<T> {
     }
 }
 
-impl<T, I: BatchIndex> BatchSelect<I> for BatchEmpty<T> {
+impl<T: Clone, I: BatchIndex> BatchSelect<I> for BatchEmpty<T> {
     fn select(self, dim: isize, idx: I) -> Self {
         let (shape, _) = check_select(self.shape, dim, idx).unwrap();
         Self {
@@ -124,7 +124,7 @@ mod tests {
     fn d() -> Device { Device::default() }
     fn be(shape: BatchShape) -> BatchEmpty<()> { BatchEmpty::<()>::with_empty_batch_dim().with_shape_for_test(shape) }
 
-    impl<T> BatchEmpty<T> {
+    impl<T: Clone> BatchEmpty<T> {
         fn with_shape_for_test(mut self, shape: BatchShape) -> Self { self.shape = shape; self }
     }
 

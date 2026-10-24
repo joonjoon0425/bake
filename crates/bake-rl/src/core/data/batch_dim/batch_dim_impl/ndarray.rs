@@ -2,6 +2,8 @@ use ndarray::prelude::*;
 
 use crate::core::data::{WithBatchDim, batch_dim::{BatchSelect, BatchShape, convert::{AttachBatchDim, DetachBatchDim}, ops::*}};
 
+/// ndarray::ArrayD with batch dimension
+#[derive(Debug, Clone)]
 pub struct BatchArray<A: Default + Clone + 'static> {
     nb: usize,
     array: ArrayD<A>
@@ -10,7 +12,7 @@ pub struct BatchArray<A: Default + Clone + 'static> {
 impl<A: Default + Clone + 'static> BatchArray<A> {
     /// create a new `BatchArray` with empty batch dimension, from given tensor
     pub fn with_empty_batch_dim(array: ArrayD<A>) -> Self {
-        assert_eq!(array.shape()[0], 1, "empty batch shape requires dim 0 == 1");
+        assert!(array.shape().is_empty(), "empty batch shape empty shape");
 
         Self {
             nb: 0,
@@ -57,8 +59,8 @@ impl<A: Default + Clone + 'static> WithBatchDim for BatchArray<A> {
 
     fn stack(dat: Vec<Self>) -> Self {
         let shape = check_stack(&dat).unwrap();
-        let inner = dat.into_iter().map(|a| a.array.view()).collect();
-        let stacked = ndarray::stack(Axis(0), inner).unwrap();
+        let inner: Vec<_> = dat.iter().map(|a| a.array.view()).collect();
+        let stacked = ndarray::stack(Axis(0), &inner).unwrap();
         Self {
             nb: shape.len(),
             array: stacked
@@ -77,8 +79,8 @@ impl<A: Default + Clone + 'static> WithBatchDim for BatchArray<A> {
 
     fn cat(dat: Vec<Self>, dim: isize) -> Self {
         let (shape, dim) = check_cat(dim, &dat).unwrap();
-        let inner = dat.iter().map(|a| a.array.view()).collect();
-        let catenated = ndarray::concatenate(Axis(dim), inner).unwrap();
+        let inner: Vec<_> = dat.iter().map(|a| a.array.view()).collect();
+        let catenated = ndarray::concatenate(Axis(dim), &inner).unwrap();
         Self {
             nb: shape.len(),
             array: catenated

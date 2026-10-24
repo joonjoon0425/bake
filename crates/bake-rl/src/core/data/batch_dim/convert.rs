@@ -3,9 +3,9 @@
 use crate::core::data::{BatchShape, WithBatchDim};
 
 /// attach batch dimension; this will have blanket impl for already-`WithBatchDim` types
-pub trait AttachBatchDim {
+pub trait AttachBatchDim: Clone {
     /// the type after batch dimension has been attached
-    type Attached: WithBatchDim;
+    type Attached: WithBatchDim + DetachBatchDim<Detached = Self>;
     /// attach batch dimension
     /// # Panics
     /// - When given batch_shape is invalid
@@ -15,7 +15,7 @@ pub trait AttachBatchDim {
 }
 
 /// blanket impl
-impl<T: WithBatchDim> AttachBatchDim for T {
+impl<T: WithBatchDim + DetachBatchDim<Detached = Self>> AttachBatchDim for T {
     type Attached = Self;
 
     fn attach_batch_dim(self, batch_shape: BatchShape) -> Self::Attached {
@@ -26,7 +26,7 @@ impl<T: WithBatchDim> AttachBatchDim for T {
 /// detach batch dimension, if possible; Unlike `AttachBatchDim`, this do not have blanket impl
 pub trait DetachBatchDim: WithBatchDim {
     /// the type after batch dimension has been detached
-    type Detached;
+    type Detached: AttachBatchDim<Attached = Self>;
     /// detach batch dimension
     /// # Return
     /// - detached type

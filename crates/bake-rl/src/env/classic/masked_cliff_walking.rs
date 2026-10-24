@@ -1,5 +1,7 @@
 //! Cliff Walking with masks at the boundaries
-use crate::core::env::{Environment, EnvironmentConfig, space::DiscreteSpace};
+use burn::tensor::Bool;
+
+use crate::core::{Single, data::BatchScalar, env::{Environment, EnvironmentConfig, space::DiscreteSpace}};
 /// CliffWalking with mask implementation
 /// - All feature are same but on the boundary, the agent receives an mask.
 /// - The agent won't be able to go left from the left boundary, right at right boundary, and so on.
@@ -16,7 +18,7 @@ impl MaskedCliffWalking {
     }
 }
 
-impl Environment for MaskedCliffWalking {
+impl Environment<Single> for MaskedCliffWalking {
     type Constraint = Vec<bool>;
     type ObsSpace = DiscreteSpace;
     type ActionSpace = DiscreteSpace;
@@ -28,7 +30,7 @@ impl Environment for MaskedCliffWalking {
         ((self.pos2usize(), vec![false, true, false, true]), ())
     }
 
-    fn step(&mut self, action: usize) -> ((usize, Self::Constraint), f32, bool, bool, ()) {
+    fn step(&mut self, action: usize) -> ((usize, Self::Constraint), f32, BatchScalar<Bool>, BatchScalar<Bool>, ()) {
         assert!(action == 0 || action == 1 || action == 2 || action == 3);
         let mut next_pos = (self.pos.0 as isize, self.pos.1 as isize);
 
@@ -68,7 +70,7 @@ impl Environment for MaskedCliffWalking {
         }
 
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);
-        ((self.pos2usize(), mask), reward, terminated, false, ())
+        ((self.pos2usize(), mask), reward, BatchScalar::One(terminated), BatchScalar::One(false), ())
     }
 
     fn obs_space(&self) -> &Self::ObsSpace {
@@ -87,7 +89,7 @@ impl MaskedCliffWalkingConfig {
     pub fn new() -> Self { Self }
 }
 
-impl EnvironmentConfig for MaskedCliffWalkingConfig {
+impl EnvironmentConfig<Single> for MaskedCliffWalkingConfig {
     type Environment = MaskedCliffWalking;
     fn init(self) -> Self::Environment {
         let obs_space = DiscreteSpace::new(48);
@@ -137,31 +139,31 @@ mod tests {
         env.reset();
 
         let (pos, reward, terminated, _, _) = env.step(1); // (0, 1)
-        if reward != -1f32 || terminated { panic!("Wrong env impl on {}", pos.0) }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
         let (pos, reward, terminated, _, _) = env.step(3); // (1, 1)
-        if reward != -1f32 || terminated { panic!("Wrong env impl on {}", pos.0) }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
         let (pos, reward, terminated, _, _) = env.step(3); // (2, 1)
-        if reward != -1f32 || terminated { panic!("Wrong env impl on {}", pos.0) }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
         let (pos, reward, terminated, _, _) = env.step(3); // (3, 1)
-        if reward != -1f32 || terminated { panic!("Wrong env impl on {}", pos.0) }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
         let (pos, reward, terminated, _, _) = env.step(3); // (4, 1)
-        if reward != -1f32 || terminated { panic!("Wrong env impl on {}", pos.0) }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
         let (_, reward, terminated, _, _) = env.step(3); // (5, 1)
-        if reward != -1f32 || terminated { panic!("Wrong env impl") }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
         let (_, reward, terminated, _, _) = env.step(3); // (6, 1)
-        if reward != -1f32 || terminated { panic!("Wrong env impl") }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
         let (_, reward, terminated, _, _) = env.step(3); //
-        if reward != -1f32 || terminated { panic!("Wrong env impl") }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
         let (_, reward, terminated, _, _) = env.step(3);
-        if reward != -1f32 || terminated { panic!("Wrong env impl") }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
         let (_, reward, terminated, _, _) = env.step(3);
-        if reward != -1f32 || terminated { panic!("Wrong env impl") }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
         let (_, reward, terminated, _, _) = env.step(3);
-        if reward != -1f32 || terminated { panic!("Wrong env impl") }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
         let (_, reward, terminated, _, _) = env.step(3); // (11, 1)
-        if reward != -1f32 || terminated { panic!("Wrong env impl") }
+        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
         let (_, reward, terminated, _, _) = env.step(0); // (11, 0) goal
-        if reward != 100f32 || !terminated { panic!("Wrong env impl") }
+        if reward != 100f32 || !terminated.into_scalar() { panic!("Wrong env impl") }
     }
 
     // #[test]

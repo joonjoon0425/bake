@@ -1,7 +1,7 @@
 use bake_macros::WithBatchDim;
 use crate::core::data::batch_dim::{BatchEmpty, BatchTensor};
 
-#[derive(WithBatchDim)]
+#[derive(WithBatchDim, Clone)]
 struct _TestStruct {
     f3: BatchEmpty<()>,
     f1: BatchTensor<2>,

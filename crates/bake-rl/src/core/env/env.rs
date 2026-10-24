@@ -1,6 +1,7 @@
 //! Trait for environment
 
-use crate::core::{Repr, data::batch_dim::convert::AttachBatchDim, env::space::Space};
+use crate::core::{Repr, data::batch_dim::convert::{AttachBatchDim, DetachBatchDim}, env::space::Space};
+use burn::prelude::Bool;
 
 /// `Environment` trait which all non-vectorized environments must implement
 /// - For custom non-vetorized environment, implement this trait
@@ -27,7 +28,7 @@ pub trait Environment<R: Repr> {
     /// reset the environment and return the tuple ((obs, constraint), information)
     fn reset(&mut self) -> ((<Self::ObsSpace as Space<R>>::Element, Self::Constraint), Self::Info);
     /// take one step and returns the tuple ((obs, constraint), reward, terminated, truncated, information)
-    fn step(&mut self, action: <Self::ActionSpace as Space<R>>::Element) -> ((<Self::ObsSpace as Space<R>>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info);
+    fn step(&mut self, action: <Self::ActionSpace as Space<R>>::Element) -> ((<Self::ObsSpace as Space<R>>::Element, Self::Constraint), Self::Reward, R::Scalar<Bool>, R::Scalar<Bool>, Self::Info);
 }
 
 /// the configuration trait for environments
@@ -40,11 +41,11 @@ pub trait EnvironmentConfig<R: Repr> {
 }
 
 /// trait for batchable environment
-pub trait BatchableEnvironment<R: Repr> : Environment<R, ObsSpace: Space<R, Element: AttachBatchDim>, ActionSpace: Space<R, Element: AttachBatchDim>, Constraint: AttachBatchDim, Reward: AttachBatchDim>
+pub trait BatchableEnvironment<R: Repr> : Environment<R, ObsSpace: Space<R, Element: AttachBatchDim>, ActionSpace: Space<R, Element: AttachBatchDim<Attached: DetachBatchDim>>, Constraint: AttachBatchDim, Reward: AttachBatchDim>
 {}
 
 impl<R, E> BatchableEnvironment<R> for E
 where
     R: Repr,
-    E: Environment<R, ObsSpace: Space<R, Element: AttachBatchDim>, ActionSpace: Space<R, Element: AttachBatchDim>, Constraint: AttachBatchDim, Reward: AttachBatchDim>,
+    E: Environment<R, ObsSpace: Space<R, Element: AttachBatchDim>, ActionSpace: Space<R, Element: AttachBatchDim<Attached: DetachBatchDim>>, Constraint: AttachBatchDim, Reward: AttachBatchDim>,
 {}

@@ -1,24 +1,24 @@
 //! The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
 //! - Especially useful for vector environments
 //! 
-use crate::core::{Vector, data::Batch, env::{VectorEnvironment, space::Space}};
+use crate::core::{Repr, Vector, data::{Batch, WithBatchDim, batch_dim::convert::AttachBatchDim}, env::{VectorEnvironment, space::Space}};
 use burn::prelude::*;
 /// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
 /// - Especially useful for vector environments
-pub struct Tape<E: VectorEnvironment> {
+pub struct Tape<R: Repr, E: VectorEnvironment<R>> {
     env: E,
     /// current observation
-    pub obs: <E::ObsSpace as Space<Vector>>::Element,
+    pub obs: <<E::ObsSpace as Space<R>>::Element as AttachBatchDim>::Attached,
     /// current constraint
     pub constraint: E::Constraint,
     /// `true` if the environment has terminated or truncated
-    done: Tensor<1, Bool>,
+    done: R::Array<1, Bool>,
     /// current information of the environment
     pub info: E::Info,
     autoreset: bool,
 }
 
-impl<E: VectorEnvironment> Tape<E> {
+impl<E: VectorEnvironment<Vector>> Tape<Vector, E> {
     /// create a new tape, calling `reset` on all environments
     /// # Arguments
     /// - `env: E`
@@ -53,13 +53,14 @@ impl<E: VectorEnvironment> Tape<E> {
     }
     /// take one step and returns the transition and info
     /// - if `autoreset = true`, during the `step`, terminated or truncated environments are automatically reset
-    pub fn step(&mut self, action: <E::ActionSpace as Space<Vector>>::Element) -> Batch<<E::ObsSpace as Space<Vector>>::Element, <E::ActionSpace as Space<Vector>>::Element, E::Constraint, E::Reward> {
+    pub fn step(&mut self, action: <<E::ActionSpace as Space<Vector>>::Element as AttachBatchDim>::Attached) -> Batch<<<E::ObsSpace as Space<Vector>>::Element as AttachBatchDim>::Attached, <<E::ActionSpace as Space<Vector>>::Element as AttachBatchDim>::Attached, E::Constraint, E::Reward> {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);
         let done = terminated.clone().bool_or(truncated.clone());
         self.done = done.clone();
         self.info = info;
+        let bs = obs.batch_shape();
         let batch = Batch {
             obs,
             action,
@@ -69,8 +70,8 @@ impl<E: VectorEnvironment> Tape<E> {
             constraint,
             next_constraint: self.constraint.clone(),
 
-            terminated,
-            truncated
+            terminated: terminated.attach_batch_dim(bs.clone()),
+            truncated: truncated.attach_batch_dim(bs)
         };
         
         if self.autoreset {
