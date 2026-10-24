@@ -13,9 +13,17 @@ pub struct BatchEmpty<T> {
 
 impl<T> BatchEmpty<T> {
     /// create a new `BatchEmpty<T>` struct with empty batch dimension
-    pub fn new() -> Self {
+    pub fn with_empty_batch_dim() -> Self {
         Self {
             shape: vec![],
+            _p: PhantomData
+        }
+    }
+
+    /// create a new `BatchEmpty<T>` struct with given batch dimension
+    pub fn with_batch_dim(batch_shape: BatchShape) -> Self {
+        Self {
+            shape: batch_shape,
             _p: PhantomData
         }
     }
@@ -101,7 +109,7 @@ mod tests {
     use crate::core::data::batch_dim::{BatchEmpty, BatchShape, WithBatchDim};
 
     fn d() -> Device { Device::default() }
-    fn be(shape: BatchShape) -> BatchEmpty<()> { BatchEmpty::<()>::new().with_shape_for_test(shape) }
+    fn be(shape: BatchShape) -> BatchEmpty<()> { BatchEmpty::<()>::with_empty_batch_dim().with_shape_for_test(shape) }
 
     impl<T> BatchEmpty<T> {
         fn with_shape_for_test(mut self, shape: BatchShape) -> Self { self.shape = shape; self }
@@ -111,7 +119,7 @@ mod tests {
 
     #[test]
     fn new_is_empty_batch() {
-        let b = BatchEmpty::<()>::new();
+        let b = BatchEmpty::<()>::with_empty_batch_dim();
         assert!(b.batch_shape().is_empty());
     }
 
@@ -193,7 +201,7 @@ mod tests {
     #[test]
     fn stack_empty_batch() {
         // Single 환경 원소([]) N개 → [N]: sync wrapper가 쓰는 경로
-        let b = BatchEmpty::stack(vec![BatchEmpty::<()>::new(), BatchEmpty::new(), BatchEmpty::new()]);
+        let b = BatchEmpty::stack(vec![BatchEmpty::<()>::with_empty_batch_dim(), BatchEmpty::with_empty_batch_dim(), BatchEmpty::with_empty_batch_dim()]);
         assert_eq!(vec![3], *b.batch_shape());
     }
 
@@ -323,7 +331,7 @@ mod tests {
 
     #[test]
     fn zeros_like_from_empty_batch() {
-        let z = BatchEmpty::zeros_like(4, &BatchEmpty::<()>::new());
+        let z = BatchEmpty::zeros_like(4, &BatchEmpty::<()>::with_empty_batch_dim());
         assert_eq!(vec![4], *z.batch_shape());
     }
 

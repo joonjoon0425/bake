@@ -1,13 +1,15 @@
 //! Categorical distribution
-//! 
-use burn::{Tensor, tensor::{Int, activation::log_softmax}};
+
+use burn::tensor::activation::log_softmax;
+
+use crate::core::data::batch_dim::*;
 use crate::core::{Vector, distribution::{Distribution, PossibleConstraint}};
 use crate::core::constraint::DiscreteConstraint;
 
 #[derive(Debug, Clone)]
 /// A Categorical probability distribution
 pub struct Categorical {
-    log_probs: Tensor<2>,
+    log_probs: BatchTensor<2>,
 }
 
 impl Categorical {

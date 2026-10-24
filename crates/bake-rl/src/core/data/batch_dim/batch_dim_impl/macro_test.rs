@@ -18,8 +18,8 @@ mod test {
         let device = Device::default();
         
         let t = _TestStruct {
-            f1: BatchTensor::new(Tensor::from_floats([[1., 2., 3.]], &device)),
-            f2: BatchTensor::new(Tensor::from_floats(
+            f1: BatchTensor::with_empty_batch_dim(Tensor::from_floats([[1., 2., 3.]], &device)),
+            f2: BatchTensor::with_empty_batch_dim(Tensor::from_floats(
                 [
                     [
                         [1., 2., 3.],
@@ -29,7 +29,7 @@ mod test {
                 ],
                 &device)
             ),
-            f3: BatchEmpty::new(),
+            f3: BatchEmpty::with_empty_batch_dim(),
         };
 
         WithBatchDim::zeros_like(30, &t).reshape(vec![5, 6])

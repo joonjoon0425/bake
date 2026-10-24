@@ -2,24 +2,26 @@
 use burn::prelude::*;
 use ndarray::{Array, Dim};
 
+use crate::core::data::batch_dim::convert::AttachBatchDim;
+
 /// the marker trait
 /// - for unified representation
 pub trait Repr: std::fmt::Debug + Copy {
     /// float array type, with fixed rank
-    type FloatArray<const D: usize> : Clone + 'static;
+    type FloatArray<const D: usize> : AttachBatchDim + Clone + 'static;
     /// integer array type, with fixed rank
-    type IntArray<const D: usize> : Clone + 'static;
+    type IntArray<const D: usize> : AttachBatchDim + Clone + 'static;
     /// boolean array type, with fixed rank
-    type BoolArray<const D: usize> : Clone + 'static;
+    type BoolArray<const D: usize> : AttachBatchDim + Clone + 'static;
 
     /// float type
-    type Float : Clone + 'static;
+    type Float : AttachBatchDim + Clone + 'static;
     /// integer type
-    type Int : Clone + 'static;
+    type Int : AttachBatchDim + Clone + 'static;
     /// boolean type
-    type Bool : Clone + 'static;
+    type Bool : AttachBatchDim + Clone + 'static;
     /// index (usize) type
-    type Index : Clone + 'static;
+    type Index : AttachBatchDim + Clone + 'static;
 
     /// device type
     type Device : Clone + 'static;

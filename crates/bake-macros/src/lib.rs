@@ -3,7 +3,6 @@
 use proc_macro::TokenStream;
 use syn::{DeriveInput, ItemImpl, parse_macro_input};
 
-mod batchable;
 mod batch_dim;
 mod utils;
 mod discrete_action_value;
@@ -12,21 +11,22 @@ mod actor_critic;
 mod state_value;
 mod policy;
 mod qnet;
-/// `Batchable`을 파생한다.
-///
-/// 필드는 두 종류다.
-/// - **batched**: `Batchable`로 위임
-/// - **skipped** (`#[batchable(skip)]`): 손대지 않고 통과. `cat`에서는 첫 항목이 이긴다
-///
-/// `len`은 배치 필드 중 첫 `Some`을 취한다. 모든 배치 필드가 길이를 갖지 않으면
-/// (예: 전부 `()`) `None`이 된다.
-#[proc_macro_derive(Batchable, attributes(batchable))]
-pub fn derive_batchable(input: TokenStream) -> TokenStream {
-    let ast = parse_macro_input!(input as DeriveInput);
-    batchable::expand(&ast)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
+
+// /// `Batchable`을 파생한다.
+// ///
+// /// 필드는 두 종류다.
+// /// - **batched**: `Batchable`로 위임
+// /// - **skipped** (`#[batchable(skip)]`): 손대지 않고 통과. `cat`에서는 첫 항목이 이긴다
+// ///
+// /// `len`은 배치 필드 중 첫 `Some`을 취한다. 모든 배치 필드가 길이를 갖지 않으면
+// /// (예: 전부 `()`) `None`이 된다.
+// #[proc_macro_derive(Batchable, attributes(batchable))]
+// pub fn derive_batchable(input: TokenStream) -> TokenStream {
+//     let ast = parse_macro_input!(input as DeriveInput);
+//     batchable::expand(&ast)
+//         .unwrap_or_else(syn::Error::into_compile_error)
+//         .into()
+// }
 
 /// derive `WithBatchDim`
 #[proc_macro_derive(WithBatchDim)]

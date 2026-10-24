@@ -53,5 +53,5 @@ pub trait WithBatchDim: Sized {
 
 mod batch_dim_impl;
 pub use batch_dim_impl::{BatchTensor, BatchEmpty};
-
 pub mod ops;
+pub mod convert;

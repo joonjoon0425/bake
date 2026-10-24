@@ -1,12 +1,12 @@
 //! the transition (s, a, r, s'), as a batched form
 //! 
-use bake_macros::Batchable;
+use bake_macros::WithBatchDim;
 use burn::prelude::*;
-use crate::core::data::Batchable;
 
+use crate::core::data::batch_dim::*;
 /// the transition (s, a, r, s'), as a batched form
-#[derive(Batchable, Debug, Clone)]
-pub struct Batch<Obs: Batchable, Action: Batchable, Constraint: Batchable, Reward: Batchable> {
+#[derive(WithBatchDim, Debug, Clone)]
+pub struct Batch<Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: WithBatchDim> {
     /// observation
     pub obs: Obs,
     /// action
@@ -22,7 +22,7 @@ pub struct Batch<Obs: Batchable, Action: Batchable, Constraint: Batchable, Rewar
     pub next_constraint: Constraint,
 
     /// terminated
-    pub terminated: Tensor<1, Bool>,
+    pub terminated: BatchTensor<1, Bool>,
     /// truncated
-    pub truncated: Tensor<1, Bool>
+    pub truncated: BatchTensor<1, Bool>
 }

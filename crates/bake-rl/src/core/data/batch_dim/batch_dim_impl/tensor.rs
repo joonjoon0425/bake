@@ -1,5 +1,6 @@
 use burn::{prelude::*, tensor::kind::Basic};
 
+use crate::core::data::batch_dim::convert::{AttachBatchDim, DetachBatchDim};
 use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
 use crate::core::data::batch_dim::ops::*;
 
@@ -12,11 +13,20 @@ pub struct BatchTensor<const D: usize, K: Basic = Float> {
 
 impl<const D: usize, K: Basic> BatchTensor<D, K> {
     /// create a new `BatchTensor` with empty batch dimension, from given tensor
-    pub fn new(tensor: Tensor<D, K>) -> Self {
-        debug_assert_eq!(tensor.dims()[0], 1, "empty batch shape requires dim 0 == 1");
+    pub fn with_empty_batch_dim(tensor: Tensor<D, K>) -> Self {
+        assert_eq!(tensor.dims()[0], 1, "empty batch shape requires dim 0 == 1");
 
         Self {
             shape: vec![],
+            t: tensor
+        }
+    }
+    /// create a new `BatchTensor` with given batch dimension
+    pub fn with_batch_dim(batch_shape: BatchShape, tensor: Tensor<D, K>) -> Self {
+        assert!(n_batch(&batch_shape) == tensor.dims()[0], "invalid batch shape given for with_batch_dim of BatchTensor");
+
+        Self {
+            shape: batch_shape,
             t: tensor
         }
     }
@@ -148,6 +158,22 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
             shape,
             t
         }
+    }
+}
+
+impl<const D: usize, K: Basic> AttachBatchDim for Tensor<D, K> {
+    type Attached = BatchTensor<D, K>;
+
+    fn attach_batch_dim(self, batch_shape: crate::core::data::BatchShape) -> Self::Attached {
+        BatchTensor::with_batch_dim(batch_shape, self)
+    }
+}
+
+impl<const D: usize, K: Basic> DetachBatchDim for BatchTensor<D, K> {
+    type Detached = Tensor<D, K>;
+
+    fn detach_batch_dim(self) -> (Self::Detached, crate::core::data::BatchShape) {
+        (self.t, self.shape)
     }
 }
 
@@ -297,7 +323,7 @@ mod tests {
 
     #[test]
     fn new_empty_batch() {
-        let b = BatchTensor::new(Tensor::<2>::ones([1, 3], &d()));
+        let b = BatchTensor::with_empty_batch_dim(Tensor::<2>::ones([1, 3], &d()));
         assert!(b.batch_shape().is_empty());
         check_inv(&b);
     }
@@ -306,12 +332,12 @@ mod tests {
     #[cfg(debug_assertions)]
     #[should_panic]
     fn new_panic_dim0_not_1() {
-        BatchTensor::new(Tensor::<2>::ones([3, 3], &d()));
+        BatchTensor::with_empty_batch_dim(Tensor::<2>::ones([3, 3], &d()));
     }
 
     #[test]
     fn unsqueeze_empty_batch() {
-        let b = BatchTensor::new(Tensor::<2>::ones([1, 3], &d())).unsqueeze(0);
+        let b = BatchTensor::with_empty_batch_dim(Tensor::<2>::ones([1, 3], &d())).unsqueeze(0);
         assert_eq!(vec![1], *b.batch_shape());
         check_inv(&b);
     }
@@ -327,7 +353,7 @@ mod tests {
     #[should_panic]
     fn squeeze_empty_batch_panic() {
         // n_dims = 0 에서 음수 인덱스: 무한 루프가 아니라 패닉이어야 함
-        BatchTensor::new(Tensor::<2>::ones([1, 3], &d())).squeeze(-1);
+        BatchTensor::with_empty_batch_dim(Tensor::<2>::ones([1, 3], &d())).squeeze(-1);
     }
 
     #[test]
@@ -355,7 +381,7 @@ mod tests {
 
     #[test]
     fn stack_empty_batch() {
-        let one = BatchTensor::new(Tensor::<2>::ones([1, 3], &d()));
+        let one = BatchTensor::with_empty_batch_dim(Tensor::<2>::ones([1, 3], &d()));
         let b = BatchTensor::stack(vec![one.clone(), one.clone(), one]);
         assert_eq!(vec![3], *b.batch_shape());
         check_inv(&b);
@@ -558,7 +584,7 @@ mod tests {
     #[test]
     fn bool_stack_select() {
         let t: Tensor<2, Bool> = Tensor::from_bool(TensorData::from([[true, false]]), &d());
-        let s = BatchTensor::stack(vec![BatchTensor::new(t.clone()), BatchTensor::new(t)]);
+        let s = BatchTensor::stack(vec![BatchTensor::with_empty_batch_dim(t.clone()), BatchTensor::with_empty_batch_dim(t)]);
         let s = s.unsqueeze(-1).select(1, Tensor::from_ints([0, 0], &d()));
         assert_eq!(vec![2, 2], *s.batch_shape());
         // 백엔드에 따라 Bool 저장 dtype이 u8일 수 있어서 into_data_as로 읽음
