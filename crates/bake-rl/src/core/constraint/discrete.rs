@@ -1,58 +1,94 @@
 //! discrete constraint
 
 use burn::prelude::*;
-use crate::core::{Vector, Repr, Single, constraint::Unconstrained};
+use crate::core::data::BatchEmpty;
+use crate::core::data::batch_dim::convert::DetachBatchDim;
+use crate::core::{Repr, Single, Vector};
+use crate::core::constraint::Unconstrained;
+use crate::core::data::batch_dim::{BatchTensor, convert::AttachBatchDim};
 
 /// discrete constraint for discrete action spaces
 pub trait DiscreteConstraint<M: Repr> {
     /// Fill the given `values` with `fill_value` where mask is false
-    fn apply(self, values: M::FloatArray<2>, fill_value: f32) -> M::FloatArray<2>;
+    fn apply(self, values: <M::Array<2, Float> as AttachBatchDim>::Attached, fill_value: f32) -> <M::Array<2, Float> as AttachBatchDim>::Attached;
     /// Compute the mean, considering the constraints. squeezed after reduction
-    fn mean_dim(self, values: M::FloatArray<2>) -> M::Float;
+    fn mean_dim(self, values: <M::Array<2, Float> as AttachBatchDim>::Attached) -> <M::Array<1, Float> as AttachBatchDim>::Attached;
     /// return the possible number of actions
-    fn n_possible_actions(&self) -> Option<M::Index>;
+    fn n_possible_actions(&self) -> Option<M::Scalar<Int>>;
     /// returns if the given action is possible
-    fn is_possible(&self, action: M::Index) -> M::Bool;
+    fn is_possible(&self, action: <M::Scalar<Int> as AttachBatchDim>::Attached) -> <M::Scalar<Bool> as AttachBatchDim>::Attached;
 }
 
 /// implementation for tensor mask
-impl DiscreteConstraint<Vector> for Tensor<2, Bool> {
-    fn apply(self, values: Tensor<2>, fill_value: f32) -> Tensor<2> {
-        values.mask_fill(self.bool_not(), fill_value)
+impl DiscreteConstraint<Vector> for BatchTensor<2, Bool> {
+    fn apply(self, values: BatchTensor<2>, fill_value: f32) -> BatchTensor<2> {
+        let (mask, bs_mask) = self.detach_batch_dim();
+        let (values, bs_value) = values.detach_batch_dim();
+        assert!(bs_mask == bs_value, "batch dimension does not matches");
+
+        values.mask_fill(mask.bool_not(), fill_value).attach_batch_dim(bs_value)
     }
 
-    fn mean_dim(self, values: Tensor<2>) -> Tensor<1> {
-        let invalid = self.clone().bool_not();
-        let n_possible_actions = self.float().sum_dim(1);
+    fn mean_dim(self, values: BatchTensor<2>) -> BatchTensor<1> {
+        let (mask, bs_mask) = self.detach_batch_dim();
+        let (values, bs_value) = values.detach_batch_dim();
+        assert!(bs_mask == bs_value, "batch dimension does not matches");
+
+        let invalid = mask.clone().bool_not();
+        let n_possible_actions = mask.float().sum_dim(1);
         let mean = values.mask_fill(invalid, 0f32).sum_dim(1) / n_possible_actions;
-        mean.squeeze_dim(1)
+        mean.squeeze_dim(1).attach_batch_dim(bs_value)
     }
 
     fn n_possible_actions(&self) -> Option<Tensor<1, Int>> {
-        Some(self.clone().float().sum_dim(1).squeeze_dim(1).int())
+        let (mask, _) = self.clone().detach_batch_dim();
+        Some(mask.float().sum_dim(1).squeeze_dim(1).int())
     }
 
-    fn is_possible(&self, action: Tensor<1, Int>) -> Tensor<1, Bool> {
-        self.clone().gather(1, action.unsqueeze_dim(1)).squeeze_dim(1)
+    fn is_possible(&self, action: BatchTensor<1, Int>) -> BatchTensor<1, Bool> {
+        let (mask, bs) = self.clone().detach_batch_dim();
+        mask.gather(1, action.unsqueeze_dim(1)).squeeze_dim(1).attach_batch_dim(bs)
     }
 }
 
 /// implementation for `Unconstrained`
-impl DiscreteConstraint<Vector> for Unconstrained {
-    fn apply(self, values: Tensor<2>, _: f32) -> Tensor<2> { values }
-    fn mean_dim(self, values: Tensor<2>) -> Tensor<1> { values.mean_dim(1).squeeze_dim(1) }
-    fn n_possible_actions(&self) -> Option<Tensor<1, Int>> { None }
-    fn is_possible(&self, action: Tensor<1, Int>) -> Tensor<1, Bool> {
-        let n_actions = action.shape()[0];
-        Tensor::from_bool(vec![true; n_actions].as_slice(), &action.device())
+impl DiscreteConstraint<Vector> for BatchEmpty<Unconstrained> {
+    fn apply(self, values: <<Vector as Repr>::Array<2, Float> as AttachBatchDim>::Attached, fill_value: f32) -> <<Vector as Repr>::Array<2, Float> as AttachBatchDim>::Attached {
+        values
+    }
+
+    fn mean_dim(self, values: <<Vector as Repr>::Array<2, Float> as AttachBatchDim>::Attached) -> <<Vector as Repr>::Array<1, Float> as AttachBatchDim>::Attached {
+        let (t, batch_shape) = values.detach_batch_dim();
+        let t = t.mean_dim(1).squeeze_dim(1);
+        t.attach_batch_dim(batch_shape)
+    }
+
+    fn is_possible(&self, action: <<Vector as Repr>::Scalar<Int> as AttachBatchDim>::Attached) -> <<Vector as Repr>::Scalar<Bool> as AttachBatchDim>::Attached {
+        let (t, bs) = action.detach_batch_dim();
+        let bt = Tensor::from_bool(vec![true; t.shape().num_elements()].as_slice(), &t.device());
+        bt.attach_batch_dim(bs)
+    }
+
+    fn n_possible_actions(&self) -> Option<<Vector as Repr>::Scalar<Int>> {
+        None
     }
 }
+impl DiscreteConstraint<Single> for BatchEmpty<Unconstrained> {
+    fn apply(self, values: <<Single as Repr>::Array<2, Float> as AttachBatchDim>::Attached, fill_value: f32) -> <<Single as Repr>::Array<2, Float> as AttachBatchDim>::Attached {
+        values
+    }
 
-impl DiscreteConstraint<Single> for Unconstrained {
-    fn apply(self, values: <Single as Repr>::FloatArray<2>, _: f32) -> <Single as Repr>::FloatArray<2> { values }
-    fn mean_dim(self, values: <Single as Repr>::FloatArray<2>) -> <Single as Repr>::Float { values.mean_axis(ndarray::Axis(1)).unwrap().to_vec()[0] }
-    fn n_possible_actions(&self) -> Option<<Single as Repr>::Index> { None }
-    fn is_possible(&self, _: <Single as Repr>::Index) -> <Single as Repr>::Bool { true }
+    fn mean_dim(self, values: <<Single as Repr>::Array<2, Float> as AttachBatchDim>::Attached) -> <<Single as Repr>::Array<1, Float> as AttachBatchDim>::Attached {
+        
+    }
+
+    fn is_possible(&self, action: <<Single as Repr>::Scalar<Int> as AttachBatchDim>::Attached) -> <<Single as Repr>::Scalar<Bool> as AttachBatchDim>::Attached {
+        let (t, bs) = action.detach_batch_dim();
+    }
+
+    fn n_possible_actions(&self) -> Option<<Single as Repr>::Scalar<Int>> {
+        None
+    }
 }
 
 #[cfg(test)]

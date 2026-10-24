@@ -28,7 +28,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
 
     // for BatchSelect
     let mut g = ast.generics.clone();
-    g.params.push(parse_quote!(__I: ::bake_rl::core:;data::batch_dim::BatchIndex));
+    g.params.push(parse_quote!(__I: ::bake_rl::core::data::batch_dim::BatchIndex));
     {
         let wc = g.make_where_clause();
         for ty in &field_tys {

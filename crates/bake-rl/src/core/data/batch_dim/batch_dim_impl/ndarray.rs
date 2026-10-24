@@ -1,10 +1,31 @@
 use ndarray::prelude::*;
 
-use crate::core::data::{WithBatchDim, batch_dim::{BatchSelect, BatchShape, ops::*}};
+use crate::core::data::{WithBatchDim, batch_dim::{BatchSelect, BatchShape, convert::{AttachBatchDim, DetachBatchDim}, ops::*}};
 
 pub struct BatchArray<A> {
     nb: usize,
     array: ArrayD<A>
+}
+
+impl<A> BatchArray<A> {
+    /// create a new `BatchArray` with empty batch dimension, from given tensor
+    pub fn with_empty_batch_dim(array: ArrayD<A>) -> Self {
+        assert_eq!(array.shape()[0], 1, "empty batch shape requires dim 0 == 1");
+
+        Self {
+            nb: 0,
+            array
+        }
+    }
+    /// create a new `BatchArray` with given batch dimension
+    pub fn with_batch_dim(batch_shape: BatchShape, array: ArrayD<A>) -> Self {
+        assert!(batch_shape == array.shape()[..batch_shape.len()], "invalid batch shape given for with_batch_dim of BatchTensor");
+
+        Self {
+            nb: batch_shape.len(),
+            array
+        }
+    }
 }
 
 impl<A: Default> WithBatchDim for BatchArray<A> {
@@ -89,5 +110,22 @@ impl<A: Default> BatchSelect<Vec<usize>> for BatchArray<A> {
             nb: shape.len(),
             array: a
         }
+    }
+}
+
+impl<A: Default> AttachBatchDim for ArrayD<A> {
+    type Attached = BatchArray<A>;
+
+    fn attach_batch_dim(self, batch_shape: BatchShape) -> Self::Attached {
+        BatchArray::with_batch_dim(batch_shape, self)
+    }
+}
+
+impl<A: Default> DetachBatchDim for BatchArray<A> {
+    type Detached = ArrayD<A>;
+
+    fn detach_batch_dim(self) -> (Self::Detached, BatchShape) {
+        let shape = self.array.shape()[..self.nb].try_into().unwrap();
+        (self.array, shape)
     }
 }
