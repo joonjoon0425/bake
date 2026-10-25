@@ -2,13 +2,13 @@
 
 use burn::prelude::*;
 
-use crate::core::data::BatchEmpty;
+use crate::core::data::{BatchEmpty, WithBatchDim};
 use crate::core::data::batch_dim::convert::DetachBatchDim;
 use crate::core::constraint::Unconstrained;
 use crate::core::data::batch_dim::{BatchTensor, convert::AttachBatchDim};
 
 /// discrete constraint for discrete action spaces
-pub trait DiscreteConstraint {
+pub trait DiscreteConstraint: WithBatchDim {
     /// Fill the given `values` with `fill_value` where mask is false
     fn apply(self, values: BatchTensor<2>, fill_value: f32) -> BatchTensor<2>;
     /// Compute the mean, considering the constraints. squeezed after reduction

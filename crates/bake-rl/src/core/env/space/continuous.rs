@@ -1,12 +1,13 @@
 //! Space for continuous elements
 
 use crate::core::env::space::Space;
-use burn::prelude::*;
+use burn::{prelude::*, tensor::Distribution::Uniform};
 /// Continuous space
 /// - E: element type
 ///     - `burn::Tensor`
 #[derive(Debug, Clone)]
 pub struct ContinuousSpace<const D: usize> {
+    device: Device,
     shape: Vec<usize>,
     low: Tensor<D>,
     high: Tensor<D>,
@@ -14,8 +15,8 @@ pub struct ContinuousSpace<const D: usize> {
 
 impl<const D: usize> ContinuousSpace<D> {
     /// create a new continuous space, with feature rank D
-    pub fn new(shape: &[usize], low: Tensor<D>, high: Tensor<D>) -> Self {
-        Self { shape: shape.try_into().unwrap(), low, high }
+    pub fn new(shape: &[usize], low: Tensor<D>, high: Tensor<D>, device: &Device) -> Self {
+        Self { shape: shape.try_into().unwrap(), low, high, device: device.clone() }
     }
     /// return the shape
     pub fn shape(&self) -> &[usize] {
@@ -33,4 +34,13 @@ impl<const D: usize> ContinuousSpace<D> {
 
 impl<const D: usize> Space for ContinuousSpace<D> {
     type Element = Tensor<D>;
+
+    fn device(&self) -> Device {
+        self.device.clone()
+    }
+
+    fn sample(&self) -> Self::Element {
+        let s = Tensor::random(self.shape(), Uniform(0., 1.), &self.device);
+        (self.low.clone() - self.high.clone()) * s + self.low.clone()
+    }
 }

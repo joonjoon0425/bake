@@ -17,4 +17,5 @@ ndarray = { workspace = true }
 pyo3-build-config = { version = "0.29.2", optional = true }
 
 [features]
+default = ["gym"]
 gym = ["dep:pyo3", "dep:pyo3-build-config"]

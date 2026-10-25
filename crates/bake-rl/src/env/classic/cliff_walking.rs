@@ -88,8 +88,8 @@ impl CliffWalkingConfig {
 impl EnvironmentConfig for CliffWalkingConfig {
     type Environment = CliffWalking;
     fn init(self, device: &Device) -> Self::Environment {
-        let obs_space = DiscreteSpace::new(48);
-        let action_space = DiscreteSpace::new(4);
+        let obs_space = DiscreteSpace::new(48, device);
+        let action_space = DiscreteSpace::new(4, device);
         Self::Environment { pos: (0, 0), obs_space, action_space, device: device.clone() }
     }
 }
