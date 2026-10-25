@@ -69,7 +69,6 @@ pub use batch_dim_impl::{
     BatchTensor,
     BatchEmpty,
     BatchArray,
-    BatchScalar,
 };
 pub mod ops;
 pub mod convert;

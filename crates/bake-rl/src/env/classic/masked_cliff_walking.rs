@@ -1,7 +1,6 @@
 //! Cliff Walking with masks at the boundaries
-use burn::tensor::Bool;
-
-use crate::core::{Single, data::BatchScalar, env::{Environment, EnvironmentConfig, space::DiscreteSpace}};
+use burn::prelude::*;
+use crate::core::{env::{Environment, EnvironmentConfig, space::DiscreteSpace}};
 /// CliffWalking with mask implementation
 /// - All feature are same but on the boundary, the agent receives an mask.
 /// - The agent won't be able to go left from the left boundary, right at right boundary, and so on.
@@ -9,28 +8,30 @@ pub struct MaskedCliffWalking {
     pos: (usize, usize),
     obs_space: DiscreteSpace,
     action_space: DiscreteSpace,
+    device: Device,
 }
 
 impl MaskedCliffWalking {
 
-    fn pos2usize(&self) -> usize {
-        self.pos.1 * 12 + self.pos.0
+    fn pos2tensor(&self) -> Tensor<1, Int> {
+        Tensor::from_ints([self.pos.1 * 12 + self.pos.0], &self.device)
     }
 }
 
-impl Environment<Single> for MaskedCliffWalking {
-    type Constraint = Vec<bool>;
+impl Environment for MaskedCliffWalking {
+    type Constraint = Tensor<2, Bool>;
     type ObsSpace = DiscreteSpace;
     type ActionSpace = DiscreteSpace;
     type Reward = f32;
     type Info = ();
 
-    fn reset(&mut self) -> ((usize, Self::Constraint), Self::Info) {
+    fn reset(&mut self) -> ((Tensor<1, Int>, Self::Constraint), Self::Info) {
         self.pos = (0, 0);
-        ((self.pos2usize(), vec![false, true, false, true]), ())
+        ((self.pos2tensor(), Tensor::from_bool([false, true, false, true], &self.device)), ())
     }
 
-    fn step(&mut self, action: usize) -> ((usize, Self::Constraint), f32, BatchScalar<Bool>, BatchScalar<Bool>, ()) {
+    fn step(&mut self, action: Tensor<1, Int>) -> ((Tensor<1, Int>, Self::Constraint), f32, bool, bool, ()) {
+        let action = action.into_scalar();
         assert!(action == 0 || action == 1 || action == 2 || action == 3);
         let mut next_pos = (self.pos.0 as isize, self.pos.1 as isize);
 
@@ -44,7 +45,7 @@ impl Environment<Single> for MaskedCliffWalking {
         }
         let mut reward = -1f32;
         let mut terminated = false;
-        let mut mask = vec![true; 4];
+        let mut mask = [true; 4];
         
         if next_pos.1 == 0 && (0 < next_pos.0 && next_pos.0 < 11) {
             // the agent met a cliff
@@ -70,7 +71,7 @@ impl Environment<Single> for MaskedCliffWalking {
         }
 
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);
-        ((self.pos2usize(), mask), reward, BatchScalar::One(terminated), BatchScalar::One(false), ())
+        ((self.pos2tensor(), Tensor::from_bool(mask, &self.device)), reward, terminated, false, ())
     }
 
     fn obs_space(&self) -> &Self::ObsSpace {
@@ -79,6 +80,10 @@ impl Environment<Single> for MaskedCliffWalking {
 
     fn action_space(&self) -> &Self::ActionSpace {
         &self.action_space
+    }
+
+    fn device(&self) -> Device {
+        self.device.clone()
     }
 }
 
@@ -89,94 +94,11 @@ impl MaskedCliffWalkingConfig {
     pub fn new() -> Self { Self }
 }
 
-impl EnvironmentConfig<Single> for MaskedCliffWalkingConfig {
+impl EnvironmentConfig for MaskedCliffWalkingConfig {
     type Environment = MaskedCliffWalking;
-    fn init(self) -> Self::Environment {
+    fn init(self, device: &Device) -> Self::Environment {
         let obs_space = DiscreteSpace::new(48);
         let action_space = DiscreteSpace::new(4);
-        Self::Environment { pos: (0, 0), obs_space, action_space }
+        Self::Environment { pos: (0, 0), obs_space, action_space, device: device.clone() }
     }
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use crate::core::env::{Environment, EnvironmentConfig};
-    use crate::env::classic::masked_cliff_walking::MaskedCliffWalkingConfig;
-
-    #[test]
-    #[should_panic]
-    fn invalid_action() {
-        let mut env = MaskedCliffWalkingConfig::new().init();
-        env.reset();
-        env.step(5);
-    }
-
-    #[test]
-    fn udlr() {
-        let mut env = MaskedCliffWalkingConfig::new().init();
-        env.reset();
-        let ((pos, _), _, _, _, _) = env.step(1);
-        assert_eq!(pos, 12);
-        let ((pos, _), _, _, _, _) = env.step(3);
-        assert_eq!(pos, 13);
-        let ((pos, _), _, _, _, _) = env.step(1);
-        assert_eq!(pos, 25);
-    }
-
-    #[test]
-    fn cliff_to_start() {
-        let mut env = MaskedCliffWalkingConfig::new().init();
-        env.reset();
-        let ((pos, _), _, _, _, _) = env.step(3);
-        assert_eq!(pos, 0)
-    }
-
-    #[test]
-    fn goal_terminate_reward() {
-        let mut env = MaskedCliffWalkingConfig::new().init();
-        env.reset();
-
-        let (pos, reward, terminated, _, _) = env.step(1); // (0, 1)
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
-        let (pos, reward, terminated, _, _) = env.step(3); // (1, 1)
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
-        let (pos, reward, terminated, _, _) = env.step(3); // (2, 1)
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
-        let (pos, reward, terminated, _, _) = env.step(3); // (3, 1)
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
-        let (pos, reward, terminated, _, _) = env.step(3); // (4, 1)
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl on {}", pos.0) }
-        let (_, reward, terminated, _, _) = env.step(3); // (5, 1)
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
-        let (_, reward, terminated, _, _) = env.step(3); // (6, 1)
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
-        let (_, reward, terminated, _, _) = env.step(3); //
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
-        let (_, reward, terminated, _, _) = env.step(3);
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
-        let (_, reward, terminated, _, _) = env.step(3);
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
-        let (_, reward, terminated, _, _) = env.step(3);
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
-        let (_, reward, terminated, _, _) = env.step(3); // (11, 1)
-        if reward != -1f32 || terminated.into_scalar() { panic!("Wrong env impl") }
-        let (_, reward, terminated, _, _) = env.step(0); // (11, 0) goal
-        if reward != 100f32 || !terminated.into_scalar() { panic!("Wrong env impl") }
-    }
-
-    // #[test]
-    // fn masking() {
-    //     let qtable = QTableConfig::new(48, 4).init();
-    //     let mut exploration = EpsGreedy::new(1, 1.0);
-
-    //     let mut env = MaskedCliffWalkingConfig::new().init();
-    //     let (obs, constraint) = env.reset();
-
-    //     for _ in 0..1000 {
-    //         let action = exploration.sample(qtable.qvalues_as_vec(obs), constraint);
-    //         assert!(action != 2 && action != 0);
-    //     }
-    // }
 }

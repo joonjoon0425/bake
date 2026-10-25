@@ -4,15 +4,12 @@
 //! The action space is discrete with two actions (`0` = push left, `1` = push right),
 //! so the mask is always all-true; it exists only so that mask-aware networks
 //! (e.g. dueling) can be exercised on an unmasked task.
-use burn::tensor::Bool;
+use burn::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
-use crate::core::Single;
 use crate::core::constraint::Unconstrained;
-use crate::core::data::BatchScalar;
 use crate::core::env::space::ContinuousSpace;
 use crate::core::env::space::DiscreteSpace;
 use crate::core::env::space::Space;
-use ndarray::prelude::*;
 
 use crate::core::env::Environment;
 use crate::core::env::EnvironmentConfig;
@@ -56,16 +53,18 @@ pub struct CartPole {
     rng: StdRng,
     /// Pre-built all-true mask. Cloning a tensor clones a handle, not the buffer,
     /// so this avoids rebuilding it on every step.
-    mask: <Self as Environment<Single>>::Constraint,
+    mask: <Self as Environment>::Constraint,
 
-    obs_space: ContinuousSpace<1, Single>,
+    device: Device,
+
+    obs_space: ContinuousSpace<2>,
     action_space: DiscreteSpace,
 }
  
 impl CartPole {
     /// Build the observation tensor from the current state.
-    fn obs(&self) -> ArrayD<f32> {
-            arr1(&[self.x, self.x_dot, self.theta, self.theta_dot]).into_dyn()
+    fn obs(&self) -> Tensor<2> {
+        Tensor::from_floats([[self.x, self.x_dot, self.theta, self.theta_dot]], &self.device)
     }
  
     /// Whether the current state is outside the failure thresholds.
@@ -74,14 +73,14 @@ impl CartPole {
     }
 }
  
-impl Environment<Single> for CartPole {
-    type ObsSpace = ContinuousSpace<1, Single>;
+impl Environment for CartPole {
+    type ObsSpace = ContinuousSpace<2>;
     type ActionSpace = DiscreteSpace;
     type Constraint = Unconstrained;
     type Reward = f32;
     type Info = ();
 
-    fn reset(&mut self) -> ((<Self::ObsSpace as Space<Single>>::Element, Self::Constraint), ()) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), ()) {
         let mut sample = || self.rng.random_range(-INIT_RANGE..INIT_RANGE);
  
         self.x = sample();
@@ -93,7 +92,8 @@ impl Environment<Single> for CartPole {
         ((self.obs(), self.mask.clone()), ())
     }
  
-    fn step(&mut self, action: usize) -> ((<Self::ObsSpace as Space<Single>>::Element, Self::Constraint), f32, BatchScalar<Bool>, BatchScalar<Bool>, ()) {
+    fn step(&mut self, action: Tensor<1, Int>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), f32, bool, bool, ()) {
+        let action = action.into_scalar::<u64>() as usize;
         debug_assert!(
             (0..N_ACTIONS).contains(&action),
             "action out of range: {action}"
@@ -122,8 +122,8 @@ impl Environment<Single> for CartPole {
         (
             (self.obs(), self.mask.clone()),
             1.0,
-            BatchScalar::One(terminated),
-            BatchScalar::One(truncated),
+            terminated,
+            truncated,
             ()
         )
     }
@@ -134,6 +134,10 @@ impl Environment<Single> for CartPole {
 
     fn action_space(&self) -> &Self::ActionSpace {
         &self.action_space
+    }
+
+    fn device(&self) -> Device {
+        self.device.clone()
     }
 }
 
@@ -158,10 +162,10 @@ impl CartPoleConfig {
     } 
 }
 
-impl EnvironmentConfig<Single> for CartPoleConfig {
+impl EnvironmentConfig for CartPoleConfig {
     type Environment = CartPole;
-    fn init(self) -> Self::Environment {
-        let obs_space = ContinuousSpace::new(&[1, 4], arr1(&[-f32::INFINITY; 4]).into_dyn(), arr1(&[f32::INFINITY; 4]).into_dyn());
+    fn init(self, device: &Device) -> Self::Environment {
+        let obs_space = ContinuousSpace::new(&[4], Tensor::from_floats([[-f32::INFINITY; 4]], device), Tensor::from_floats([[f32::INFINITY; 4]], device));
         let action_space = DiscreteSpace::new(2);
         CartPole {
             x: 0.0,
@@ -173,6 +177,7 @@ impl EnvironmentConfig<Single> for CartPoleConfig {
             mask: Unconstrained,
             obs_space,
             action_space,
+            device: device.clone()
         }
     }
 }

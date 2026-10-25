@@ -1,29 +1,23 @@
 //! Synchronized vector environment wrapper
-
-use std::marker::PhantomData;
-
-use crate::core::{Repr, Vector, data::{WithBatchDim, batch_dim::convert::{AttachBatchDim, DetachBatchDim}}, env::{BatchableEnvironment, Environment, EnvironmentConfig, VectorEnvironment, VectorizedEnvironmentConfig, space::Space}};
+use crate::core::{data::{WithBatchDim, batch_dim::convert::{AttachBatchDim, DetachBatchDim}}, env::{BatchableEnvironment, Environment, EnvironmentConfig, VectorEnvironment, VectorizedEnvironmentConfig, space::Space}};
 use burn::prelude::*;
 /// vectorize non-vector environment in a synchronized way 
-pub struct SynchronizedVectorEnvironment<R, E>
+pub struct SynchronizedVectorEnvironment<E>
 where 
-    R: Repr,
-    E: BatchableEnvironment<R>,
+    E: BatchableEnvironment,
 {
     envs: Vec<E>,
     obs_space: E::ObsSpace,
     action_space: E::ActionSpace,
-    latest_obs: Option<Vec<<<E::ObsSpace as Space<R>>::Element as AttachBatchDim>::Attached>>,
+    latest_obs: Option<Vec<<<E::ObsSpace as Space>::Element as AttachBatchDim>::Attached>>,
     latest_constraint: Option<Vec<<E::Constraint as AttachBatchDim>::Attached>>,
     latest_info: Option<Vec<E::Info>>,
     device: Device
 }
 
-type Re = Vector;
-
-impl<E> VectorEnvironment<Re> for SynchronizedVectorEnvironment<Re, E>
+impl<E> VectorEnvironment for SynchronizedVectorEnvironment<E>
 where
-    E: BatchableEnvironment<Re>
+    E: BatchableEnvironment
 {
     type ObsSpace = E::ObsSpace;
     type ActionSpace = E::ActionSpace;
@@ -43,7 +37,7 @@ where
         self.envs.len()
     }
 
-    fn reset(&mut self, mask: Option<<Re as Repr>::Array<1, Bool>>) -> ((<<Self::ObsSpace as Space<Re>>::Element as AttachBatchDim>::Attached, Self::Constraint), Self::Info) {
+    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<<Self::ObsSpace as Space>::Element as AttachBatchDim>::Attached, Self::Constraint), Self::Info) {
         match mask {
             Some(mask) => {
                 let mask = mask.try_into_vec_as().unwrap();
@@ -81,7 +75,7 @@ where
         
     }
 
-    fn step(&mut self, action: <<Self::ActionSpace as Space<Re>>::Element as AttachBatchDim>::Attached) -> ((<<Self::ObsSpace as Space<Re>>::Element as AttachBatchDim>::Attached, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
+    fn step(&mut self, action: <<Self::ActionSpace as Space>::Element as AttachBatchDim>::Attached) -> ((<<Self::ObsSpace as Space>::Element as AttachBatchDim>::Attached, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
         let n_envs = self.n_envs();
         let actions = action.unstack();
         let mut rewards = Vec::with_capacity(n_envs);
@@ -98,8 +92,8 @@ where
             truncated.push(trunc);
         }
         let rewards = WithBatchDim::stack(rewards);
-        let terminated = Tensor::cat(terminated, 0);
-        let truncated = Tensor::cat(truncated, 0);
+        let terminated = Tensor::from_bool(terminated.as_slice(), &self.device);
+        let truncated = Tensor::from_bool(truncated.as_slice(), &self.device);
 
         let obss = WithBatchDim::stack(self.latest_obs.clone().unwrap());
         let constraints = WithBatchDim::stack(self.latest_constraint.clone().unwrap());
@@ -113,34 +107,30 @@ where
 }
 
 /// configuration for `SynchronizedVectorEnvironment`
-pub struct SynchronizedVectorEnvironmentConfig<R, C>
+pub struct SynchronizedVectorEnvironmentConfig<C>
 where
-    R: Repr,
-    C: EnvironmentConfig<R, Environment: BatchableEnvironment<R>>
+    C: EnvironmentConfig<Environment: BatchableEnvironment>
 {
     configs: Vec<C>,
-    _p: PhantomData<R>
 }
 
-impl<R, C> SynchronizedVectorEnvironmentConfig<R, C> 
+impl<C> SynchronizedVectorEnvironmentConfig<C> 
 where
-    R: Repr,
-    C: EnvironmentConfig<R, Environment: BatchableEnvironment<R>>
+    C: EnvironmentConfig<Environment: BatchableEnvironment>
 {
     /// create a new `SynchronizedVectorEnvironmentConfig` from given configurations
-    pub fn new(configs: Vec<C>) -> Self { Self { configs, _p: PhantomData } }
+    pub fn new(configs: Vec<C>) -> Self { Self { configs } }
 }
 
-impl<R, C> VectorizedEnvironmentConfig<R> for SynchronizedVectorEnvironmentConfig<R, C>
+impl<C> VectorizedEnvironmentConfig for SynchronizedVectorEnvironmentConfig<C>
 where
-    R: Repr,
-    C: EnvironmentConfig<R, Environment: BatchableEnvironment<R>>,
-    SynchronizedVectorEnvironment<R, C::Environment> : VectorEnvironment<R>,
+    C: EnvironmentConfig<Environment: BatchableEnvironment>,
+    SynchronizedVectorEnvironment<C::Environment> : VectorEnvironment,
 {
-    type Environment = SynchronizedVectorEnvironment<R, C::Environment>;
+    type Environment = SynchronizedVectorEnvironment<C::Environment>;
 
     fn init(self, device: &Device) -> Self::Environment {
-        let envs: Vec<<C as EnvironmentConfig<R>>::Environment> = self.configs.into_iter().map(|c| c.init()).collect();
+        let envs: Vec<<C as EnvironmentConfig>::Environment> = self.configs.into_iter().map(|c| c.init(device)).collect();
         let obs_space = envs[0].obs_space().clone();
         let action_space = envs[0].action_space().clone();
 

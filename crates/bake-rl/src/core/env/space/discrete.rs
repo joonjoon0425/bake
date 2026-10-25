@@ -1,6 +1,7 @@
 //! Space for discrete elements
 
-use crate::core::{Repr, env::space::Space};
+use burn::prelude::*;
+use crate::core::env::space::Space;
 
 /// Discrete space
 #[derive(Debug, Clone)]
@@ -17,6 +18,6 @@ impl DiscreteSpace {
     pub fn n(&self) -> usize { self.n }
 }
 
-impl<M: Repr> Space<M> for DiscreteSpace {
-    type Element = M::Index;
+impl Space for DiscreteSpace {
+    type Element = Tensor<1, Int>;
 }

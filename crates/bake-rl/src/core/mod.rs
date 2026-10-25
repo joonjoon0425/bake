@@ -1,8 +1,5 @@
 //! # `core`: core components of `bake-rl`
-//! 
-
-pub mod repr;
-pub use repr::*;
+//!
 
 pub mod buffer;
 pub mod constraint;
