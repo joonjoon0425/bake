@@ -35,7 +35,7 @@ pub trait VectorEnvironment {
 }
 
 /// configuration trait for `VectorizedEnvironment`
-pub trait VectorizedEnvironmentConfig {
+pub trait VectorEnvironmentConfig {
     /// the environment which configuration is about
     type Environment: VectorEnvironment;
     /// create a new environment

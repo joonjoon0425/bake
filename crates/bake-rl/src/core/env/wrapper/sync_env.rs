@@ -1,5 +1,5 @@
 //! Synchronized vector environment wrapper
-use crate::core::{data::{WithBatchDim, batch_dim::convert::{AttachBatchDim, DetachBatchDim}}, env::{BatchableEnvironment, Environment, EnvironmentConfig, VectorEnvironment, VectorizedEnvironmentConfig, space::Space}};
+use crate::core::{data::{WithBatchDim, batch_dim::convert::{AttachBatchDim, DetachBatchDim}}, env::{BatchableEnvironment, Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig, space::Space}};
 use burn::prelude::*;
 /// vectorize non-vector environment in a synchronized way 
 pub struct SynchronizedVectorEnvironment<E>
@@ -122,7 +122,7 @@ where
     pub fn new(configs: Vec<C>) -> Self { Self { configs } }
 }
 
-impl<C> VectorizedEnvironmentConfig for SynchronizedVectorEnvironmentConfig<C>
+impl<C> VectorEnvironmentConfig for SynchronizedVectorEnvironmentConfig<C>
 where
     C: EnvironmentConfig<Environment: BatchableEnvironment>,
     SynchronizedVectorEnvironment<C::Environment> : VectorEnvironment,

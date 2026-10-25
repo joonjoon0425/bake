@@ -17,3 +17,11 @@ pub mod tabular;
 
 /// re-exportation
 extern crate self as bake_rl;
+
+/// prelude module
+pub mod prelude {
+    pub use bake_rl::core::data::{Batch, BatchTensor, BatchShape, WithBatchDim};
+    pub use bake_rl::core::constraint::DiscreteConstraint;
+    pub use bake_rl::core::env::{Tape, Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig};
+    pub use bake_rl::core::distribution::Distribution;
+}

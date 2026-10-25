@@ -1,4 +1,6 @@
-use bake_rl::{core::{data::BatchTensor, env::{Tape, VectorizedEnvironmentConfig, wrapper::sync_env::SynchronizedVectorEnvironmentConfig}}, env::classic::cartpole::CartPoleConfig};
+use bake_rl::prelude::*;
+use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironmentConfig;
+use bake_rl::env::classic::cartpole::CartPoleConfig;
 use burn::prelude::*;
 
 pub fn main() {
