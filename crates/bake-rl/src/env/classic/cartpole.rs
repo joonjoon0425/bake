@@ -77,7 +77,7 @@ impl Environment for CartPole {
     type ObsSpace = ContinuousSpace<2>;
     type ActionSpace = DiscreteSpace;
     type Constraint = Unconstrained;
-    type Reward = f32;
+    type Reward = Tensor<1>;
     type Info = ();
 
     fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), ()) {
@@ -92,7 +92,7 @@ impl Environment for CartPole {
         ((self.obs(), self.mask.clone()), ())
     }
  
-    fn step(&mut self, action: Tensor<1, Int>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), f32, bool, bool, ()) {
+    fn step(&mut self, action: Tensor<1, Int>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Tensor<1>, bool, bool, ()) {
         let action = action.into_scalar::<u64>() as usize;
         debug_assert!(
             (0..N_ACTIONS).contains(&action),
@@ -121,7 +121,7 @@ impl Environment for CartPole {
  
         (
             (self.obs(), self.mask.clone()),
-            1.0,
+            Tensor::from_floats([1.0], &self.device),
             terminated,
             truncated,
             ()

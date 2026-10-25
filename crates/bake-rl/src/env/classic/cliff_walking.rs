@@ -26,14 +26,14 @@ impl Environment for CliffWalking {
     type ObsSpace = DiscreteSpace;
     type ActionSpace = DiscreteSpace;
     type Info = ();
-    type Reward = f32;
+    type Reward = Tensor<1>;
 
     fn reset(&mut self) -> ((Tensor<1, Int>, Self::Constraint), ()) {
         self.pos = (0, 0);
         ((self.pos2tensor(), Unconstrained), ())
     }
 
-    fn step(&mut self, action: Tensor<1, Int>) -> ((Tensor<1, Int>, Self::Constraint), f32, bool, bool, ()) {
+    fn step(&mut self, action: Tensor<1, Int>) -> ((Tensor<1, Int>, Self::Constraint), Tensor<1>, bool, bool, ()) {
         let action = action.into_scalar();
         assert!(action == 0 || action == 1 || action == 2 || action == 3);
         let mut next_pos: (isize, isize) = (self.pos.0 as isize, self.pos.1 as isize);
@@ -62,7 +62,7 @@ impl Environment for CliffWalking {
         }
 
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);
-        ((self.pos2tensor(), Unconstrained), reward, terminated, false, ())
+        ((self.pos2tensor(), Unconstrained), Tensor::from_floats([reward], &self.device), terminated, false, ())
     }
 
     fn obs_space(&self) -> &Self::ObsSpace {
