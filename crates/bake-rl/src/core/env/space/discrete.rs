@@ -1,7 +1,7 @@
 //! Space for discrete elements
 
 use burn::{prelude::*, tensor::Distribution::Uniform};
-use crate::core::env::space::Space;
+use crate::core::{data::{WithBatchDim, batch_dim::convert::AttachBatchDim}, env::space::Space};
 
 /// Discrete space
 #[derive(Debug, Clone)]
@@ -22,8 +22,10 @@ impl DiscreteSpace {
 impl Space for DiscreteSpace {
     type Element = Tensor<1, Int>;
 
-    fn sample(&self) -> Self::Element {
-        Tensor::random([1], Uniform(0., self.n as f64), &self.device)
+    fn sample(&self, num: usize) -> <Self::Element as AttachBatchDim>::Attached {
+        let vec = 
+            (0..num).into_iter().map(|_| Tensor::random([1], Uniform(0., self.n as f64), &self.device).attach_batch_dim(vec![])).collect();
+        WithBatchDim::stack(vec)
     }
 
     fn device(&self) -> Device {
