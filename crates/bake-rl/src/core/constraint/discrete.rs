@@ -84,8 +84,8 @@ mod tests {
     #[test]
     fn apply_test() {
         let device = Device::flex();
-        let t = Tensor::<2>::from_floats([[1f32, 2., 3., 4.], [1f32, 2., 3., 4.], [1f32, 2., 3., 4.]], &device).attach_batch_dim(vec![1]);
-        let m = Tensor::<2, Bool>::from_bool([[true, true, false, true], [false, true, true, true], [true, true, false, false]], &device).attach_batch_dim(vec![1]);
+        let t = Tensor::<2>::from_floats([[1f32, 2., 3., 4.], [1f32, 2., 3., 4.], [1f32, 2., 3., 4.]], &device).attach_batch_dim(vec![3]);
+        let m = Tensor::<2, Bool>::from_bool([[true, true, false, true], [false, true, true, true], [true, true, false, false]], &device).attach_batch_dim(vec![3]);
 
         let (t, _) = m.apply(t, -1e9).detach_batch_dim();
         let ans = Tensor::<2>::from_floats([[1f32, 2., -1e9, 4.], [-1e9, 2., 3., 4.], [1f32, 2., -1e9, -1e9]], &device);
@@ -95,8 +95,8 @@ mod tests {
     #[test]
     fn mean_dim_test() {
         let device = Device::default();
-        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![1]);
-        let values = Tensor::<2>::from_floats([[1.0, 2.0, 3.0, 4.0], [-1.0, -2.0, -3.0, -4.0], [10.0, 20.0, 30.0, 40.0]], &device).attach_batch_dim(vec![1]);
+        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![3]);
+        let values = Tensor::<2>::from_floats([[1.0, 2.0, 3.0, 4.0], [-1.0, -2.0, -3.0, -4.0], [10.0, 20.0, 30.0, 40.0]], &device).attach_batch_dim(vec![3]);
 
         let mean: Vec<f32> = mask.mean_dim(values).detach_batch_dim().0.into_data().try_into_vec().unwrap();
         assert!(mean[0] == 3.0);
@@ -107,7 +107,7 @@ mod tests {
     #[test]
     fn n_possible_actions_test() {
         let device = Device::default();
-        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![1]);
+        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![3]);
         let n = mask.n_possible_actions().unwrap().detach_batch_dim().0;
         let ans = Tensor::<1, Int>::from_ints([3, 2, 3], &device);
 
@@ -117,8 +117,8 @@ mod tests {
     #[test]
     fn possible_actions_test() {
         let device = Device::default();
-        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![1]);
-        let action_1 = Tensor::<1, Int>::from_ints([1, 0, 2], &device).attach_batch_dim(vec![1]);
+        let mask = Tensor::from_bool([[false, true, true, true], [true, true, false, false], [true, true, false, true]], &device).attach_batch_dim(vec![3]);
+        let action_1 = Tensor::<1, Int>::from_ints([1, 0, 2], &device).attach_batch_dim(vec![3]);
         let b = mask.is_possible(action_1);
         let ans = Tensor::from_bool([true, true, false], &device);
         assert!(b.detach_batch_dim().0.equal(ans).all().into_scalar::<bool>())

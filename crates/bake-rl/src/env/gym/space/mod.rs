@@ -54,7 +54,7 @@ impl<const D: usize> GymSpace for ContinuousSpace<D> {
         let py_array = vec.into_pyarray(py);
         let mut shape = self.shape().to_vec();
         shape.remove(0);
-        py_array.reshape(shape)?;
+        let py_array = py_array.reshape(shape)?;
         Ok(py_array.into_any())
     }
 

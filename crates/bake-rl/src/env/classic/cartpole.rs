@@ -165,7 +165,7 @@ impl CartPoleConfig {
 impl EnvironmentConfig for CartPoleConfig {
     type Environment = CartPole;
     fn init(self, device: &Device) -> Self::Environment {
-        let obs_space = ContinuousSpace::new(&[4], Tensor::from_floats([[-f32::INFINITY; 4]], device), Tensor::from_floats([[f32::INFINITY; 4]], device), device);
+        let obs_space = ContinuousSpace::new(&[1, 4], Tensor::from_floats([[-f32::INFINITY; 4]], device), Tensor::from_floats([[f32::INFINITY; 4]], device), device);
         let action_space = DiscreteSpace::new(2, device);
         CartPole {
             x: 0.0,
