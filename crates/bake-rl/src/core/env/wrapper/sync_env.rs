@@ -78,6 +78,9 @@ where
     fn step(&mut self, action: <<Self::ActionSpace as Space>::Element as AttachBatchDim>::Attached) -> ((<<Self::ObsSpace as Space>::Element as AttachBatchDim>::Attached, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
         let n_envs = self.n_envs();
         let actions = action.unstack();
+        // assertion
+        assert!(n_envs == actions.len(), "the number of environment and the number of given action does not matches");
+
         let mut rewards = Vec::with_capacity(n_envs);
         let mut terminated = Vec::with_capacity(n_envs);
         let mut truncated = Vec::with_capacity(n_envs);
