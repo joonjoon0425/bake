@@ -11,7 +11,7 @@ impl BatchDict {
     }
 
     /// insert a new key and value
-    pub fn insert<T: WithBatchDim>(&mut self, key: &'static str, value: T) {
+    pub fn insert<T: WithBatchDim>(&mut self, key: String, value: T) {
         assert!(self.batch_shape() == value.batch_shape(), "BatchDict::insert: The batch shape of dictionary and given value does not matches.");
         self.dict.insert(key, BatchDictLeaf {
             value: Box::new(value),
@@ -21,7 +21,7 @@ impl BatchDict {
     }
 
     /// get an existing value
-    pub fn get<T: WithBatchDim>(&self, key: &'static str) -> Result<&T, String> {
+    pub fn get<T: WithBatchDim>(&self, key: &str) -> Result<&T, String> {
         let erased = self.dict.get(key).ok_or(
             format!("The item for given key {} does not exists. Following keys exists: {}",
                 key,
@@ -44,7 +44,7 @@ impl BatchDict {
     }
 
     /// get an existing value as mutable reference
-    pub fn get_mut<T: WithBatchDim>(&mut self, key: &'static str) -> Result<&mut T, String> {
+    pub fn get_mut<T: WithBatchDim>(&mut self, key: &str) -> Result<&mut T, String> {
         // cannot do like `get`. I think it's due to the `{}` block?
         let mut key_type = String::new();
         for (s, v) in self.dict.iter() {
@@ -67,7 +67,7 @@ impl BatchDict {
     }
 
     /// remove the value of given key
-    pub fn remove<T: WithBatchDim>(&mut self, key: &'static str) -> Result<T, String> {
+    pub fn remove<T: WithBatchDim>(&mut self, key: &str) -> Result<T, String> {
         // check the existence of key, and the type
         self.dict.get(key).ok_or(
             format!("The item for given key {} does not exists. Following keys exists: {}",
@@ -160,7 +160,7 @@ impl WithBatchDim for BatchDict {
         // used for checking the total number of values for each keys
         let n = dat.len();
         let mut dict = BTreeMap::new();
-        let mut split: BTreeMap<&'static str, (Vec<Erased>, WithBatchDimOpsVTable, &'static str)> = BTreeMap::new();
+        let mut split: BTreeMap<String, (Vec<Erased>, WithBatchDimOpsVTable, &'static str)> = BTreeMap::new();
         
         // collect all elements in each keys
         for d in dat {
@@ -184,7 +184,7 @@ impl WithBatchDim for BatchDict {
         // used for checking the total number of values for each keys
         let n = dat.len();
         let mut dict = BTreeMap::new();
-        let mut split: BTreeMap<&'static str, (Vec<Erased>, WithBatchDimOpsVTable, &'static str)> = BTreeMap::new();
+        let mut split: BTreeMap<String, (Vec<Erased>, WithBatchDimOpsVTable, &'static str)> = BTreeMap::new();
         
         // collect all elements in each keys
         for d in dat {
@@ -206,7 +206,7 @@ impl WithBatchDim for BatchDict {
 
     fn unstack(self) -> Vec<Self> {
         let n = self.batch_shape()[0];
-        let mut split: BTreeMap<&'static str, (Vec<Erased>, WithBatchDimOpsVTable, &'static str)> = BTreeMap::new();
+        let mut split: BTreeMap<String, (Vec<Erased>, WithBatchDimOpsVTable, &'static str)> = BTreeMap::new();
         for (s, leaf) in self.dict {
             let vec = (leaf.vtable.unstack)(leaf.value);
             split.insert(s, (vec, leaf.vtable, leaf.type_name));
@@ -214,7 +214,7 @@ impl WithBatchDim for BatchDict {
         let mut dicts = vec![BatchDict { dict: BTreeMap::new() }; n];
         for (s, (vec, vtable, type_name)) in split {
             for (dict, value) in dicts.iter_mut().zip(vec.into_iter()) {
-                dict.dict.insert(s, BatchDictLeaf {
+                dict.dict.insert(s.clone(), BatchDictLeaf {
                     value,
                     vtable: vtable.clone(),
                     type_name,
@@ -262,7 +262,7 @@ impl WithBatchDim for BatchDict {
     fn zeros_like(capacity: usize, data: &Self) -> Self {
         let mut dict = BTreeMap::new();
         for (s, leaf) in &data.dict {
-            dict.insert(*s, BatchDictLeaf {
+            dict.insert(s.clone(), BatchDictLeaf {
                 value: (leaf.vtable.zeros_like)(capacity, &leaf.value),
                 vtable: leaf.vtable.clone(),
                 type_name: leaf.type_name,
