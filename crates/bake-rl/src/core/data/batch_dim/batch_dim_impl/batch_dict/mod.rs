@@ -69,9 +69,9 @@ mod tests {
     /// one element (empty batch) of a dict with keys `obs`, `mask`, `text`
     fn elem_dict(id: f32) -> BatchDict {
         let mut dict = BatchDict::new();
-        dict.insert("obs".into(), elem_t(id));
-        dict.insert("mask".into(), BatchEmpty::<()>::with_empty_batch_dim());
-        dict.insert("text".into(), elem_s(&format!("s{id}")));
+        dict.insert("obs", elem_t(id)).unwrap();
+        dict.insert("mask", BatchEmpty::<()>::with_empty_batch_dim()).unwrap();
+        dict.insert("text", elem_s(&format!("s{id}"))).unwrap();
         dict
     }
 
@@ -108,14 +108,14 @@ mod tests {
     #[test]
     fn insert_overwrites_existing_key() {
         let mut dict = elem_dict(1.0);
-        dict.insert("obs".into(), elem_t(7.0));
+        dict.insert("obs", elem_t(7.0)).unwrap();
         assert_eq!(obs_ids(&dict), vec![7.0]);
     }
 
     #[test]
     fn insert_overwrite_with_different_type() {
         let mut dict = elem_dict(1.0);
-        dict.insert("obs".into(), elem_s("now a string"));
+        dict.insert("obs", elem_s("now a string")).unwrap();
         assert!(dict.get::<BatchTensor<2>>("obs").is_err());
         assert!(dict.get::<BatchArray<String>>("obs").is_ok());
     }
@@ -240,7 +240,7 @@ mod tests {
     #[should_panic]
     fn stack_same_key_different_type_panics() {
         let mut b = elem_dict(1.0);
-        b.insert("obs".into(), elem_s("wrong"));
+        b.insert("obs", elem_s("wrong")).unwrap();
         BatchDict::stack(vec![elem_dict(0.0), b]);
     }
 
@@ -354,7 +354,7 @@ mod tests {
         let mut buf = BatchDict::zeros_like(5, &elem_dict(0.0));
         let mut src = batch_dict(2);
         let t = src.remove::<BatchArray<String>>("text").unwrap();
-        src.insert("txt".into(), t);
+        src.insert("txt", t).unwrap();
         buf.assign_inplace(src, 0);
     }
 
@@ -364,8 +364,8 @@ mod tests {
     fn nested_dict_follows_outer_ops() {
         let make = |i: f32| {
             let mut outer = BatchDict::new();
-            outer.insert("inner".into(), elem_dict(i));
-            outer.insert("reward".into(), BatchTensor::<1>::with_empty_batch_dim(Tensor::from_floats([i], &d())));
+            outer.insert("inner", elem_dict(i)).unwrap();
+            outer.insert("reward", BatchTensor::<1>::with_empty_batch_dim(Tensor::from_floats([i], &d()))).unwrap();
             outer
         };
         let dict = BatchDict::stack((0..4).map(|i| make(i as f32)).collect()).slice(0, (1..3).into());

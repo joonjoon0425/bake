@@ -10,14 +10,16 @@ impl BatchDict {
         }
     }
 
-    /// insert a new key and value
-    pub fn insert<T: WithBatchDim>(&mut self, key: String, value: T) {
-        assert!(self.batch_shape() == value.batch_shape(), "BatchDict::insert: The batch shape of dictionary and given value does not matches.");
-        self.dict.insert(key, BatchDictLeaf {
+    /// insert a new key and value; if the given key was already present in dictionary, it replaces with given value and returns the previous value
+    pub fn insert<T: WithBatchDim>(&mut self, key: impl Into<String>, value: T) -> Result<BatchDictLeaf, String> {
+        if !self.dict.is_empty() {
+            if self.batch_shape() == value.batch_shape() { return Err("BatchDict::insert: The batch shape of dictionary and given value does not matches.".into()) };
+        }
+        self.dict.insert(key.into(), BatchDictLeaf {
             value: Box::new(value),
             type_name: std::any::type_name::<T>(),
             vtable: WithBatchDimOpsVTable::new::<T>(),
-        });
+        }).ok_or("Unexpected error".into())
     }
 
     /// get an existing value
@@ -170,7 +172,7 @@ impl WithBatchDim for BatchDict {
         }
 
         for (s, (vec, vtable, type_name)) in split {
-            assert_eq!(n, vec.len(), "BatchDict::stack: key `{}` present in {} of {} items", s, vec.len(), n);
+            assert_eq!(n, vec.len(), "BatchDict::cat: key '{}' present in {} of {} items", s, vec.len(), n);
             let value = (vtable.cat)(vec, dim);
             dict.insert(s, BatchDictLeaf { value, type_name, vtable });
         }
@@ -194,7 +196,7 @@ impl WithBatchDim for BatchDict {
         }
 
         for (s, (vec, vtable, type_name)) in split {
-            assert_eq!(n, vec.len(), "BatchDict::stack: key `{}` present in {} of {} items", s, vec.len(), n);
+            assert_eq!(n, vec.len(), "BatchDict::stack: key '{}' present in {} of {} items", s, vec.len(), n);
             let value = (vtable.stack)(vec);
             dict.insert(s, BatchDictLeaf { value, type_name, vtable });
         }
