@@ -17,6 +17,7 @@ pub mod tabular;
 
 /// re-exportation
 extern crate self as bake_rl;
+extern crate burn;
 
 /// prelude module
 pub mod prelude {

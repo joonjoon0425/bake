@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{Data, DeriveInput, Fields, Ident, Type, parse_quote};
+use syn::{Data, DeriveInput, Fields, Ident};
 
 pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
     let name = &ast.ident;
@@ -22,20 +22,9 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
     };
 
     let field_idents: Vec<Ident> = fields.iter().map(|f| f.ident.clone().unwrap()).collect();
-    let field_tys: Vec<Type> = fields.iter().map(|f| f.ty.clone()).collect();
     let first = field_idents[0].clone();
     let bufs: Vec<Ident> = field_idents.iter().map(|i| format_ident!("__f_{}", i)).collect();
     let first_buf = bufs[0].clone();
-    // for BatchSelect
-    let mut g = ast.generics.clone();
-    g.params.push(parse_quote!(__I: ::bake_rl::core::data::batch_dim::BatchIndex));
-    {
-        let wc = g.make_where_clause();
-        for ty in &field_tys {
-            wc.predicates.push(parse_quote!(#ty: ::bake_rl::core::data::batch_dim::BatchSelect<__I>));
-        }
-    }
-    let (impl_generics_select, _, where_clause_select) = g.split_for_impl();
     
     Ok(quote! {
         impl #impl_generics ::bake_rl::core::data::batch_dim::WithBatchDim for #name #ty_generics #where_clause {
@@ -58,6 +47,12 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
             fn unsqueeze(self, dim: isize) -> Self {
                 Self {
                     #( #field_idents: ::bake_rl::core::data::batch_dim::WithBatchDim::unsqueeze(self.#field_idents, dim), )*
+                }
+            }
+
+            fn select(self, dim: isize, idx: ::bake_rl::burn::prelude::Tensor<1, ::bake_rl::burn::prelude::Int>) -> Self {
+                Self {
+                    #(#field_idents: ::bake_rl::core::data::batch_dim::WithBatchDim::select(self.#field_idents, dim, ::core::clone::Clone::clone(&idx)), )*
                 }
             }
 
@@ -111,14 +106,6 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
             fn zeros_like(capacity: usize, data: &Self) -> Self {
                 Self {
                     #(#field_idents: ::bake_rl::core::data::batch_dim::WithBatchDim::zeros_like(capacity, &data.#field_idents), )*
-                }
-            }
-        }
-
-        impl #impl_generics_select ::bake_rl::core::data::batch_dim::BatchSelect<__I> for #name #ty_generics #where_clause_select {
-            fn select(self, dim: isize, idx: __I) -> Self {
-                Self {
-                    #(#field_idents: ::bake_rl::core::data::batch_dim::BatchSelect::<__I>::select(self.#field_idents, dim, ::core::clone::Clone::clone(&idx)), )*
                 }
             }
         }

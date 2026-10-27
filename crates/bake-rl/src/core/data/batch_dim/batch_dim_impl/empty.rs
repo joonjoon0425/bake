@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
-use crate::core::data::batch_dim::{BatchIndex, BatchSelect, BatchShape, WithBatchDim};
+use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
 use crate::core::data::batch_dim::ops::*;
-
+use burn::prelude::*;
 /// `Unconstrained` or any empty struct with batch dimension
 /// - I may change return type of `batch_size()` into `Option` and delete this struct
 #[derive(Debug, Clone)]
@@ -29,7 +29,7 @@ impl<T: Clone> BatchEmpty<T> {
     }
 }
 
-impl<T: Clone> WithBatchDim for BatchEmpty<T> {
+impl<T: Send + Sync + Clone + 'static> WithBatchDim for BatchEmpty<T> {
     fn batch_shape(&self) -> BatchShape {
         self.shape.clone()
     }
@@ -51,6 +51,14 @@ impl<T: Clone> WithBatchDim for BatchEmpty<T> {
         Self {
             shape,
             ..self
+        }
+    }
+
+    fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
+        let (shape, _) = check_select(self.shape, dim, idx).unwrap();
+        Self {
+            shape,
+            _p: PhantomData
         }
     }
 
@@ -104,22 +112,12 @@ impl<T: Clone> WithBatchDim for BatchEmpty<T> {
     }
 }
 
-impl<T: Clone, I: BatchIndex> BatchSelect<I> for BatchEmpty<T> {
-    fn select(self, dim: isize, idx: I) -> Self {
-        let (shape, _) = check_select(self.shape, dim, idx).unwrap();
-        Self {
-            shape,
-            _p: PhantomData
-        }
-    }
-}
-
 // tests made by Claude
 
 #[cfg(test)]
 mod tests {
     use burn::prelude::*;
-    use crate::core::data::batch_dim::{BatchSelect, BatchEmpty, BatchShape, WithBatchDim};
+    use crate::core::data::batch_dim::{BatchEmpty, BatchShape, WithBatchDim};
 
     fn d() -> Device { Device::default() }
     fn be(shape: BatchShape) -> BatchEmpty<()> { BatchEmpty::<()>::with_empty_batch_dim().with_shape_for_test(shape) }

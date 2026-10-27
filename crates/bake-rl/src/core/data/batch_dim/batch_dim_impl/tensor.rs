@@ -1,7 +1,7 @@
 use burn::{prelude::*, tensor::kind::Basic};
 
 use crate::core::data::batch_dim::convert::{AttachBatchDim, DetachBatchDim};
-use crate::core::data::batch_dim::{BatchSelect, BatchShape, WithBatchDim};
+use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
 use crate::core::data::batch_dim::ops::*;
 
 /// `burn::Tensor`, with batch dimension
@@ -32,7 +32,7 @@ impl<const D: usize, K: Basic> BatchTensor<D, K> {
     }
 }
 
-impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
+impl<const D: usize, K: Basic + 'static> WithBatchDim for BatchTensor<D, K> {
     fn batch_shape(&self) -> BatchShape {
         self.shape.clone()
     }
@@ -58,6 +58,28 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
         Self {
             shape,
             ..self
+        }
+    }
+
+    fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
+        let (shape, dim) = check_select(self.shape.clone(), dim, idx.clone()).unwrap();
+        let mut dims = self.t.dims();
+        let n_features: usize = dims[1..].iter().product();
+
+        let out = n_batch(&shape[..dim]);
+        let k = self.shape[dim];
+        let res = n_batch(&shape[dim + 1..]) * n_features;
+
+        dims[0] = n_batch(&shape);
+
+        let t = self.t
+            .reshape([out, k , res])
+            .select(1, idx)
+            .reshape(dims);
+
+        Self {
+            shape,
+            t
         }
     }
 
@@ -149,31 +171,7 @@ impl<const D: usize, K: Basic> WithBatchDim for BatchTensor<D, K> {
     }
 }
 
-impl<const D: usize, K: Basic> BatchSelect<Tensor<1, Int>> for BatchTensor<D, K> {
-    fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
-        let (shape, dim) = check_select(self.shape.clone(), dim, idx.clone()).unwrap();
-        let mut dims = self.t.dims();
-        let n_features: usize = dims[1..].iter().product();
-
-        let out = n_batch(&shape[..dim]);
-        let k = self.shape[dim];
-        let res = n_batch(&shape[dim + 1..]) * n_features;
-
-        dims[0] = n_batch(&shape);
-
-        let t = self.t
-            .reshape([out, k , res])
-            .select(1, idx)
-            .reshape(dims);
-
-        Self {
-            shape,
-            t
-        }
-    }
-}
-
-impl<const D: usize, K: Basic> AttachBatchDim for Tensor<D, K> {
+impl<const D: usize, K: Basic + 'static> AttachBatchDim for Tensor<D, K> {
     type Attached = BatchTensor<D, K>;
 
     fn attach_batch_dim(self, batch_shape: crate::core::data::BatchShape) -> Self::Attached {
@@ -181,7 +179,7 @@ impl<const D: usize, K: Basic> AttachBatchDim for Tensor<D, K> {
     }
 }
 
-impl<const D: usize, K: Basic> DetachBatchDim for BatchTensor<D, K> {
+impl<const D: usize, K: Basic + 'static> DetachBatchDim for BatchTensor<D, K> {
     type Detached = Tensor<D, K>;
 
     fn detach_batch_dim(self) -> (Self::Detached, crate::core::data::BatchShape) {
@@ -193,7 +191,7 @@ impl<const D: usize, K: Basic> DetachBatchDim for BatchTensor<D, K> {
 mod tests {
     use burn::prelude::*;
     use burn::tensor::kind::Basic;
-    use crate::core::data::batch_dim::{BatchSelect, BatchShape, BatchTensor, WithBatchDim};
+    use crate::core::data::batch_dim::{BatchShape, BatchTensor, WithBatchDim};
     use crate::core::data::batch_dim::ops::n_batch;
     fn d() -> Device { Device::default() }
 

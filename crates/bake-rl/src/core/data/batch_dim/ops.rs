@@ -1,6 +1,6 @@
 //! shape operation function and helper functions
-use crate::core::data::batch_dim::{BatchIndex, BatchShape, WithBatchDim};
-
+use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
+use burn::prelude::*;
 /// resolve the negative index; returns None if index is out of range
 pub fn resolve_negative_index(n_dims: usize, dim: isize) -> Result<usize, String> {
     let n = n_dims as isize;
@@ -145,8 +145,8 @@ pub fn check_slice(mut shape: BatchShape, dim: isize, range: std::range::Range<u
 /// # Return
 /// - if possible, return the selected batch shape and resolved dim
 /// - else return `Err`
-pub fn check_select<I: BatchIndex>(mut shape: BatchShape, dim: isize, idx: I) -> Result<(BatchShape, usize), String> {
+pub fn check_select(mut shape: BatchShape, dim: isize, idx: Tensor<1, Int>) -> Result<(BatchShape, usize), String> {
     let dim = resolve_negative_index(shape.len(), dim)?;
-    shape[dim] = idx.n();
+    shape[dim] = idx.dims().len();
     Ok((shape, dim))
 }
