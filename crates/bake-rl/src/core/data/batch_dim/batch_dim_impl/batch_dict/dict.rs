@@ -12,6 +12,7 @@ impl BatchDict {
 
     /// insert a new key and value
     pub fn insert<T: WithBatchDim>(&mut self, key: &'static str, value: T) {
+        assert!(self.batch_shape() == value.batch_shape(), "BatchDict::insert: The batch shape of dictionary and given value does not matches.");
         self.dict.insert(key, BatchDictLeaf {
             value: Box::new(value),
             type_name: std::any::type_name::<T>(),
@@ -67,7 +68,8 @@ impl BatchDict {
 
     /// remove the value of given key
     pub fn remove<T: WithBatchDim>(&mut self, key: &'static str) -> Result<T, String> {
-        let erased = self.dict.remove(key).ok_or(
+        // check the existence of key, and the type
+        self.dict.get(key).ok_or(
             format!("The item for given key {} does not exists. Following keys exists: {}",
                 key,
                 {
@@ -78,20 +80,21 @@ impl BatchDict {
                     key_type
                 }
             )
-        )?;
-
-        let res = erased.value.downcast::<T>();
-        if res.is_ok() {
-            Ok(*res.ok().unwrap())
-        } else {
-            Err(
-                format!("The item for given key {} has type {}, but type {} was given",
+        ).and_then(|v| {
+            if !v.value.is::<T>() {
+                Err(format!("The item for given key {} has type {}, but type {} was given",
                     key,
-                    erased.type_name,
+                    v.type_name,
                     std::any::type_name::<T>()
-                )
-            )
-        }
+                ))
+            } else {
+                Ok(())
+            }
+        })?;
+
+        let erased = self.dict.remove(key).unwrap();
+
+        Ok(*erased.value.downcast::<T>().unwrap())
     }
 }
 
@@ -167,7 +170,7 @@ impl WithBatchDim for BatchDict {
         }
 
         for (s, (vec, vtable, type_name)) in split {
-            assert_eq!(n, vec.len(), "BatchDict::stack: key `{}` present in {} of {} items", type_name, vec.len(), n);
+            assert_eq!(n, vec.len(), "BatchDict::stack: key `{}` present in {} of {} items", s, vec.len(), n);
             let value = (vtable.cat)(vec, dim);
             dict.insert(s, BatchDictLeaf { value, type_name, vtable });
         }
@@ -191,7 +194,7 @@ impl WithBatchDim for BatchDict {
         }
 
         for (s, (vec, vtable, type_name)) in split {
-            assert_eq!(n, vec.len(), "BatchDict::stack: key `{}` present in {} of {} items", type_name, vec.len(), n);
+            assert_eq!(n, vec.len(), "BatchDict::stack: key `{}` present in {} of {} items", s, vec.len(), n);
             let value = (vtable.stack)(vec);
             dict.insert(s, BatchDictLeaf { value, type_name, vtable });
         }
@@ -249,6 +252,7 @@ impl WithBatchDim for BatchDict {
     }
 
     fn assign_inplace(&mut self, data: Self, idx: usize) {
+        assert!(self.dict.iter().len() == data.dict.iter().len(), "BatchDict::assign_inplace: The number of key differs in self and data");
         for ((dst_s, dst_leaf), (src_str, src_leaf)) in self.dict.iter_mut().zip(data.dict.into_iter()) {
             assert!(*dst_s == src_str, "BatchDict::assign_inplace: key mismatch: expected {dst_s}, got {src_str}");
             (dst_leaf.vtable.assign_inplace)(&mut dst_leaf.value, src_leaf.value, idx)

@@ -147,6 +147,6 @@ pub fn check_slice(mut shape: BatchShape, dim: isize, range: std::range::Range<u
 /// - else return `Err`
 pub fn check_select(mut shape: BatchShape, dim: isize, idx: Tensor<1, Int>) -> Result<(BatchShape, usize), String> {
     let dim = resolve_negative_index(shape.len(), dim)?;
-    shape[dim] = idx.dims().len();
+    shape[dim] = idx.dims()[0];
     Ok((shape, dim))
 }
