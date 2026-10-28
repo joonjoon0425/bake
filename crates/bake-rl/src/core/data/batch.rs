@@ -26,3 +26,10 @@ pub struct Batch<Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchD
     /// truncated
     pub truncated: BatchTensor<1, Bool>
 }
+
+impl<Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: WithBatchDim> Batch<Obs, Action, Constraint, Reward> {
+    /// return the current device of `Batch`
+    pub fn device(&self) -> Device {
+        self.terminated.device()
+    }
+} 

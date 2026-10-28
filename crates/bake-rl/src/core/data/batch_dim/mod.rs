@@ -50,6 +50,10 @@ pub trait WithBatchDim: Sized + Clone + 'static + Send + Sync {
     fn assign_inplace(&mut self, data: Self, idx: usize);
     /// make zeros with given capacity, which has shape of given data
     fn zeros_like(capacity: usize, data: &Self) -> Self;
+    /// enable autodiff
+    /// # Warning
+    /// - no-op basically
+    fn autodiff(self) -> Self { self }
 }
 
 mod batch_dim_impl;

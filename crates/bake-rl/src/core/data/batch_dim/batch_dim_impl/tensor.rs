@@ -11,7 +11,7 @@ pub struct BatchTensor<const D: usize, K: Basic = Float> {
     t: Tensor<D, K>,
 }
 
-impl<const D: usize, K: Basic> BatchTensor<D, K> {
+impl<const D: usize, K: KindAutoDiff> BatchTensor<D, K> {
     /// create a new `BatchTensor` with given batch dimension
     pub(crate) fn with_batch_dim(batch_shape: BatchShape, tensor: Tensor<D, K>) -> Self {
         assert!(n_batch(&batch_shape) == tensor.dims()[0], "invalid batch shape given for with_batch_dim of BatchTensor");
@@ -21,9 +21,14 @@ impl<const D: usize, K: Basic> BatchTensor<D, K> {
             t: tensor
         }
     }
+
+    /// return the device
+    pub fn device(&self) -> Device {
+        self.t.device().clone()
+    }
 }
 
-impl<const D: usize, K: Basic + 'static> WithBatchDim for BatchTensor<D, K> {
+impl<const D: usize, K: KindAutoDiff> WithBatchDim for BatchTensor<D, K> {
     fn batch_shape(&self) -> BatchShape {
         self.shape.clone()
     }
@@ -160,9 +165,14 @@ impl<const D: usize, K: Basic + 'static> WithBatchDim for BatchTensor<D, K> {
             t
         }
     }
+
+    fn autodiff(self) -> Self {
+        let (t, bs) = self.detach_batch_dim();
+        K::autodiff_t(t).attach_batch_dim(bs)
+    }
 }
 
-impl<const D: usize, K: Basic + 'static> AttachBatchDim for Tensor<D, K> {
+impl<const D: usize, K: KindAutoDiff> AttachBatchDim for Tensor<D, K> {
     type Attached = BatchTensor<D, K>;
 
     fn attach_batch_dim(self, batch_shape: crate::core::data::BatchShape) -> Self::Attached {
@@ -170,13 +180,22 @@ impl<const D: usize, K: Basic + 'static> AttachBatchDim for Tensor<D, K> {
     }
 }
 
-impl<const D: usize, K: Basic + 'static> DetachBatchDim for BatchTensor<D, K> {
+impl<const D: usize, K: KindAutoDiff> DetachBatchDim for BatchTensor<D, K> {
     type Detached = Tensor<D, K>;
 
     fn detach_batch_dim(self) -> (Self::Detached, crate::core::data::BatchShape) {
         (self.t, self.shape)
     }
 }
+
+/// for autodiff implementation
+pub trait KindAutoDiff: Basic + 'static {
+    fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self>;
+}
+impl KindAutoDiff for Float { fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self> { t.autodiff() } }
+impl KindAutoDiff for Int   { fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self> { t } }
+impl KindAutoDiff for Bool  { fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self> { t } }
+
 
 #[cfg(test)]
 mod tests {
