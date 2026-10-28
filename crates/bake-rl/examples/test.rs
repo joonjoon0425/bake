@@ -43,6 +43,10 @@ pub fn main() {
     let mut reward_vec = vec![];
     let mut step_vec = vec![];
 
+
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
+
     for count in 0..total_steps {
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
         let batch = tape.step(action);
@@ -75,6 +79,9 @@ pub fn main() {
             let avg_step = step_vec.iter().rev().take(100).sum::<f32>() / 100.;
             println!("{count},{avg_reward},{avg_step},{}", exploration.eps());
         }
+
+        *exploration.eps_mut() = eps_sch.step() as f32;
+        *buffer.beta_mut() = beta_sch.step();
     }
 
     // evaluation
@@ -82,11 +89,17 @@ pub fn main() {
         GymnasiumEnvironmentConfig::cartpole().kwarg("render_mode", "human").seed(10) ,
     ]).init(&device);
 
-    let mut tape = Tape::new(env, true);
+    let mut tape = Tape::new(env, false);
     let mut eval = Greedy;
     for _ in 0..5 {
-        let action = eval.sample(&online, tape.obs.clone(), tape.constraint.clone());
-        tape.step(action);
+        loop {
+            let action = eval.sample(&online, tape.obs.clone(), tape.constraint.clone());
+            tape.step(action);
+            if tape.done().clone().into_scalar() { 
+                tape.reset(None);
+                break;
+            }
+        }
     }
 }
 
@@ -116,6 +129,7 @@ impl TestNet {
         for i in 0..(n - 1) {
             obs = self.activation.forward(self.linear[i].forward(obs));
         }
+        obs = self.linear[n - 1].forward(obs);
         obs.attach_batch_dim(bs)
     }
 }

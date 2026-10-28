@@ -36,7 +36,10 @@ pub mod prelude {
         Greedy,
         Exploration,
     };
-
+    pub use bake_rl::core::scheduler::{
+        Scheduler,
+        LinearScheduler,
+    };
     pub use bake_rl::deep::prelude::*;
     pub use bake_macros::{WithBatchDim, actor_critic, qnet, policy};
 }

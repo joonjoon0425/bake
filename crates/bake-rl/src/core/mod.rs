@@ -7,3 +7,5 @@ pub mod data;
 pub mod distribution;
 pub mod env;
 pub mod exploration;
+
+pub mod scheduler;

@@ -1,6 +1,6 @@
 //! A Linear scheduler implementation
 //! 
-use crate::scheduler::Scheduler;
+use crate::core::scheduler::Scheduler;
 
 /// A liner scheduler implementation
 pub struct LinearScheduler {
@@ -51,7 +51,7 @@ impl Scheduler for LinearScheduler {
 
 #[cfg(test)]
 mod tests {
-    use crate::scheduler::LinearScheduler;
+    use crate::core::scheduler::LinearScheduler;
 
     #[test]
     #[should_panic]

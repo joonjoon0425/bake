@@ -35,7 +35,6 @@ where
     Constraint: DiscreteConstraint
 {
     let online = online.train();
-    let target = target.clone().train();
     let batch = batch.autodiff();
 
     let qvalues = online.action_values(batch.obs, batch.constraint).detach_batch_dim().0;
