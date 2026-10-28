@@ -3,7 +3,6 @@
 
 pub mod buffer;
 pub mod constraint;
-pub mod contract;
 pub mod data;
 pub mod distribution;
 pub mod env;

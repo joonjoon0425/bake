@@ -14,4 +14,6 @@ pub use batch_dim::{
     BatchArray,
     BatchDict,
     WithBatchDim,
+    AttachBatchDim,
+    DetachBatchDim,
 };

@@ -14,8 +14,8 @@ pub(crate) fn state_value(func_name: &Ident, generics: &Generics, self_ty: &Type
     };
 
     quote! {
-        impl #impl_generics ::bake_deep::contract::basic::StateValue for #self_ty #where_clause {
-            fn state_value(&self, obs: Self::Obs) -> ::bake_deep::burn::prelude::Tensor<1> {
+        impl #impl_generics ::bake_rl::deep::contract::StateValue for #self_ty #where_clause {
+            fn state_value(&self, obs: Self::Obs) -> ::bake_rl::core::data::BatchTensor<1> {
                 #out
                 __out
             }

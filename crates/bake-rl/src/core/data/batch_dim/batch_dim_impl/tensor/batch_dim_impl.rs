@@ -1,16 +1,8 @@
-use burn::{prelude::*, tensor::kind::Basic};
-
 use crate::core::data::batch_dim::convert::{AttachBatchDim, DetachBatchDim};
 use crate::core::data::batch_dim::{BatchShape, WithBatchDim};
 use crate::core::data::batch_dim::ops::*;
-
-/// `burn::Tensor`, with batch dimension
-#[derive(Debug, Clone)]
-pub struct BatchTensor<const D: usize, K: Basic = Float> {
-    shape: BatchShape,
-    t: Tensor<D, K>,
-}
-
+use crate::core::data::batch_dim::batch_dim_impl::tensor::{BatchTensor, KindAutoDiff};
+use burn::prelude::*;
 impl<const D: usize, K: KindAutoDiff> BatchTensor<D, K> {
     /// create a new `BatchTensor` with given batch dimension
     pub(crate) fn with_batch_dim(batch_shape: BatchShape, tensor: Tensor<D, K>) -> Self {
@@ -155,7 +147,7 @@ impl<const D: usize, K: KindAutoDiff> WithBatchDim for BatchTensor<D, K> {
         let mut shape = data.t.shape();
         shape[0] = shape[0] * capacity;
 
-        let t = Tensor::zeros(shape, &data.t.device());
+        let t = Tensor::zeros(shape, (&data.t.device(), data.t.dtype()));
 
         let mut shape = data.shape.clone();
         shape.insert(0, capacity);
@@ -188,25 +180,17 @@ impl<const D: usize, K: KindAutoDiff> DetachBatchDim for BatchTensor<D, K> {
     }
 }
 
-/// for autodiff implementation
-pub trait KindAutoDiff: Basic + 'static {
-    fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self>;
-}
-impl KindAutoDiff for Float { fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self> { t.autodiff() } }
-impl KindAutoDiff for Int   { fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self> { t } }
-impl KindAutoDiff for Bool  { fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self> { t } }
-
 
 #[cfg(test)]
 mod tests {
     use burn::prelude::*;
-    use burn::tensor::kind::Basic;
+    use crate::core::data::batch_dim::batch_dim_impl::tensor::KindAutoDiff;
     use crate::core::data::batch_dim::convert::AttachBatchDim;
-use crate::core::data::batch_dim::{BatchShape, BatchTensor, WithBatchDim};
+    use crate::core::data::batch_dim::{BatchShape, BatchTensor, WithBatchDim};
     use crate::core::data::batch_dim::ops::n_batch;
     fn d() -> Device { Device::default() }
 
-    fn bt<const D: usize, K: Basic>(shape: BatchShape) -> BatchTensor<D, K> {
+    fn bt<const D: usize, K: KindAutoDiff>(shape: BatchShape) -> BatchTensor<D, K> {
         let mut s = [2; D];
         let n = n_batch(&shape);
         s[0] = n;
@@ -336,7 +320,7 @@ use crate::core::data::batch_dim::{BatchShape, BatchTensor, WithBatchDim};
     }
 
     /// 불변식: 텐서 0번 축 길이 == 배치 원소 수
-    fn check_inv<const D: usize, K: Basic>(b: &BatchTensor<D, K>) {
+    fn check_inv<const D: usize, K: KindAutoDiff>(b: &BatchTensor<D, K>) {
         assert_eq!(b.t.dims()[0], n_batch(&b.shape), "invariant broken: dims[0] != n_batch");
     }
 

@@ -2,4 +2,6 @@
 //! 
 
 pub mod algorithms;
+pub mod contract;
 pub mod loss;
+pub mod network;

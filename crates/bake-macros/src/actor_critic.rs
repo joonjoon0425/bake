@@ -80,10 +80,10 @@ pub(crate) fn encoder_separated(actor_f: &Ident, critic_f: &Ident, generics: &Ge
     quote! {
         #actor
         #critic
-        impl #impl_generics ::bake_deep::contract::compound::ActorCritic for #self_ty #where_clause {
-            fn dist_and_state_value<C: ::bake_deep::distribution::PossibleConstraint<Self::Dist>>(&self, obs: Self::Obs, constraint: C) -> (Self::Dist, ::bake_deep::burn::prelude::Tensor<1>) {
-                let dist = ::bake_deep::contract::basic::Policy::dist(self, obs.clone(), constraint);
-                let state_value = ::bake_deep::contract::basic::StateValue::state_value(self, obs);
+        impl #impl_generics ::bake_rl::deep::contract::ActorCritic for #self_ty #where_clause {
+            fn dist_and_state_value<C: ::bake_rl::core::distribution::PossibleConstraint<Self::Dist>>(&self, obs: Self::Obs, constraint: C) -> (Self::Dist, ::bake_rl::core::data::BatchTensor<1>) {
+                let dist = ::bake_rl::deep::contract::Policy::dist(self, obs.clone(), constraint);
+                let state_value = ::bake_rl::deep::contract::StateValue::state_value(self, obs);
                 (dist, state_value)
             }
         }
@@ -103,8 +103,8 @@ pub(crate) fn encoder_shared(actor_critic_f: &Ident, actor_f: &Ident, critic_f: 
     quote! {
         #actor
         #critic
-        impl #impl_generics ::bake_deep::contract::compound::ActorCritic for #self_ty #where_clause {
-            fn dist_and_state_value<C: ::bake_deep::distribution::PossibleConstraint<Self::Dist>>(&self, obs: Self::Obs, constraint: C) -> (Self::Dist, ::bake_deep::burn::prelude::Tensor<1>) {
+        impl #impl_generics ::bake_rl::deep::contract::ActorCritic for #self_ty #where_clause {
+            fn dist_and_state_value<C: ::bake_rl::core::distribution::PossibleConstraint<Self::Dist>>(&self, obs: Self::Obs, constraint: C) -> (Self::Dist, ::bake_rl::core::data::BatchTensor<1>) {
                 #actor_critic_out
                 (__dist, __state_value)
             }
