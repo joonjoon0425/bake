@@ -1,6 +1,6 @@
 //! Dictionary which can contain any type of `WithBatchDim` types
 
-use std::{any::Any, collections::BTreeMap, range::Range};
+use std::{any::Any, collections::BTreeMap, ops::Range};
 use crate::core::data::BatchShape;
 
 /// Dictionary with batch dimension

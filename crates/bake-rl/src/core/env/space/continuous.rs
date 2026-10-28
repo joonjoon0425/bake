@@ -22,6 +22,8 @@ impl<const D: usize> ContinuousSpace<D> {
         Self { shape: shape.try_into().unwrap(), low, high, device: device.clone() }
     }
     /// return the shape
+    /// # Warning
+    /// - Due to fixed rank of `burn::Tensor`, shape will always have dimension 1 in the first dimension
     pub fn shape(&self) -> &[usize] {
         &self.shape
     }

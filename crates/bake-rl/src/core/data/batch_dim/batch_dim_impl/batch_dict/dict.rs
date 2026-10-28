@@ -227,7 +227,7 @@ impl WithBatchDim for BatchDict {
         dicts
     }
 
-    fn slice(self, dim: isize, range: std::range::Range<usize>) -> Self {
+    fn slice(self, dim: isize, range: std::ops::Range<usize>) -> Self {
         let mut dict = BTreeMap::new();
         for (s, v) in self.dict {
             dict.insert(s,  BatchDictLeaf {

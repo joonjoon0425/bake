@@ -25,6 +25,18 @@ pub mod prelude {
     pub use bake_rl::core::constraint::DiscreteConstraint;
     pub use bake_rl::core::env::{Tape, Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig, space::Space};
     pub use bake_rl::core::distribution::Distribution;
+    pub use bake_rl::core::buffer::sampler::{Sampler, SamplerConfig};
+    pub use bake_rl::core::buffer::{
+        replay::ReplayBufferConfig,
+        rollout::RolloutBuffer,
+    };
+    pub use bake_rl::core::exploration::{
+        Boltzmann,
+        EpsGreedy,
+        Greedy,
+        Exploration,
+    };
 
+    pub use bake_rl::deep::prelude::*;
     pub use bake_macros::{WithBatchDim, actor_critic, qnet, policy};
 }

@@ -28,11 +28,17 @@ impl<Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: 
     /// Push a givn transition into buffer and return the pushed indices
     pub fn push(&mut self, t: Batch<Obs, Action, Constraint, Reward>) -> (usize, usize) {
         if self.buffer.is_none() {
-            assert!(self.capacity % t.batch_shape().len() == 0, "the number of environments (or batch size) must divide the capacity of buffer.");
-            self.init(Batch::zeros_like(self.capacity, &t));
+            assert!(self.capacity % t.batch_shape()[0] == 0, "the number of environments (or batch size) must divide the capacity of buffer.");
+            if t.batch_shape().is_empty() {
+                // single, empty batch data
+                self.init(Batch::zeros_like(self.capacity, &t));
+            } else {
+                // n_envs batch data
+                self.init(Batch::zeros_like(self.capacity, &t.clone().slice(0, 0..1).squeeze(0)));
+            }
         }
         let index = self.head;
-        let batch_size = t.batch_shape().len();
+        let batch_size = *t.batch_shape().get(0).unwrap_or(&1);
         self.buffer.as_mut().unwrap().assign_inplace(t, index);
         self.head = (self.head + batch_size) % self.capacity;
 

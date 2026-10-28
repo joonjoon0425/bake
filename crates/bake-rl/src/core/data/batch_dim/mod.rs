@@ -1,6 +1,6 @@
 //! A trait for batch dimension; the element implementing this trait can have batch dimension, and has some common operations related to batch
 
-use std::range::Range;
+use std::ops::Range;
 use burn::prelude::*;
 /// the type of batch dimension shape
 pub type BatchShape = Vec<usize>;

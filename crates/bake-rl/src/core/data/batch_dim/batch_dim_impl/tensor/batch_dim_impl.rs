@@ -122,8 +122,8 @@ impl<const D: usize, K: KindAutoDiff> WithBatchDim for BatchTensor<D, K> {
         }
     }
 
-    fn slice(self, dim: isize, range: std::range::Range<usize>) -> Self {
-        let (shape, dim) = check_slice(self.shape.clone(), dim, range).unwrap();
+    fn slice(self, dim: isize, range: std::ops::Range<usize>) -> Self {
+        let (shape, dim) = check_slice(self.shape.clone(), dim, range.clone()).unwrap();
         let mut dims = self.t.dims();
         let n_features: usize = dims[1..].iter().product();
 

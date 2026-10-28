@@ -5,3 +5,11 @@ pub mod algorithms;
 pub mod contract;
 pub mod loss;
 pub mod network;
+
+/// prelude module
+pub mod prelude {
+    pub use crate::deep::algorithms::*;
+    pub use crate::deep::contract::*;
+    pub use crate::deep::loss::LossFn;
+    pub use crate::deep::network::Network;
+}

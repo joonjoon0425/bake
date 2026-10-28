@@ -104,8 +104,8 @@ pub(crate) fn update_separated_ac_impl(generics: &Generics, self_ty: &Type) -> p
                 loss: Loss,
                 lr_a: f64,
                 lr_c: f64,
-                opt_a: &mut ::bake_rl::deep::burn::optim::ModuleOptimizer,
-                opt_c: &mut ::bake_rl::deep::burn::optim::ModuleOptimizer,
+                opt_a: &mut ::bake_rl::burn::optim::ModuleOptimizer,
+                opt_c: &mut ::bake_rl::burn::optim::ModuleOptimizer,
             ) -> Self {
                 self = ::bake_rl::deep::network::update(self, loss.policy_loss_with_entropy(), lr_a, opt_a);
                 self = ::bake_rl::deep::network::update(self, loss.value_loss(), lr_c, opt_c);

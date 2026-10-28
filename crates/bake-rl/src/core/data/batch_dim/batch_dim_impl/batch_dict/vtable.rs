@@ -66,7 +66,7 @@ fn unsqueeze<T: WithBatchDim>(v: Erased, dim: isize) -> Erased {
     )
 }
 
-fn slice<T: WithBatchDim>(v: Erased, dim: isize, range: std::range::Range<usize>) -> Erased {
+fn slice<T: WithBatchDim>(v: Erased, dim: isize, range: std::ops::Range<usize>) -> Erased {
     Box::new(
         v.downcast::<T>().expect("BatchDict type mismatch in slice")
         .slice(dim, range)

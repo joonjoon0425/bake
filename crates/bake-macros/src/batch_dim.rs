@@ -97,7 +97,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
                 }
             }
 
-            fn slice(self, dim: isize, range: std::range::Range<usize>) -> Self {
+            fn slice(self, dim: isize, range: std::ops::Range<usize>) -> Self {
                 Self {
                     #(#field_idents: ::bake_rl::core::data::batch_dim::WithBatchDim::slice(self.#field_idents, dim, ::core::clone::Clone::clone(&range)), )*
                 }

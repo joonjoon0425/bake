@@ -131,7 +131,7 @@ pub fn check_assign_inplace(dst: &BatchShape, src: &BatchShape, idx: usize) -> R
 /// # Return
 /// - if possible, return the sliced batch shape and resolved dim
 /// - else return `Err`
-pub fn check_slice(mut shape: BatchShape, dim: isize, range: std::range::Range<usize>) -> Result<(BatchShape, usize), String> {
+pub fn check_slice(mut shape: BatchShape, dim: isize, range: std::ops::Range<usize>) -> Result<(BatchShape, usize), String> {
     let dim = resolve_negative_index(shape.len(), dim)?;
     if range.start > range.end || range.end > shape[dim] {
         Err(format!("range {}..{} out of bounds for axis {dim} of size {}", range.start, range.end, shape[dim]))

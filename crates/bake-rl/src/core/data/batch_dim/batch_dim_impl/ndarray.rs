@@ -78,9 +78,9 @@ impl<A: Default + Send + Sync + Clone + 'static> WithBatchDim for BatchArray<A> 
         }
     }
 
-    fn slice(self, dim: isize, range: std::range::Range<usize>) -> Self {
-        let (shape, dim) = check_slice(self.batch_shape().clone(), dim, range).unwrap();
-        let a = self.array.slice_axis(Axis(dim), ndarray::Slice::from(range.start..range.end)).to_owned();
+    fn slice(self, dim: isize, range: std::ops::Range<usize>) -> Self {
+        let (shape, dim) = check_slice(self.batch_shape().clone(), dim, range.clone()).unwrap();
+        let a = self.array.slice_axis(Axis(dim), ndarray::Slice::from(range)).to_owned();
         Self {
             nb: shape.len(),
             array: a

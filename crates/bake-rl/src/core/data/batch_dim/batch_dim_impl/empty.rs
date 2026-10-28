@@ -94,7 +94,7 @@ impl<T: Send + Sync + Clone + 'static> WithBatchDim for BatchEmpty<T> {
         }
     }
 
-    fn slice(self, dim: isize, range: std::range::Range<usize>) -> Self {
+    fn slice(self, dim: isize, range: std::ops::Range<usize>) -> Self {
         let (shape, _) = check_slice(self.shape, dim, range).unwrap();
         Self {
             shape,
