@@ -49,7 +49,7 @@ mod tests {
     use burn::prelude::*;
     use ndarray::{ArrayD, IxDyn};
 
-    use crate::core::data::batch_dim::convert::DetachBatchDim;
+    use crate::core::data::batch_dim::convert::{AttachBatchDim, DetachBatchDim};
     use crate::core::data::{BatchArray, BatchDict, BatchEmpty, BatchShape, BatchTensor, WithBatchDim};
 
     // ───────────── helpers ─────────────
@@ -58,12 +58,12 @@ mod tests {
 
     /// one element (empty batch) whose features are `[id, id + 0.5]`; inner tensor `[1, 2]`
     fn elem_t(id: f32) -> BatchTensor<2> {
-        BatchTensor::with_empty_batch_dim(Tensor::from_floats([[id, id + 0.5]], &d()))
+        Tensor::from_floats([[id, id + 0.5]], &d()).attach_empty_dim()
     }
 
     /// one element (empty batch) holding a single string
     fn elem_s(s: &str) -> BatchArray<String> {
-        BatchArray::with_empty_batch_dim(ArrayD::from_elem(IxDyn(&[]), s.to_string()))
+        ArrayD::from_elem(IxDyn(&[]), s.to_string()).attach_empty_dim()
     }
 
     /// one element (empty batch) of a dict with keys `obs`, `mask`, `text`
@@ -365,7 +365,7 @@ mod tests {
         let make = |i: f32| {
             let mut outer = BatchDict::new();
             outer.insert("inner", elem_dict(i)).unwrap();
-            outer.insert("reward", BatchTensor::<1>::with_empty_batch_dim(Tensor::from_floats([i], &d()))).unwrap();
+            outer.insert("reward", Tensor::<1>::from_floats([i], &d()).attach_empty_dim()).unwrap();
             outer
         };
         let dict = BatchDict::stack((0..4).map(|i| make(i as f32)).collect()).slice(0, (1..3).into());

@@ -4,7 +4,7 @@ use numpy::{IntoPyArray, PyArrayMethods, PyReadonlyArrayDyn, PyUntypedArrayMetho
 use pyo3::{exceptions::PyValueError, prelude::*};
 use burn::prelude::*;
 
-use crate::core::env::space::ContinuousSpace;
+use crate::core::{data::batch_dim::{AttachBatchDim, DetachBatchDim}, env::space::ContinuousSpace};
 
 /// `GymSpace` trait which can be build from Gymnasium spaces
 pub trait GymSpace: Space + Sized {
@@ -26,13 +26,13 @@ impl GymSpace for DiscreteSpace {
     }
 
     fn to_py<'py>(&self, py: Python<'py>, data: Self::Element) -> PyResult<Bound<'py, PyAny>> {
-        let data = data.into_scalar::<i64>();
+        let data = data.detach_batch_dim().0.into_scalar::<i64>();
         Ok(data.into_pyobject(py)?.into_any())
     }
 
     fn from_py(&self, py_data: &Bound<'_, PyAny>) -> PyResult<Self::Element> {
         let data: i64 = py_data.extract()?;
-        Ok(Tensor::from_ints([data], &self.device()))
+        Ok(Tensor::from_ints([data], &self.device()).attach_empty_dim())
     }
 }
 
@@ -50,7 +50,7 @@ impl<const D: usize> GymSpace for ContinuousSpace<D> {
     }
 
     fn to_py<'py>(&self, py: Python<'py>, data: Self::Element) -> PyResult<Bound<'py, PyAny>> {
-        let vec: Vec<f32> = data.into_data().try_into_vec_as().unwrap();
+        let vec: Vec<f32> = data.detach_batch_dim().0.into_data().try_into_vec_as().unwrap();
         let py_array = vec.into_pyarray(py);
         let mut shape = self.shape().to_vec();
         shape.remove(0);
@@ -60,7 +60,7 @@ impl<const D: usize> GymSpace for ContinuousSpace<D> {
 
     fn from_py(&self, py_data: &Bound<'_, PyAny>) -> PyResult<Self::Element> {
         let arr = to_f32_array(py_data, &self.device())?;
-        Ok(arr)
+        Ok(arr.attach_empty_dim())
     }
 }
 

@@ -1,6 +1,6 @@
 //! Space for continuous elements
 
-use crate::core::{data::{WithBatchDim, batch_dim::convert::AttachBatchDim}, env::space::Space};
+use crate::core::{data::{BatchTensor, WithBatchDim, batch_dim::convert::AttachBatchDim}, env::space::Space};
 use burn::{prelude::*, tensor::Distribution::Uniform};
 /// Continuous space with feature rank (D - 1)
 /// - E: element type
@@ -36,13 +36,13 @@ impl<const D: usize> ContinuousSpace<D> {
 }
 
 impl<const D: usize> Space for ContinuousSpace<D> {
-    type Element = Tensor<D>;
+    type Element = BatchTensor<D>;
 
     fn device(&self) -> Device {
         self.device.clone()
     }
 
-    fn sample(&self, num: usize) -> <Self::Element as AttachBatchDim>::Attached {
+    fn sample(&self, num: usize) -> Self::Element {
         let vec = (0..num).into_iter()
             .map(|_| {
                 let s = Tensor::random(self.shape(), Uniform(0., 1.), &self.device);

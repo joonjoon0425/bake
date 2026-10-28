@@ -12,6 +12,15 @@ pub trait AttachBatchDim: Clone {
     /// # Return
     /// - attached type
     fn attach_batch_dim(self, batch_shape: BatchShape) -> Self::Attached;
+
+    /// attach empty batch dimension
+    /// # Panics
+    /// - When the empty batch dimension cannot be attached
+    /// # Return
+    /// - caller with empty batch dimension attached
+    fn attach_empty_dim(self) -> Self::Attached {
+        self.attach_batch_dim(vec![])
+    }
 }
 
 /// blanket impl

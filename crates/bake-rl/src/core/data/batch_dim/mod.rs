@@ -61,3 +61,4 @@ pub use batch_dim_impl::{
 };
 pub mod ops;
 pub mod convert;
+pub use convert::{AttachBatchDim, DetachBatchDim};

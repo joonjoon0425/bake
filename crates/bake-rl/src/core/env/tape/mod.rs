@@ -8,7 +8,7 @@ use burn::prelude::*;
 pub struct Tape<E: VectorEnvironment> {
     env: E,
     /// current observation
-    pub obs: <<E::ObsSpace as Space>::Element as AttachBatchDim>::Attached,
+    pub obs: <E::ObsSpace as Space>::Element,
     /// current constraint
     pub constraint: E::Constraint,
     /// current information of the environment
@@ -53,7 +53,7 @@ impl<E: VectorEnvironment> Tape<E> {
     }
     /// take one step and returns the transition and info
     /// - if `autoreset = true`, during the `step`, terminated or truncated environments are automatically reset
-    pub fn step(&mut self, action: <<E::ActionSpace as Space>::Element as AttachBatchDim>::Attached) -> Batch<<<E::ObsSpace as Space>::Element as AttachBatchDim>::Attached, <<E::ActionSpace as Space>::Element as AttachBatchDim>::Attached, E::Constraint, E::Reward> {
+    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> Batch<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward> {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);

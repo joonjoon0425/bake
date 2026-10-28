@@ -10,15 +10,8 @@ pub struct BatchArray<A: Default + Clone + 'static> {
 }
 
 impl<A: Default + Clone + 'static> BatchArray<A> {
-    /// create a new `BatchArray` with empty batch dimension, from given tensor
-    pub fn with_empty_batch_dim(array: ArrayD<A>) -> Self {
-        Self {
-            nb: 0,
-            array
-        }
-    }
     /// create a new `BatchArray` with given batch dimension
-    pub fn with_batch_dim(batch_shape: BatchShape, array: ArrayD<A>) -> Self {
+    pub(crate) fn with_batch_dim(batch_shape: BatchShape, array: ArrayD<A>) -> Self {
         assert!(batch_shape == array.shape()[..batch_shape.len()], "invalid batch shape given for with_batch_dim of BatchTensor");
 
         Self {
@@ -187,7 +180,7 @@ mod tests {
     #[test]
     fn with_empty_batch_dim_accepts_feature_array() {
         // 배치 [] 원소는 [F] 모양이어야 함
-        let b = BatchArray::with_empty_batch_dim(ArrayD::<f32>::zeros(IxDyn(&[4])));
+        let b = ArrayD::<f32>::zeros(IxDyn(&[4])).attach_empty_dim();
         assert!(b.batch_shape().is_empty());
     }
 

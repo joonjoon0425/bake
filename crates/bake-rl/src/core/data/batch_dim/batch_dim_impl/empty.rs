@@ -13,7 +13,8 @@ pub struct BatchEmpty<T: Clone> {
 
 impl<T: Clone> BatchEmpty<T> {
     /// create a new `BatchEmpty<T>` struct with empty batch dimension
-    pub fn with_empty_batch_dim() -> Self {
+    #[allow(dead_code)]
+    pub(crate) fn with_empty_batch_dim() -> Self {
         Self {
             shape: vec![],
             _p: PhantomData
@@ -21,7 +22,7 @@ impl<T: Clone> BatchEmpty<T> {
     }
 
     /// create a new `BatchEmpty<T>` struct with given batch dimension
-    pub fn with_batch_dim(batch_shape: BatchShape) -> Self {
+    pub(crate) fn with_batch_dim(batch_shape: BatchShape) -> Self {
         Self {
             shape: batch_shape,
             _p: PhantomData

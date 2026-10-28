@@ -2,13 +2,13 @@
 //! - The `Space` corresponds to the `space` of Farama Foundation's `gymnasium`.
 //! 
 use burn::prelude::*;
-use crate::core::data::batch_dim::convert::AttachBatchDim;
+use crate::core::data::WithBatchDim;
 /// `Space` trait for specifying the properties of observation space and action space
 pub trait Space: Clone {
     /// the type of element
-    type Element: AttachBatchDim + Clone + 'static;
+    type Element: WithBatchDim;
     /// sample `n` random elements
-    fn sample(&self, num: usize) -> <Self::Element as AttachBatchDim>::Attached;
+    fn sample(&self, num: usize) -> Self::Element;
     /// return the device of space
     fn device(&self) -> Device;
 }

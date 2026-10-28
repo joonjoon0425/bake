@@ -11,15 +11,16 @@ struct _TestStruct {
 #[cfg(test)]
 mod test {
     use crate::core::data::batch_dim::batch_dim_impl::macro_test::_TestStruct;
-    use crate::core::data::batch_dim::{BatchEmpty, BatchTensor, WithBatchDim};
+    use crate::core::data::batch_dim::convert::AttachBatchDim;
+use crate::core::data::batch_dim::{BatchEmpty, WithBatchDim};
     use burn::prelude::*;
 
     fn ts() -> _TestStruct {
         let device = Device::default();
         
         let t = _TestStruct {
-            f1: BatchTensor::with_empty_batch_dim(Tensor::from_floats([[1., 2., 3.]], &device)),
-            f2: BatchTensor::with_empty_batch_dim(Tensor::from_floats(
+            f1: Tensor::from_floats([[1., 2., 3.]], &device).attach_empty_dim(),
+            f2: Tensor::from_floats(
                 [
                     [
                         [1., 2., 3.],
@@ -27,8 +28,8 @@ mod test {
                         [4., 2., 1.]
                     ],
                 ],
-                &device)
-            ),
+                &device).attach_empty_dim()
+            ,
             f3: BatchEmpty::with_empty_batch_dim(),
         };
 

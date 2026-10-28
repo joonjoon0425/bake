@@ -1,6 +1,8 @@
 //! Cliff Walking
 
 use burn::prelude::*;
+use crate::core::data::BatchTensor;
+use crate::core::data::batch_dim::{AttachBatchDim, DetachBatchDim};
 use crate::core::env::space::DiscreteSpace;
 use crate::core::env::{Environment, EnvironmentConfig};
 use crate::core::constraint::Unconstrained;
@@ -28,13 +30,13 @@ impl Environment for CliffWalking {
     type Info = ();
     type Reward = Tensor<1>;
 
-    fn reset(&mut self) -> ((Tensor<1, Int>, Self::Constraint), ()) {
+    fn reset(&mut self) -> ((BatchTensor<1, Int>, Self::Constraint), ()) {
         self.pos = (0, 0);
-        ((self.pos2tensor(), Unconstrained), ())
+        ((self.pos2tensor().attach_empty_dim(), Unconstrained), ())
     }
 
-    fn step(&mut self, action: Tensor<1, Int>) -> ((Tensor<1, Int>, Self::Constraint), Tensor<1>, bool, bool, ()) {
-        let action = action.into_scalar();
+    fn step(&mut self, action: BatchTensor<1, Int>) -> ((BatchTensor<1, Int>, Self::Constraint), Tensor<1>, bool, bool, ()) {
+        let action = action.detach_batch_dim().0.into_scalar();
         assert!(action == 0 || action == 1 || action == 2 || action == 3);
         let mut next_pos: (isize, isize) = (self.pos.0 as isize, self.pos.1 as isize);
 
@@ -62,7 +64,7 @@ impl Environment for CliffWalking {
         }
 
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);
-        ((self.pos2tensor(), Unconstrained), Tensor::from_floats([reward], &self.device), terminated, false, ())
+        ((self.pos2tensor().attach_empty_dim(), Unconstrained), Tensor::from_floats([reward], &self.device), terminated, false, ())
     }
 
     fn obs_space(&self) -> &Self::ObsSpace {

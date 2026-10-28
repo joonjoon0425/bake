@@ -1,6 +1,6 @@
 //! Trait for environment
 
-use crate::core::{data::batch_dim::convert::{AttachBatchDim, DetachBatchDim}, env::space::Space};
+use crate::core::env::space::Space;
 use burn::prelude::*;
 /// `Environment` trait which all non-vectorized environments must implement
 /// - For custom non-vetorized environment, implement this trait
@@ -40,12 +40,3 @@ pub trait EnvironmentConfig {
     /// create a new environment, with given device
     fn init(self, device: &Device) -> Self::Environment;
 }
-
-/// trait for batchable environment
-pub trait BatchableEnvironment : Environment<ObsSpace: Space<Element: AttachBatchDim>, ActionSpace: Space<Element: AttachBatchDim<Attached: DetachBatchDim>>, Constraint: AttachBatchDim, Reward: AttachBatchDim>
-{}
-
-impl<E> BatchableEnvironment for E
-where
-    E: Environment<ObsSpace: Space<Element: AttachBatchDim>, ActionSpace: Space<Element: AttachBatchDim<Attached: DetachBatchDim>>, Constraint: AttachBatchDim, Reward: AttachBatchDim>,
-{}

@@ -7,6 +7,9 @@
 use burn::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use crate::core::constraint::Unconstrained;
+use crate::core::data::BatchTensor;
+use crate::core::data::batch_dim::AttachBatchDim;
+use crate::core::data::batch_dim::DetachBatchDim;
 use crate::core::env::space::ContinuousSpace;
 use crate::core::env::space::DiscreteSpace;
 use crate::core::env::space::Space;
@@ -89,11 +92,11 @@ impl Environment for CartPole {
         self.theta_dot = sample();
         self.steps = 0;
  
-        ((self.obs(), self.mask.clone()), ())
+        ((self.obs().attach_empty_dim(), self.mask.clone()), ())
     }
  
-    fn step(&mut self, action: Tensor<1, Int>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Tensor<1>, bool, bool, ()) {
-        let action = action.into_scalar::<u64>() as usize;
+    fn step(&mut self, action: BatchTensor<1, Int>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Tensor<1>, bool, bool, ()) {
+        let action = action.detach_batch_dim().0.into_scalar::<u64>() as usize;
         debug_assert!(
             (0..N_ACTIONS).contains(&action),
             "action out of range: {action}"
@@ -120,7 +123,7 @@ impl Environment for CartPole {
         let truncated = !terminated && self.steps >= MAX_STEPS;
  
         (
-            (self.obs(), self.mask.clone()),
+            (self.obs().attach_empty_dim(), self.mask.clone()),
             Tensor::from_floats([1.0], &self.device),
             terminated,
             truncated,
