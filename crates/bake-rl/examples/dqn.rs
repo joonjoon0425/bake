@@ -1,14 +1,12 @@
-use bake_rl::deep::algorithms;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::prelude::*;
+use bake_rl::deep::prelude::*;
 use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironmentConfig;
 use burn::nn::activation::ActivationConfig;
 use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::Activation;
 use burn::optim::*;
-
-use algorithms::dqn::*;
 
 pub fn main() {
     let seed = 140;
@@ -23,17 +21,17 @@ pub fn main() {
     let state = DQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = TestNet::new(vec![tape.obs_space().shape()[1], 128, 84, tape.action_space().n()], ActivationConfig::Relu, &device);
     let mut target = online.clone();
-    let lr = 1e-3;
+    let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();
         
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
     let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
 
-    let total_steps = 600000;
+    let total_steps = 1000000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
-    let batch_size = 128;
+    let batch_size = 512;
 
     // temporary, until the logger is implemented...
     let mut reward = 0f32;

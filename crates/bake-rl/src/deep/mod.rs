@@ -8,8 +8,10 @@ pub mod network;
 
 /// prelude module
 pub mod prelude {
-    pub use crate::deep::algorithms::*;
+    pub use crate::deep::algorithms::{
+        dqn::*,
+    };
     pub use crate::deep::contract::*;
-    pub use crate::deep::loss::LossFn;
+    pub use crate::deep::loss::{LossFn, Loss, ActorCriticLoss};
     pub use crate::deep::network::Network;
 }

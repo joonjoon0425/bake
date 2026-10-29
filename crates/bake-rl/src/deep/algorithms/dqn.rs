@@ -1,7 +1,12 @@
 //! Deep Q-Network
 use burn::prelude::*;
-use bake_rl::prelude::*;
-use crate::{core::buffer::sampler::SampleInfo, deep::loss::Loss};
+use crate::core::buffer::sampler::SampleInfo;
+use crate::core::constraint::DiscreteConstraint;
+use crate::core::data::{Batch, BatchTensor, DetachBatchDim, WithBatchDim};
+use crate::deep::{
+    contract::DiscreteActionValue,
+    loss::{Loss, LossFn}
+};
 
 /// Deep Q-Network algorithm
 #[derive(Debug, Clone)]
