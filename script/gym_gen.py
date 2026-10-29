@@ -33,13 +33,13 @@ def build(entry: dict):
     return env
 
 
-toml_bin = open("script/envs.toml", "rb")
+toml_bin = open("script/envs_gen.toml", "rb")
 gen_src = open("crates/bake-rl/src/env/gym/generated.rs", "w")
 d = tomllib.load(toml_bin)
 
 output = """//! DO NOT EDIT
-//! Auto-generated code with script/gen_gym.py
-//! For regeneration, run following bash script in <path-to-bake> :`uv run script/gen_gym.py`
+//! Auto-generated code with script/gym_gen.py
+//! For regeneration, run following bash script in <path-to-bake> :`uv run script/gym_gen.py`
 
 use crate::env::gym::env::GymnasiumEnvironmentConfig;
 use crate::core::env::space::{DiscreteSpace, ContinuousSpace, ByteSpace};

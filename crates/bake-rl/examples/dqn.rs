@@ -15,7 +15,7 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::lunarlander().seed(10)
+        GymnasiumEnvironmentConfig::lunar_lander().seed(10)
     ]).init(&device);
     
     let mut tape = Tape::new(env, false);
@@ -86,7 +86,7 @@ pub fn main() {
 
     // evaluation
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::lunarlander().kwarg("render_mode", "human").seed(10) ,
+        GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human").seed(10) ,
     ]).init(&device);
 
     let mut tape = Tape::new(env, false);

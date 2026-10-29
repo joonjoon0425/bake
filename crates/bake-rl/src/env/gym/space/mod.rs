@@ -105,7 +105,7 @@ fn to_f32_array<const D: usize>(obj: &Bound<'_, PyAny>, device: &Device) -> PyRe
 fn to_u8_array<const D: usize>(obj: &Bound<'_, PyAny>, device: &Device) -> PyResult<Tensor<D, Int>> {
     let np = obj.py().import("numpy")?;
     let arr = np.call_method1("ascontiguousarray", (obj, "uint8"))?;
-    let arr: PyReadonlyArrayDyn<f32> = arr.extract()?;
+    let arr: PyReadonlyArrayDyn<u8> = arr.extract()?;
     let mut shape = vec![1];
     shape.extend_from_slice(arr.shape());
     let arr = arr.as_slice()?.to_vec();

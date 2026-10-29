@@ -4,7 +4,7 @@ use bake_rl::burn::prelude::*;
 pub fn main() {
     let device = Device::default();
     let env = SynchronizedVectorEnvironmentConfig::new(
-        vec![GymnasiumEnvironmentConfig::carracing().seed(140).kwarg("render_mode", "human")]
+        vec![GymnasiumEnvironmentConfig::hero_preprocessed().seed(140).kwarg("render_mode", "human")]
     ).init(&device);
 
     let mut tape = Tape::new(env, true);

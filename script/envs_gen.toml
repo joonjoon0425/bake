@@ -1,0 +1,899 @@
+# DO NOT EDIT! auto-generated with script/toml_gen.py
+
+[cart_pole]
+id = "CartPole-v1"
+
+[mountain_car]
+id = "MountainCar-v0"
+
+[mountain_car_continuous]
+id = "MountainCarContinuous-v0"
+
+[pendulum]
+id = "Pendulum-v1"
+
+[acrobot]
+id = "Acrobot-v1"
+
+[lunar_lander]
+id = "LunarLander-v3"
+
+[lunar_lander_continuous]
+id = "LunarLanderContinuous-v3"
+
+[bipedal_walker]
+id = "BipedalWalker-v3"
+
+[bipedal_walker_hardcore]
+id = "BipedalWalkerHardcore-v3"
+
+[car_racing]
+id = "CarRacing-v3"
+
+[blackjack]
+id = "Blackjack-v1"
+
+[frozen_lake]
+id = "FrozenLake-v1"
+
+[frozen_lake8x8]
+id = "FrozenLake8x8-v1"
+
+[cliff_walking]
+id = "CliffWalking-v1"
+
+[cliff_walking_slippery]
+id = "CliffWalkingSlippery-v1"
+
+[taxi]
+id = "Taxi-v4"
+
+[reacher]
+id = "Reacher-v5"
+
+[pusher]
+id = "Pusher-v5"
+
+[inverted_pendulum]
+id = "InvertedPendulum-v5"
+
+[inverted_double_pendulum]
+id = "InvertedDoublePendulum-v5"
+
+[half_cheetah]
+id = "HalfCheetah-v5"
+
+[hopper]
+id = "Hopper-v5"
+
+[swimmer]
+id = "Swimmer-v5"
+
+[walker2d]
+id = "Walker2d-v5"
+
+[ant]
+id = "Ant-v5"
+
+[humanoid]
+id = "Humanoid-v5"
+
+[humanoid_standup]
+id = "HumanoidStandup-v5"
+
+[adventure_preprocessed]
+id = "ale_py:ALE/Adventure-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[air_raid_preprocessed]
+id = "ale_py:ALE/AirRaid-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[alien_preprocessed]
+id = "ale_py:ALE/Alien-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[amidar_preprocessed]
+id = "ale_py:ALE/Amidar-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[assault_preprocessed]
+id = "ale_py:ALE/Assault-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[asterix_preprocessed]
+id = "ale_py:ALE/Asterix-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[asteroids_preprocessed]
+id = "ale_py:ALE/Asteroids-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[atlantis2_preprocessed]
+id = "ale_py:ALE/Atlantis2-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[atlantis_preprocessed]
+id = "ale_py:ALE/Atlantis-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[bank_heist_preprocessed]
+id = "ale_py:ALE/BankHeist-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[basic_math_preprocessed]
+id = "ale_py:ALE/BasicMath-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[battle_zone_preprocessed]
+id = "ale_py:ALE/BattleZone-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[beam_rider_preprocessed]
+id = "ale_py:ALE/BeamRider-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[berzerk_preprocessed]
+id = "ale_py:ALE/Berzerk-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[blackjack_preprocessed]
+id = "ale_py:ALE/Blackjack-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[bowling_preprocessed]
+id = "ale_py:ALE/Bowling-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[boxing_preprocessed]
+id = "ale_py:ALE/Boxing-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[breakout_preprocessed]
+id = "ale_py:ALE/Breakout-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[carnival_preprocessed]
+id = "ale_py:ALE/Carnival-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[casino_preprocessed]
+id = "ale_py:ALE/Casino-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[centipede_preprocessed]
+id = "ale_py:ALE/Centipede-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[chopper_command_preprocessed]
+id = "ale_py:ALE/ChopperCommand-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[crazy_climber_preprocessed]
+id = "ale_py:ALE/CrazyClimber-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[crossbow_preprocessed]
+id = "ale_py:ALE/Crossbow-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[darkchambers_preprocessed]
+id = "ale_py:ALE/Darkchambers-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[defender_preprocessed]
+id = "ale_py:ALE/Defender-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[demon_attack_preprocessed]
+id = "ale_py:ALE/DemonAttack-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[donkey_kong_preprocessed]
+id = "ale_py:ALE/DonkeyKong-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[double_dunk_preprocessed]
+id = "ale_py:ALE/DoubleDunk-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[earthworld_preprocessed]
+id = "ale_py:ALE/Earthworld-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[elevator_action_preprocessed]
+id = "ale_py:ALE/ElevatorAction-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[enduro_preprocessed]
+id = "ale_py:ALE/Enduro-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[entombed_preprocessed]
+id = "ale_py:ALE/Entombed-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[et_preprocessed]
+id = "ale_py:ALE/Et-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[fishing_derby_preprocessed]
+id = "ale_py:ALE/FishingDerby-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[flag_capture_preprocessed]
+id = "ale_py:ALE/FlagCapture-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[freeway_preprocessed]
+id = "ale_py:ALE/Freeway-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[frogger_preprocessed]
+id = "ale_py:ALE/Frogger-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[frostbite_preprocessed]
+id = "ale_py:ALE/Frostbite-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[galaxian_preprocessed]
+id = "ale_py:ALE/Galaxian-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[gopher_preprocessed]
+id = "ale_py:ALE/Gopher-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[gravitar_preprocessed]
+id = "ale_py:ALE/Gravitar-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[hangman_preprocessed]
+id = "ale_py:ALE/Hangman-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[haunted_house_preprocessed]
+id = "ale_py:ALE/HauntedHouse-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[hero_preprocessed]
+id = "ale_py:ALE/Hero-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[human_cannonball_preprocessed]
+id = "ale_py:ALE/HumanCannonball-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[ice_hockey_preprocessed]
+id = "ale_py:ALE/IceHockey-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[jamesbond_preprocessed]
+id = "ale_py:ALE/Jamesbond-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[journey_escape_preprocessed]
+id = "ale_py:ALE/JourneyEscape-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[kaboom_preprocessed]
+id = "ale_py:ALE/Kaboom-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[kangaroo_preprocessed]
+id = "ale_py:ALE/Kangaroo-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[keystone_kapers_preprocessed]
+id = "ale_py:ALE/KeystoneKapers-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[king_kong_preprocessed]
+id = "ale_py:ALE/KingKong-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[klax_preprocessed]
+id = "ale_py:ALE/Klax-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[koolaid_preprocessed]
+id = "ale_py:ALE/Koolaid-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[krull_preprocessed]
+id = "ale_py:ALE/Krull-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[kung_fu_master_preprocessed]
+id = "ale_py:ALE/KungFuMaster-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[laser_gates_preprocessed]
+id = "ale_py:ALE/LaserGates-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[lost_luggage_preprocessed]
+id = "ale_py:ALE/LostLuggage-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[mario_bros_preprocessed]
+id = "ale_py:ALE/MarioBros-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[miniature_golf_preprocessed]
+id = "ale_py:ALE/MiniatureGolf-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[montezuma_revenge_preprocessed]
+id = "ale_py:ALE/MontezumaRevenge-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[mr_do_preprocessed]
+id = "ale_py:ALE/MrDo-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[ms_pacman_preprocessed]
+id = "ale_py:ALE/MsPacman-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[name_this_game_preprocessed]
+id = "ale_py:ALE/NameThisGame-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[othello_preprocessed]
+id = "ale_py:ALE/Othello-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[pacman_preprocessed]
+id = "ale_py:ALE/Pacman-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[phoenix_preprocessed]
+id = "ale_py:ALE/Phoenix-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[pitfall2_preprocessed]
+id = "ale_py:ALE/Pitfall2-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[pitfall_preprocessed]
+id = "ale_py:ALE/Pitfall-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[pong_preprocessed]
+id = "ale_py:ALE/Pong-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[pooyan_preprocessed]
+id = "ale_py:ALE/Pooyan-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[private_eye_preprocessed]
+id = "ale_py:ALE/PrivateEye-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[qbert_preprocessed]
+id = "ale_py:ALE/Qbert-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[riverraid_preprocessed]
+id = "ale_py:ALE/Riverraid-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[road_runner_preprocessed]
+id = "ale_py:ALE/RoadRunner-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[robotank_preprocessed]
+id = "ale_py:ALE/Robotank-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[seaquest_preprocessed]
+id = "ale_py:ALE/Seaquest-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[sir_lancelot_preprocessed]
+id = "ale_py:ALE/SirLancelot-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[skiing_preprocessed]
+id = "ale_py:ALE/Skiing-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[solaris_preprocessed]
+id = "ale_py:ALE/Solaris-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[space_invaders_preprocessed]
+id = "ale_py:ALE/SpaceInvaders-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[space_war_preprocessed]
+id = "ale_py:ALE/SpaceWar-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[star_gunner_preprocessed]
+id = "ale_py:ALE/StarGunner-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[superman_preprocessed]
+id = "ale_py:ALE/Superman-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[surround_preprocessed]
+id = "ale_py:ALE/Surround-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[tennis_preprocessed]
+id = "ale_py:ALE/Tennis-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[tetris_preprocessed]
+id = "ale_py:ALE/Tetris-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[tic_tac_toe3d_preprocessed]
+id = "ale_py:ALE/TicTacToe3D-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[time_pilot_preprocessed]
+id = "ale_py:ALE/TimePilot-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[trondead_preprocessed]
+id = "ale_py:ALE/Trondead-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[turmoil_preprocessed]
+id = "ale_py:ALE/Turmoil-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[tutankham_preprocessed]
+id = "ale_py:ALE/Tutankham-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[up_n_down_preprocessed]
+id = "ale_py:ALE/UpNDown-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[venture_preprocessed]
+id = "ale_py:ALE/Venture-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[video_chess_preprocessed]
+id = "ale_py:ALE/VideoChess-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[video_cube_preprocessed]
+id = "ale_py:ALE/VideoCube-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[video_pinball_preprocessed]
+id = "ale_py:ALE/VideoPinball-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[wizard_of_wor_preprocessed]
+id = "ale_py:ALE/WizardOfWor-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[word_zapper_preprocessed]
+id = "ale_py:ALE/WordZapper-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[yars_revenge_preprocessed]
+id = "ale_py:ALE/YarsRevenge-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
+[zaxxon_preprocessed]
+id = "ale_py:ALE/Zaxxon-v5"
+kwargs = { frameskip = 1 }
+wrappers = [
+    { entry_point = "gymnasium.wrappers:AtariPreprocessing" },
+    { entry_point = "gymnasium.wrappers:FrameStackObservation", kwargs = { stack_size = 4 } },
+]
+
