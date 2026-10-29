@@ -42,7 +42,7 @@ output = """//! DO NOT EDIT
 //! For regeneration, run following bash script in <path-to-bake> :`uv run script/gen_gym.py`
 
 use crate::env::gym::env::GymnasiumEnvironmentConfig;
-use crate::core::env::space::{DiscreteSpace, ContinuousSpace};
+use crate::core::env::space::{DiscreteSpace, ContinuousSpace, ByteSpace};
 
 """
 
