@@ -18,3 +18,6 @@ pub use discrete::DiscreteSpace;
 
 pub mod continuous;
 pub use continuous::ContinuousSpace;
+
+pub mod byte;
+pub use byte::ByteSpace;

@@ -19,11 +19,11 @@ impl GymnasiumEnvironmentConfig<ContinuousSpace<2>, DiscreteSpace> {
     /// `MountainCar-v0` environment
     /// - `ObsSpace`: `ContinuousSpace<2>`
     /// - `ActionSpace`: `DiscreteSpace`
-    pub fn moutaincar() -> Self {
-        Self::new(MOUTAINCAR_SPEC)
+    pub fn mountaincar() -> Self {
+        Self::new(MOUNTAINCAR_SPEC)
     }
 }
-const MOUTAINCAR_SPEC: &'static str = r#"{"id": "MountainCar-v0", "entry_point": "gymnasium.envs.classic_control.mountain_car:MountainCarEnv", "reward_threshold": -110.0, "nondeterministic": false, "max_episode_steps": 200, "order_enforce": true, "disable_env_checker": false, "kwargs": {}, "additional_wrappers": [], "vector_entry_point": null}"#;
+const MOUNTAINCAR_SPEC: &'static str = r#"{"id": "MountainCar-v0", "entry_point": "gymnasium.envs.classic_control.mountain_car:MountainCarEnv", "reward_threshold": -110.0, "nondeterministic": false, "max_episode_steps": 200, "order_enforce": true, "disable_env_checker": false, "kwargs": {}, "additional_wrappers": [], "vector_entry_point": null}"#;
 
 impl GymnasiumEnvironmentConfig<ContinuousSpace<2>, ContinuousSpace<2>> {
     /// `MountainCarContinuous-v0` environment
@@ -75,8 +75,15 @@ impl GymnasiumEnvironmentConfig<ContinuousSpace<2>, ContinuousSpace<2>> {
 }
 const BIPEDALWALKER_SPEC: &'static str = r#"{"id": "BipedalWalker-v3", "entry_point": "gymnasium.envs.box2d.bipedal_walker:BipedalWalker", "reward_threshold": 300, "nondeterministic": false, "max_episode_steps": 1600, "order_enforce": true, "disable_env_checker": false, "kwargs": {}, "additional_wrappers": [], "vector_entry_point": null}"#;
 
-
-// carracing not implemented due to following reason: ('`ByteSpace` not implemented yet.',)
+impl GymnasiumEnvironmentConfig<ByteSpace<4>, ContinuousSpace<2>> {
+    /// `CarRacing-v3` environment
+    /// - `ObsSpace`: `ByteSpace<4>`
+    /// - `ActionSpace`: `ContinuousSpace<2>`
+    pub fn carracing() -> Self {
+        Self::new(CARRACING_SPEC)
+    }
+}
+const CARRACING_SPEC: &'static str = r#"{"id": "CarRacing-v3", "entry_point": "gymnasium.envs.box2d.car_racing:CarRacing", "reward_threshold": 900, "nondeterministic": false, "max_episode_steps": 1000, "order_enforce": true, "disable_env_checker": false, "kwargs": {}, "additional_wrappers": [], "vector_entry_point": null}"#;
 
 impl GymnasiumEnvironmentConfig<DiscreteSpace, DiscreteSpace> {
     /// `Taxi-v4` environment
@@ -111,8 +118,15 @@ const FROZENLAK_SPEC: &'static str = r#"{"id": "FrozenLake-v1", "entry_point": "
 
 // blackjack_flattened not implemented due to following reason: ("bake do not have `Space` correspoding to Gymnasium space of type <class 'gymnasium.spaces.tuple.Tuple'> currently",)
 
-
-// pong_preprocessed not implemented due to following reason: ('`ByteSpace` not implemented yet.',)
+impl GymnasiumEnvironmentConfig<ByteSpace<4>, DiscreteSpace> {
+    /// `ale_py:ALE/Pong-v5` environment
+    /// - `ObsSpace`: `ByteSpace<4>`
+    /// - `ActionSpace`: `DiscreteSpace`
+    pub fn pong_preprocessed() -> Self {
+        Self::new(PONG_PREPROCESSED_SPEC)
+    }
+}
+const PONG_PREPROCESSED_SPEC: &'static str = r#"{"id": "ALE/Pong-v5", "entry_point": "ale_py.env:AtariEnv", "reward_threshold": null, "nondeterministic": false, "max_episode_steps": null, "order_enforce": true, "disable_env_checker": false, "kwargs": {"game": "pong", "repeat_action_probability": 0.25, "full_action_space": false, "frameskip": 1, "max_num_frames_per_episode": 108000}, "additional_wrappers": [{"name": "AtariPreprocessing", "entry_point": "gymnasium.wrappers.atari_preprocessing:AtariPreprocessing", "kwargs": {"noop_max": 30, "frame_skip": 4, "screen_size": 84, "terminal_on_life_loss": false, "grayscale_obs": true, "grayscale_newaxis": false, "scale_obs": false}}, {"name": "FrameStackObservation", "entry_point": "gymnasium.wrappers.stateful_observation:FrameStackObservation", "kwargs": {"stack_size": 4, "padding_type": "reset"}}], "vector_entry_point": "ale_py.vector_env:AtariVectorEnv"}"#;
 
 impl GymnasiumEnvironmentConfig<ContinuousSpace<2>, ContinuousSpace<2>> {
     /// `Ant-v5` environment

@@ -14,7 +14,6 @@ def rust_space_str(space):
             n = len(space.shape)
             return f"ContinuousSpace<{n + 1}>"
         elif isinstance(space.dtype, np.dtypes.UByteDType):
-            raise NotImplementedError("`ByteSpace` not implemented yet.")
             n = len(space.shape)
             return f"ByteSpace<{n + 1}>"
         else:

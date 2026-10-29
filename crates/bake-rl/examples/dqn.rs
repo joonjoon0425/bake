@@ -15,21 +15,21 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::cartpole().seed(10) ,
+        GymnasiumEnvironmentConfig::lunarlander().seed(10)
     ]).init(&device);
     
     let mut tape = Tape::new(env, false);
 
     let state = DQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
-    let mut online = TestNet::new(vec![tape.obs_space().shape()[1], 128, tape.action_space().n()], ActivationConfig::Relu, &device);
+    let mut online = TestNet::new(vec![tape.obs_space().shape()[1], 128, 84, tape.action_space().n()], ActivationConfig::Relu, &device);
     let mut target = online.clone();
-    let lr = 2.5e-4;
+    let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
         
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
     let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
 
-    let total_steps = 500000;
+    let total_steps = 600000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
@@ -44,7 +44,7 @@ pub fn main() {
     let mut step_vec = vec![];
 
 
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.5);
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
@@ -86,7 +86,7 @@ pub fn main() {
 
     // evaluation
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::cartpole().kwarg("render_mode", "human").seed(10) ,
+        GymnasiumEnvironmentConfig::lunarlander().kwarg("render_mode", "human").seed(10) ,
     ]).init(&device);
 
     let mut tape = Tape::new(env, false);
@@ -95,7 +95,7 @@ pub fn main() {
         loop {
             let action = eval.sample(&online, tape.obs.clone(), tape.constraint.clone());
             tape.step(action);
-            if tape.done().clone().into_scalar() { 
+            if tape.done().clone().into_scalar() {
                 tape.reset(None);
                 break;
             }

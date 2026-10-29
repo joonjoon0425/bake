@@ -2,7 +2,7 @@
 
 [cartpole]
 id = "CartPole-v1"
-[moutaincar]
+[mountaincar]
 id = "MountainCar-v0"
 [mountaincar_continuous]
 id = "MountainCarContinuous-v0"
