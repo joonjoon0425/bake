@@ -59,17 +59,18 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
 ///the configuration struct for gymnasium environments
 pub struct GymnasiumEnvironmentConfig<ObsSpace: GymSpace, ActionSpace: GymSpace> {
     kwargs: Py<PyDict>,
-    name: &'static str,
+    spec: &'static str,
     seed: usize,
     _p: PhantomData<(ObsSpace, ActionSpace)>,
 }
 
 impl<ObsSpace: GymSpace, ActionSpace: GymSpace> GymnasiumEnvironmentConfig<ObsSpace, ActionSpace> {
     /// create a new environment config for Gymnasium environment
-    pub fn new(name: &'static str) -> Self {
+    /// - takes `EnvSpec` of environments, in .json format
+    pub fn new(spec: &'static str) -> Self {
         return Python::attach(|py| {
             let kwargs = PyDict::new(py);
-            Self { kwargs: kwargs.unbind(), _p: PhantomData, name, seed: 12 }
+            Self { kwargs: kwargs.unbind(), _p: PhantomData, spec, seed: 12 }
         });
     }
 
@@ -99,9 +100,12 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfig for GymnasiumE
     
     fn init(self, device: &Device) -> Self::Environment {
         return Python::attach(|py| {
-            let gym = py.import("gymnasium").unwrap();
+            let gym = py.import("gymnasium").expect("gymnasium module is not installed in current environment");
+            let spec = py.import("gymnasium.envs.registration").expect("gymnasium.envs.registration module not found");
+            let env_spec = spec.getattr("EnvSpec").expect("cannot import gymnasium.envs.registration.EnvSpec.");
             let kwargs = self.kwargs.bind(py);
-            let env = gym.call_method("make", (self.name, ), Some(&kwargs)).unwrap();
+            let spec = env_spec.call_method1("from_json", (self.spec, )).expect("Failed to call from_json of EnvSpec");
+            let env = gym.call_method("make", (spec, ), Some(&kwargs)).unwrap();
             let kwargs = PyDict::new(py);
             kwargs.set_item("seed", self.seed).unwrap();
             env.call_method("reset", (), Some(&kwargs)).unwrap();
