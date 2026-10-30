@@ -8,7 +8,7 @@ use crate::deep::{
     loss::{Loss, LossFn}
 };
 
-/// Deep Q-Network algorithm
+/// Deep Q-Network algorithm state
 #[derive(Debug, Clone)]
 pub struct DQNState {
     /// discount factor

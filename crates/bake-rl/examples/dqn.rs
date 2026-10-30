@@ -9,11 +9,11 @@ use burn::nn::activation::Activation;
 use burn::optim::*;
 
 pub fn main() {
-    let seed = 140;
+    let seed = 12;
     let device = Device::default();
     device.seed(seed);
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::lunar_lander().seed(10)
+        GymnasiumEnvironmentConfig::cart_pole().seed(seed)
     ]).init(&device);
     
     let mut tape = Tape::new(env, false);
@@ -27,11 +27,11 @@ pub fn main() {
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
     let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
 
-    let total_steps = 1000000;
+    let total_steps = 500000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
-    let batch_size = 512;
+    let batch_size = 128;
 
     // temporary, until the logger is implemented...
     let mut reward = 0f32;
@@ -84,7 +84,7 @@ pub fn main() {
 
     // evaluation
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human").seed(10) ,
+        GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(12) ,
     ]).init(&device);
 
     let mut tape = Tape::new(env, false);

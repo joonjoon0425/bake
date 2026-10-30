@@ -60,7 +60,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
 pub struct GymnasiumEnvironmentConfig<ObsSpace: GymSpace, ActionSpace: GymSpace> {
     kwargs: Py<PyDict>,
     spec: &'static str,
-    seed: usize,
+    seed: u64,
     _p: PhantomData<(ObsSpace, ActionSpace)>,
 }
 
@@ -77,7 +77,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> GymnasiumEnvironmentConfig<ObsSp
     /// set seed
     /// # Default
     /// - 12
-    pub fn seed(mut self, seed: usize) -> Self {
+    pub fn seed(mut self, seed: u64) -> Self {
         self.seed = seed;
         self
     }
