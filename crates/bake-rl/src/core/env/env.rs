@@ -1,6 +1,6 @@
 //! Trait for environment
 
-use crate::core::env::space::Space;
+use crate::core::{data::BatchOps, env::space::Space};
 use burn::prelude::*;
 /// `Environment` trait which all non-vectorized environments must implement
 /// - For custom non-vetorized environment, implement this trait
@@ -13,9 +13,9 @@ pub trait Environment {
     /// type of action space
     type ActionSpace: Space;
     /// type of constraint
-    type Constraint: Clone;
+    type Constraint: BatchOps;
     /// type of reward
-    type Reward: Clone;
+    type Reward: BatchOps;
     /// type of additional information, which is returned every `step` and `reset`
     type Info: Clone;
 

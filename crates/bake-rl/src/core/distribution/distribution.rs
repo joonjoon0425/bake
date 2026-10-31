@@ -1,9 +1,10 @@
 use crate::core::data::*;
+use burn::prelude::*;
 
 /// Probability distribution trait
 pub trait Distribution : std::fmt::Debug + Clone + Sync + Send + 'static {
     /// the sample type which it produces
-    type Sample: WithBatchDim;
+    type Sample: BatchOps;
     /// the parmeters which distribution requires
     type Params;
 
@@ -13,9 +14,9 @@ pub trait Distribution : std::fmt::Debug + Clone + Sync + Send + 'static {
     fn mode(&self) -> Self::Sample;
 
     /// get the log probabilities of given sample
-    fn log_probs(&self, action: Self::Sample) -> BatchTensor<1>; // [batch]
+    fn log_probs(&self, action: Self::Sample) -> Tensor<1>; // [batch]
     /// compute the entropies, for each batch dimensions
-    fn entropy(&self) -> BatchTensor<1>; // [batch]
+    fn entropy(&self) -> Tensor<1>; // [batch]
 }
 
 /// A trait that specifies which constraints the distributions can be applied to

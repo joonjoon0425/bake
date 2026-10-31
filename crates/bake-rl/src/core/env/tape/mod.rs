@@ -1,7 +1,7 @@
 //! The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
 //! - Especially useful for vector environments
 //! 
-use crate::core::{data::{Batch, WithBatchDim, batch_dim::convert::AttachBatchDim}, env::{VectorEnvironment, space::Space}};
+use crate::core::{data::{Transition, BatchOps}, env::{VectorEnvironment, space::Space}};
 use burn::prelude::*;
 /// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
 /// - Especially useful for vector environments
@@ -53,15 +53,14 @@ impl<E: VectorEnvironment> Tape<E> {
     }
     /// take one step and returns the transition and info
     /// - if `autoreset = true`, during the `step`, terminated or truncated environments are automatically reset
-    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> Batch<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward> {
+    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> Transition<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward> {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);
         let done = terminated.clone().bool_or(truncated.clone());
         self.done = done.clone();
         self.info = info;
-        let bs = obs.batch_shape();
-        let batch = Batch {
+        let batch = Transition {
             obs,
             action,
             reward,
@@ -70,8 +69,8 @@ impl<E: VectorEnvironment> Tape<E> {
             constraint,
             next_constraint: self.constraint.clone(),
 
-            terminated: terminated.attach_batch_dim(bs.clone()),
-            truncated: truncated.attach_batch_dim(bs)
+            terminated,
+            truncated
         };
         
         if self.autoreset {

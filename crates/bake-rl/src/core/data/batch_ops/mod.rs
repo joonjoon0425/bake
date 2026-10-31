@@ -9,6 +9,11 @@ use burn::prelude::*;
 pub trait BatchOps : Sized + Clone {
     /// checks if given batch shape is compatible
     fn check_batch(&self, bs: &[usize]) -> bool;
+    /// reshape
+    /// # Warning
+    /// - no-op for pure leaves;
+    /// - only has effect for container types used as leafs
+    fn reshape_batch(self, _bs: &[usize], _new_bs: &[usize]) -> Self { self } 
     /// concatenate along given batch axis
     /// # Arguments
     /// - bs: batch shape of dat
@@ -16,10 +21,9 @@ pub trait BatchOps : Sized + Clone {
     /// - dat: data to be catenated
     /// # Returns
     /// - concatenated data
-    /// - batch shape after concatenation
-    fn cat_batch(bs: &[Vec<usize>], dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>);
+    fn cat_batch(bs: &[Vec<usize>], dim: isize, dat: Vec<Self>) -> Self;
     /// unbind itself along given batch axis
-    fn unbind_batch(self, bs: &[usize], dim: isize) -> (Vec<Self>, Vec<usize>);
+    fn unbind_batch(self, bs: &[usize], dim: isize) -> Vec<Self>;
     /// slice along given axis, with given range
     /// # Arguments
     /// - bs: batch shape of self
@@ -27,8 +31,7 @@ pub trait BatchOps : Sized + Clone {
     /// - range: range to slice
     /// # Returns
     /// - sliced self
-    /// - batch shape after slice
-    fn slice_batch(self, bs: &[usize], dim: isize, range: std::ops::Range<usize>) -> (Self, Vec<usize>);
+    fn slice_batch(self, bs: &[usize], dim: isize, range: std::ops::Range<usize>) -> Self;
     /// gather the elements of batches of given axis, with given indices;
     /// # Arguments
     /// - bs: batch shape of self
@@ -36,8 +39,7 @@ pub trait BatchOps : Sized + Clone {
     /// - idx: selection index
     /// # Returns
     /// - selected self
-    /// - batch shape after select
-    fn select_batch(self, bs: &[usize], dim: isize, idx: Tensor<1, Int>) -> (Self, Vec<usize>);
+    fn select_batch(self, bs: &[usize], dim: isize, idx: Tensor<1, Int>) -> Self;
     /// write `src` into `self` along batch axis `dim`, starting at index `idx`
     /// # Arguments
     /// - bs: batch shape of self
@@ -58,8 +60,7 @@ pub trait BatchOps : Sized + Clone {
     /// - src: source
     /// # Returns
     /// - zero-initialized src with capacity along given batch axis
-    /// - batch shape after zeros_like
-    fn zeros_like_batch(bs: &[usize], dim: isize, capacity: usize, src: &Self) -> (Self, Vec<usize>);
+    fn zeros_like_batch(bs: &[usize], dim: isize, capacity: usize, src: &Self) -> Self;
     /// enable autodiff
     fn autodiff(self) -> Self;
 }

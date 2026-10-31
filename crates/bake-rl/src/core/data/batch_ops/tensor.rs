@@ -16,7 +16,7 @@ impl AutodiffKind for Bool  { fn autodiff_t<const D: usize>(t: Tensor<D, Self>) 
 
 impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
     fn assign_inplace_batch(&mut self, bs: &[usize], dim: isize, idx: usize, src: Self, src_bs: &[usize]) {
-        let d = resolve_negative_index(bs.len(), dim).unwrap();
+        let d = resolve_dim(bs.len(), dim).unwrap();
         assert!(
             check_batch_dim_except(&[bs.to_vec(), src_bs.to_vec()], d),
             "assign_batch: batch shapes {bs:?} and {src_bs:?} differ outside axis {d}"
@@ -47,8 +47,8 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
         K::autodiff_t(self)
     }
 
-    fn cat_batch(bs: &[Vec<usize>], dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>) {
-        let (shape, dim) = check_cat_batch(&bs, dim, &dat).unwrap();
+    fn cat_batch(bs: &[Vec<usize>], dim: isize, dat: Vec<Self>) -> Self {
+        let (shape, dim) = bs_after_cat(&bs, dim).unwrap();
         let ks: Vec<usize> = bs.iter().map(|b| b[dim]).collect();
         let mut dims = dat[0].dims();
         let n_features: usize = dims[1..].iter().product();
@@ -65,15 +65,15 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
         dims[0] = shape.iter().product();
 
         let cat = Tensor::cat(t_vec, 1).reshape(dims);
-        (cat, shape)
+        cat
     }
 
     fn check_batch(&self, bs: &[usize]) -> bool {
         self.dims()[0] == bs.iter().product::<usize>()
     }
 
-    fn select_batch(self, bs: &[usize], dim: isize, idx: Tensor<1, Int>) -> (Self, Vec<usize>) {
-        let dim = resolve_negative_index(bs.len(), dim).unwrap();
+    fn select_batch(self, bs: &[usize], dim: isize, idx: Tensor<1, Int>) -> Self {
+        let (_, dim) = bs_after_select(bs, dim, idx.dims()[0]).unwrap();
         let len = idx.dims()[0];
         
         let mut dims = self.dims();
@@ -90,14 +90,11 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
             .reshape([out, k, res])
             .select(1, idx)
             .reshape(dims);
-
-        
-
-        (t, shape)
+        t
     }
 
-    fn slice_batch(self, bs: &[usize], dim: isize, range: std::ops::Range<usize>) -> (Self, Vec<usize>) {
-        let dim = resolve_negative_index(bs.len(), dim).unwrap();
+    fn slice_batch(self, bs: &[usize], dim: isize, range: std::ops::Range<usize>) -> Self {
+        let (_, dim) = bs_after_slice(bs, dim, &range).unwrap();
         let len = range.end - range.start;
 
         let mut dims = self.dims();
@@ -115,13 +112,12 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
             .narrow(1, range.start, len)
             .reshape(dims);
         
-
-        (t, shape)
+        t
     }
 
-    fn unbind_batch(self, bs: &[usize], dim: isize) -> (Vec<Self>, Vec<usize>) {
+    fn unbind_batch(self, bs: &[usize], dim: isize) -> Vec<Self> {
         assert!(!bs.is_empty(), "batch shape is empty");
-        let dim = resolve_negative_index(bs.len(), dim).unwrap();
+        let (_, dim) = bs_after_unbind(bs, dim).unwrap();
         
         let mut dims = self.dims();
         let n_features: usize = dims[1..].iter().product();
@@ -139,16 +135,16 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
         dims[0] = shape.iter().product();
 
         let parts = parts.into_iter().map(|t| t.reshape(dims)).collect();
-        (parts, shape)
+        parts
     }
 
-    fn zeros_like_batch(bs: &[usize], dim: isize, capacity: usize, src: &Self) -> (Self, Vec<usize>) {
-        let dim = resolve_negative_index(bs.len(), dim).unwrap();
+    fn zeros_like_batch(bs: &[usize], dim: isize, capacity: usize, src: &Self) -> Self {
+        let (_, dim) = bs_after_zeros_like(bs, dim, capacity).unwrap();
         let mut shape = bs.to_vec(); shape[dim] = capacity;
         let mut tdims = src.dims(); tdims[0] = shape.iter().product();
 
         let t = Tensor::zeros(tdims, (&src.device(), src.dtype()));
 
-        (t, shape)
+        t
     }
 }

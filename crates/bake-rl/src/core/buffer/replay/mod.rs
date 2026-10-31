@@ -3,14 +3,13 @@ pub mod lazy_storage;
 
 use std::marker::PhantomData;
 use crate::core::{
-    buffer::sampler::{Sampler, PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, SamplerConfig, uniform::UniformSamplerConfig},
-    data::{Batch, WithBatchDim},
+    buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, SamplerConfig, uniform::UniformSamplerConfig}, data::{Batch, BatchOps, Transition},
 };
 use crate::core::buffer::replay::lazy_storage::LazyStorage;
 use burn::prelude::*;
 
 /// Replay buffer implementation
-pub struct ReplayBuffer<S: Sampler, Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: WithBatchDim> {
+pub struct ReplayBuffer<S: Sampler, Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> {
     /// Lazy initialization storage
     storage: LazyStorage<Obs, Action, Constraint, Reward>,
     /// the sampler
@@ -21,10 +20,10 @@ pub struct ReplayBuffer<S: Sampler, Obs: WithBatchDim, Action: WithBatchDim, Con
 impl<S, Obs, Action, Constraint, Reward> ReplayBuffer<S, Obs, Action, Constraint, Reward>
 where
     S: Sampler,
-    Obs: WithBatchDim,
-    Action: WithBatchDim,
-    Constraint: WithBatchDim,
-    Reward: WithBatchDim,
+    Obs: BatchOps,
+    Action: BatchOps,
+    Constraint: BatchOps,
+    Reward: BatchOps,
 {
     /// create a new ReplayBuffer (user's won't use this. Users must use the ReplayBufferConfig)
     pub fn new(capacity: usize, sampler: S) -> Self {
@@ -35,7 +34,7 @@ where
     }
 
     /// Push a givn transition into buffer
-    pub fn push(&mut self, t: Batch<Obs, Action, Constraint, Reward>) {
+    pub fn push(&mut self, t: Batch<Transition<Obs, Action, Constraint, Reward>>) {
         let (index, n) = self.storage.push(t);
         self.sampler.after_push(index, n);
     }
@@ -44,7 +43,7 @@ where
     pub fn n(&self) -> usize { return self.storage.n() }
 
     /// sample given amount of batches from buffer. If the buffer's length is shorter than `batch_size`, returns None.
-    pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Obs, Action, Constraint, Reward>, SampleInfo)> {
+    pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Transition<Obs, Action, Constraint, Reward>>, SampleInfo)> {
         let len = self.n();
         if len < batch_size { return None; }
         Some(self.sampler.sample(batch_size, &self.storage))
@@ -54,10 +53,10 @@ where
 
 impl<Obs, Action, Constraint, Reward> ReplayBuffer<PrioritizedSampler, Obs, Action, Constraint, Reward>
 where
-    Obs: WithBatchDim,
-    Action: WithBatchDim,
-    Constraint: WithBatchDim,
-    Reward: WithBatchDim,
+    Obs: BatchOps,
+    Action: BatchOps,
+    Constraint: BatchOps,
+    Reward: BatchOps,
 {
     /// update the priority of elements of given indices to given priorities
     pub fn update_priority(&mut self, indices: &[usize], priorities: Tensor<1>) {
@@ -72,21 +71,21 @@ where
 }
 
 /// A helper struct for creating a ReplayBuffer
-pub struct ReplayBufferConfig<SamplerConf: SamplerConfig, Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: WithBatchDim> {
+pub struct ReplayBufferConfig<SamplerConf: SamplerConfig, Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> {
     config: SamplerConf,
     seed: u64,
     capacity: usize,
     _p: PhantomData<(Obs, Action, Constraint, Reward)>,
 }
 
-impl<SamplerConf: SamplerConfig, Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: WithBatchDim,> ReplayBufferConfig<SamplerConf, Obs, Action, Constraint, Reward> {
+impl<SamplerConf: SamplerConfig, Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps,> ReplayBufferConfig<SamplerConf, Obs, Action, Constraint, Reward> {
     /// create a new replay buffer
     pub fn init(self) -> ReplayBuffer<SamplerConf::SamplerType, Obs, Action, Constraint, Reward> {
         ReplayBuffer::new(self.capacity, self.config.init(self.seed, self.capacity))
     }
 }
 
-impl<Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: WithBatchDim,> ReplayBufferConfig<UniformSamplerConfig, Obs, Action, Constraint, Reward> {
+impl<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps,> ReplayBufferConfig<UniformSamplerConfig, Obs, Action, Constraint, Reward> {
     /// create a new RerplayBufferConfig with UniformSampler
     pub fn uniform(seed: u64, capacity: usize) -> Self {
         Self {
@@ -98,7 +97,7 @@ impl<Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: 
     }
 }
 
-impl<Obs: WithBatchDim, Action: WithBatchDim, Constraint: WithBatchDim, Reward: WithBatchDim> ReplayBufferConfig<PrioritizedSamplerConfig, Obs, Action, Constraint, Reward> {
+impl<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> ReplayBufferConfig<PrioritizedSamplerConfig, Obs, Action, Constraint, Reward> {
     /// create a new ReplayBufferConfig for PER
     pub fn prioritized(seed: u64, capacity: usize, alpha: f64, beta: f64) -> Self {
         Self {

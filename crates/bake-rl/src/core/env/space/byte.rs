@@ -1,6 +1,5 @@
 //! Byte (u8) space
-
-use crate::core::data::{AttachBatchDim, BatchTensor, WithBatchDim};
+use crate::core::data::BatchOps;
 
 use super::Space;
 use burn::prelude::*;
@@ -29,16 +28,15 @@ impl<const D: usize> ByteSpace<D> {
 }
 
 impl<const D: usize> Space for ByteSpace<D> {
-    type Element = BatchTensor<D, Int>;
+    type Element = Tensor<D, Int>;
 
     fn sample(&self, num: usize) -> Self::Element {
         let vec = (0..num).into_iter()
-            .map(|_| {
-                let s = Tensor::random(self.shape(), burn::tensor::Distribution::Uniform(0., 255.), (&self.device, burn::tensor::DType::U8));
-                s.attach_empty_dim()
-            })
+            .map(|_| 
+                Tensor::random(self.shape(), burn::tensor::Distribution::Uniform(0., 255.), (&self.device, burn::tensor::DType::U8))
+            )
             .collect();
-        WithBatchDim::stack(vec)
+        BatchOps::cat_batch(&vec![vec![1]; num], 0, vec)
     }
 
     fn device(&self) -> Device {

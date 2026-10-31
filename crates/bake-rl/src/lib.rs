@@ -21,7 +21,7 @@ pub extern crate burn;
 
 /// prelude module
 pub mod prelude {
-    pub use bake_rl::core::data::{Batch, BatchTensor, BatchShape, WithBatchDim, AttachBatchDim, DetachBatchDim};
+    pub use bake_rl::core::data::{transition, Batch, BatchOps};
     pub use bake_rl::core::constraint::DiscreteConstraint;
     pub use bake_rl::core::env::{
         Tape, Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig,
@@ -43,5 +43,5 @@ pub mod prelude {
         Scheduler,
         LinearScheduler,
     };
-    pub use bake_macros::{WithBatchDim, actor_critic, qnet, policy};
+    pub use bake_macros::{BatchOps, actor_critic, qnet, policy};
 }

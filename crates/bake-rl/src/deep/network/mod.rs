@@ -1,13 +1,13 @@
 //! A common trait for neural networks
 //! 
 //! 
-use crate::core::data::WithBatchDim;
+use crate::core::data::BatchOps;
 use burn::{module::ModuleDisplay, optim::{GradientsParams, ModuleOptimizer}, prelude::*};
 
 /// A common trait for neural networks
 pub trait Network : Module + ModuleDisplay + Clone {
     /// the observation which the network takes
-    type Obs: WithBatchDim;
+    type Obs: BatchOps;
 }
 
 /// A helper update function (for bake-macro)

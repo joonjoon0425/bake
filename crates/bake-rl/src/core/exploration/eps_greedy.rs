@@ -1,6 +1,6 @@
 //! epsilon-greedy policy
 //!
-use crate::core::{constraint::discrete::DiscreteConstraint, data::{AttachBatchDim, BatchTensor, DetachBatchDim}};
+use crate::core::{constraint::discrete::DiscreteConstraint};
 use burn::{Tensor, tensor::{Distribution, Int}};
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
@@ -32,14 +32,14 @@ impl EpsGreedy {
 
 impl Exploration for EpsGreedy {
     /// sample an action from given Q values.
-    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> BatchTensor<1, Int> {
-        let (qvalues, bs) = qfunc.action_values(obs, constraint.clone()).detach_batch_dim();
+    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
+        let qvalues= qfunc.action_values(obs, constraint.clone());
         if self.rng.random_range(0.0..1.0) < self.eps {
             let random = Tensor::random_like(&qvalues, Distribution::Default);
-            let (masked, bs) = constraint.apply(random.attach_batch_dim(bs), -1f32).detach_batch_dim();
-            masked.argmax(1).squeeze_dim(1).attach_batch_dim(bs)
+            let masked = constraint.apply(random, -1f32);
+            masked.argmax(1).squeeze_dim(1)
         } else {
-            qvalues.argmax(1).squeeze_dim(1).attach_batch_dim(bs)
+            qvalues.argmax(1).squeeze_dim(1)
         }
     }
 }

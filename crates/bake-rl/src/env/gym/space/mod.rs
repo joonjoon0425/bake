@@ -4,8 +4,6 @@ use numpy::{IntoPyArray, PyArrayMethods, PyReadonlyArrayDyn, PyUntypedArrayMetho
 use pyo3::{exceptions::PyValueError, prelude::*};
 use burn::prelude::*;
 
-use crate::core::data::batch_dim::{AttachBatchDim, DetachBatchDim};
-
 /// `GymSpace` trait which can be build from Gymnasium spaces
 pub trait GymSpace: Space + Sized {
     /// build the rust space from a python `gymnasium.spaces.*` object

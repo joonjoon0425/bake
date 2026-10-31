@@ -1,7 +1,7 @@
 //! boltzmann exploration
 //! 
 
-use crate::core::{constraint::discrete::DiscreteConstraint, data::{AttachBatchDim, BatchTensor, DetachBatchDim}};
+use crate::core::{constraint::discrete::DiscreteConstraint};
 use burn::{prelude::*, tensor::activation::softmax};
 
 use crate::deep::contract::DiscreteActionValue;
@@ -29,10 +29,10 @@ impl Boltzmann {
 }
 
 impl Exploration for Boltzmann {
-    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> BatchTensor<1, Int> {
-        let (value, bs) = qfunc.action_values(obs, constraint).detach_batch_dim();
+    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
+        let value = qfunc.action_values(obs, constraint);
         let probs = softmax(value / self.temp, 1);
         let actions = probs.categorical(1).squeeze_dim(1);
-        actions.attach_batch_dim(bs)
+        actions
     }
 }

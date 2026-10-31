@@ -3,7 +3,7 @@ use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
 use crate::core::buffer::sampler::{SampleInfo, Sampler, SamplerConfig};
 use crate::core::buffer::replay::lazy_storage::LazyStorage;
-use crate::core::data::{Batch, WithBatchDim};
+use crate::core::data::{Batch, BatchOps, Transition};
 
 /// A basic sampler which treats all elements equally
 pub struct UniformSampler {
@@ -18,12 +18,12 @@ impl UniformSampler {
 impl Sampler for UniformSampler {
     /// # Panic
     /// panics when the length of the storage is smaller than n
-    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Obs, Action, Constraint, Reward>, SampleInfo)
+    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<Obs, Action, Constraint, Reward>>, SampleInfo)
     where
-        Obs: WithBatchDim,
-        Action: WithBatchDim,
-        Constraint: WithBatchDim,
-        Reward: WithBatchDim,
+        Obs: BatchOps,
+        Action: BatchOps,
+        Constraint: BatchOps,
+        Reward: BatchOps,
     {
         let len = storage.n();
         if len < sample_size { panic!("Sampler received n bigger than given storage's length") }

@@ -3,7 +3,7 @@ use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
 use crate::core::buffer::sampler::{SampleInfo, Sampler, SamplerConfig};
 use crate::core::buffer::replay::lazy_storage::LazyStorage;
-use crate::core::data::{Batch, WithBatchDim};
+use crate::core::data::{Batch, BatchOps, Transition};
 
 /// A sampler which uses Priority (PER)
 pub struct PrioritizedSampler {
@@ -47,12 +47,12 @@ impl Sampler for PrioritizedSampler {
         }
     }
 
-    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Obs, Action, Constraint, Reward>, SampleInfo)
+    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<Obs, Action, Constraint, Reward>>, SampleInfo)
     where
-        Obs: WithBatchDim,
-        Action: WithBatchDim,
-        Constraint: WithBatchDim,
-        Reward: WithBatchDim,
+        Obs: BatchOps,
+        Action: BatchOps,
+        Constraint: BatchOps,
+        Reward: BatchOps,
     {
         let device = storage.device();
         let indices_raw = self.sum_tree.sample_idx(sample_size);

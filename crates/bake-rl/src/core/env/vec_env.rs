@@ -1,4 +1,4 @@
-use crate::core::{data::WithBatchDim, env::space::Space};
+use crate::core::{data::BatchOps, env::space::Space};
 use burn::prelude::*;
 
 /// `VectorEnvironment` trait which all vectorized environments must implement
@@ -11,9 +11,9 @@ pub trait VectorEnvironment {
     /// type of action space
     type ActionSpace: Space;
     /// type of constraint
-    type Constraint: WithBatchDim;
+    type Constraint: BatchOps;
     /// type of reward
-    type Reward: WithBatchDim;
+    type Reward: BatchOps;
     /// type of additional information, which is returned every `step` and `reset`
     type Info: Clone;
 

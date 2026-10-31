@@ -1,22 +1,22 @@
 //! Synchronized vector environment wrapper
-use crate::core::{data::{WithBatchDim, batch_dim::AttachBatchDim}, env::{Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig, space::Space}};
+use crate::core::{data::BatchOps, env::{Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig, space::Space}};
 use burn::prelude::*;
 /// vectorize non-vector environment in a synchronized way 
-pub struct SynchronizedVectorEnvironment<E: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>> {
+pub struct SynchronizedVectorEnvironment<E: Environment> {
     envs: Vec<E>,
     obs_space: E::ObsSpace,
     action_space: E::ActionSpace,
     latest_obs: Option<Vec<<E::ObsSpace as Space>::Element>>,
-    latest_constraint: Option<Vec<<E::Constraint as AttachBatchDim>::Attached>>,
+    latest_constraint: Option<Vec<E::Constraint>>,
     latest_info: Option<Vec<E::Info>>,
     device: Device
 }
 
-impl<E: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>> VectorEnvironment for SynchronizedVectorEnvironment<E> {
+impl<E: Environment> VectorEnvironment for SynchronizedVectorEnvironment<E> {
     type ObsSpace = E::ObsSpace;
     type ActionSpace = E::ActionSpace;
-    type Constraint = <E::Constraint as AttachBatchDim>::Attached;
-    type Reward = <E::Reward as AttachBatchDim>::Attached;
+    type Constraint = E::Constraint;
+    type Reward = E::Reward;
     type Info = Vec<E::Info>;
 
     fn obs_space(&self) -> &Self::ObsSpace {
@@ -32,6 +32,7 @@ impl<E: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>> VectorE
     }
 
     fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info) {
+        let bs = vec![vec![1]; self.n_envs()];
         match mask {
             Some(mask) => {
                 let mask = mask.try_into_vec_as().unwrap();
@@ -40,11 +41,11 @@ impl<E: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>> VectorE
                 for idx in mask.iter().enumerate().filter(|(_, b)| **b).map(|(u, _)| u) {
                     let ((obs, constraint), info) = self.envs[idx].reset();
                     self.latest_obs.as_mut().unwrap()[idx] = obs;
-                    self.latest_constraint.as_mut().unwrap()[idx] = constraint.attach_batch_dim(vec![]);
+                    self.latest_constraint.as_mut().unwrap()[idx] = constraint;
                     self.latest_info.as_mut().unwrap()[idx] = info;
                 }
-                let obss = WithBatchDim::stack(self.latest_obs.clone().unwrap());
-                let constraints = WithBatchDim::stack(self.latest_constraint.clone().unwrap());
+                let obss = BatchOps::cat_batch(&bs, 0, self.latest_obs.clone().unwrap());
+                let constraints = BatchOps::cat_batch(&bs, 0, self.latest_constraint.clone().unwrap());
                 ((obss, constraints), self.latest_info.clone().unwrap())
             }
             None => {
@@ -55,14 +56,14 @@ impl<E: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>> VectorE
                 for idx in 0..self.n_envs() {
                     let ((obs, constraint), info) = self.envs[idx].reset();    
                     latest_obs.push(obs);
-                    latest_constraint.push(constraint.attach_batch_dim(vec![]));
+                    latest_constraint.push(constraint);
                     latest_info.push(info);
                 }
                 self.latest_obs = Some(latest_obs.clone());
                 self.latest_constraint = Some(latest_constraint.clone());
                 self.latest_info = Some(latest_info.clone());
-                let obss = WithBatchDim::stack(latest_obs);
-                let constraints = WithBatchDim::stack(latest_constraint);
+                let obss = BatchOps::cat_batch(&bs, 0, latest_obs);
+                let constraints = BatchOps::cat_batch(&bs, 0, latest_constraint);
                 ((obss, constraints), latest_info)
             }
         }
@@ -71,7 +72,8 @@ impl<E: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>> VectorE
 
     fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
         let n_envs = self.n_envs();
-        let actions = action.unstack();
+        let actions = action.unbind_batch(&[n_envs], 0);
+        let bs = vec![vec![1]; n_envs];
         // assertion
         assert!(n_envs == actions.len(), "the number of environment and the number of given action does not matches");
 
@@ -82,18 +84,18 @@ impl<E: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>> VectorE
             let action = actions[i].clone();
             let ((obs, constraint), reward, term, trunc, info) = self.envs[i].step(action);
             self.latest_obs.as_mut().unwrap()[i] = obs;
-            self.latest_constraint.as_mut().unwrap()[i] = constraint.attach_batch_dim(vec![]);
+            self.latest_constraint.as_mut().unwrap()[i] = constraint;
             self.latest_info.as_mut().unwrap()[i] = info;
-            rewards.push(reward.attach_batch_dim(vec![]));
+            rewards.push(reward);
             terminated.push(term);
             truncated.push(trunc);
         }
-        let rewards = WithBatchDim::stack(rewards);
+        let rewards = BatchOps::cat_batch(&bs, 0, rewards);
         let terminated = Tensor::from_bool(terminated.as_slice(), &self.device);
         let truncated = Tensor::from_bool(truncated.as_slice(), &self.device);
 
-        let obss = WithBatchDim::stack(self.latest_obs.clone().unwrap());
-        let constraints = WithBatchDim::stack(self.latest_constraint.clone().unwrap());
+        let obss = BatchOps::cat_batch(&bs, 0, self.latest_obs.clone().unwrap());
+        let constraints = BatchOps::cat_batch(&bs, 0, self.latest_constraint.clone().unwrap());
         let infos= self.latest_info.clone();
         ((obss, constraints), rewards, terminated, truncated, infos.unwrap())
     }
@@ -106,14 +108,14 @@ impl<E: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>> VectorE
 /// configuration for `SynchronizedVectorEnvironment`
 pub struct SynchronizedVectorEnvironmentConfig<C>
 where
-    C: EnvironmentConfig<Environment: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>>
+    C: EnvironmentConfig<Environment: Environment>
 {
     configs: Vec<C>,
 }
 
 impl<C> SynchronizedVectorEnvironmentConfig<C> 
 where
-    C: EnvironmentConfig<Environment: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>>
+    C: EnvironmentConfig<Environment: Environment>
 {
     /// create a new `SynchronizedVectorEnvironmentConfig` from given configurations
     pub fn new(configs: Vec<C>) -> Self { Self { configs } }
@@ -121,7 +123,7 @@ where
 
 impl<C> VectorEnvironmentConfig for SynchronizedVectorEnvironmentConfig<C>
 where
-    C: EnvironmentConfig<Environment: Environment<Constraint: AttachBatchDim, Reward: AttachBatchDim>>,
+    C: EnvironmentConfig<Environment: Environment>,
     SynchronizedVectorEnvironment<C::Environment> : VectorEnvironment,
 {
     type Environment = SynchronizedVectorEnvironment<C::Environment>;
