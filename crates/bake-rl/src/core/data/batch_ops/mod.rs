@@ -15,7 +15,7 @@ pub trait BatchOps : Sized + Clone {
     /// # Returns
     /// - concatenated data
     /// - batch shape after concatenation
-    fn cat_batch(bs: Vec<usize>, dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>);
+    fn cat_batch(bs: Vec<Vec<usize>>, dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>);
     /// unbind itself along given batch axis
     fn unbind_batch(self, bs: Vec<usize>, dim: isize) -> (Vec<Self>, Vec<usize>);
     /// slice along given axis, with given range

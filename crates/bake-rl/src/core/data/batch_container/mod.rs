@@ -1,65 +1,165 @@
-//! trait for containers with batch dimension
+//! containers with batch dimension
 
 use burn::prelude::*;
 use crate::core::data::batch_ops::{BatchOps, helper::*};
 
-/// trait for container with batch shape information
-pub trait BatchContainer: BatchOps {
-    /// the batch shape
-    fn bs(&self) -> Vec<usize>;
+/// container with batch shape information
+#[derive(Debug, Clone)]
+pub struct Batch<T: BatchOps> {
+    leaf: T,
+    bs: Vec<usize>,
+}
+
+impl<T: BatchOps> Batch<T> {
+    /// returns the batch shape
+    pub fn bs(&self) -> Vec<usize> { self.bs.clone() }
     /// reshape batch shape
-    fn reshape(self, bs: Vec<usize>) -> Self;
+    fn reshape(self, bs: Vec<usize>) -> Self {
+        assert!(check_reshape(&self.bs, &bs), "invalid reshape shape given");
+        Self {
+            bs,
+            ..self
+        }
+    }
+
     /// unsqueeze batch shape
-    fn unsqueeze(self, dim: isize) -> Self {
+    pub fn unsqueeze(self, dim: isize) -> Self {
         let (bs, _) = check_unsqueeze(self.bs(), dim).unwrap();
         self.reshape(bs)
     }
 
     /// squeeze batch shape
-    fn squeeze(self, dim: isize) -> Self {
+    pub fn squeeze(self, dim: isize) -> Self {
         let (bs, _) = check_squeeze(self.bs(), dim).unwrap();
         self.reshape(bs)
     }
     
     /// concatenate along the given batch axis;
-    fn cat(dim: isize, dat: Vec<Self>) -> Self {
-        let bs = dat.get(0).expect("tried to catenate empty data").bs();
-        let (ret, bs) = Self::cat_batch(bs, dim, dat);
-        ret.reshape(bs)
+    pub fn cat(dim: isize, dat: Vec<Self>) -> Self {
+        assert!(!dat.is_empty(), "tried to cat empty data");
+        let bs = dat.iter().map(|d| d.bs()).collect();
+        let dat = dat.into_iter().map(|b| b.leaf).collect();
+        let (ret, bs) = T::cat_batch(bs, dim, dat);
+        Self {
+            bs,
+            leaf: ret
+        }
     }
     
     /// stack the elements, creating a new batch axis;
-    fn stack(dat: Vec<Self>) -> Self {
-        let mut bs = dat.get(0).expect("tried to stack empty data").bs();
-        bs.insert(0, 1);
-        let (ret, bs) = Self::cat_batch(bs, 0, dat);
-        ret.reshape(bs)
+    pub fn stack(dat: Vec<Self>) -> Self {
+        assert!(!dat.is_empty(), "tried to cat empty data");
+        let bs = dat.iter().map(
+            |d| {
+                let mut bs = d.bs();
+                bs.insert(0, 1);
+                bs
+            }).collect();
+        let dat = dat.into_iter().map(|b| b.leaf).collect();
+        let (ret, bs) = T::cat_batch(bs, 0, dat);
+        Self {
+            bs,
+            leaf: ret
+        }
     }
 
     /// unstack along the given batch axis
-    fn unbind(self, dim: isize) -> Vec<Self> {
+    pub fn unbind(self, dim: isize) -> Vec<Self> {
         let bs = self.bs();
-        let (unbinded, bs) = self.unbind_batch(bs, dim);
-        unbinded.into_iter().map(|u| u.reshape(bs.clone())).collect()
+        let dat = self.leaf;
+        let (unbinded, bs) = dat.unbind_batch(bs, dim);
+        unbinded.into_iter().map(|u| Self {
+            bs: bs.clone(),
+            leaf: u
+        }).collect()
     }
 
     /// slice along given axis, with given range
-    fn slice(self, dim: isize, range: std::ops::Range<usize>) -> Self {
+    pub fn slice(self, dim: isize, range: std::ops::Range<usize>) -> Self {
         let bs = self.bs();
-        let (sliced, bs) = self.slice_batch(bs, dim, range);
-        sliced.reshape(bs)
+        let dat = self.leaf;
+        let (sliced, bs) = dat.slice_batch(bs, dim, range);
+        Self {
+            bs,
+            leaf: sliced
+        }
     }
 
     /// gather the elements of batches of given idmension, with given indices;
-    fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
+    pub fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
         let bs = self.bs();
-        let (selected, bs) = self.select_batch(bs, dim, idx);
-        selected.reshape(bs)
+        let dat = self.leaf;
+        let (selected, bs) = dat.select_batch(bs, dim, idx);
+        Self {
+            bs,
+            leaf: selected
+        }
     }
     
     /// make zeros with given capacity, along given batch axis
-    fn zeros_like(dim: isize, capacity: usize, data: &Self) -> Self {
-        let (z, bs) = Self::zeros_like_batch(data.bs(), dim, capacity, data);
-        z.reshape(bs)
+    pub fn zeros_like(dim: isize, capacity: usize, data: &Self) -> Self {
+        let bs = data.bs();
+        let data_leaf = &data.leaf;
+        let (z, bs) = T::zeros_like_batch(bs, dim, capacity, data_leaf);
+        Self {
+            bs,
+            leaf: z
+        }
+    }
+}
+
+/// of course, Batch is also Batchable...
+impl<T: BatchOps> BatchOps for Batch<T> {
+    fn assign_inplace(&mut self, src: Self, idx: usize) {
+        self.leaf.assign_inplace(src.leaf, idx);
+    }
+
+    fn autodiff(self) -> Self {
+        Self {
+            bs: self.bs,
+            leaf: self.leaf.autodiff(),
+        }
+    }
+
+    fn cat_batch(bs: Vec<Vec<usize>>, dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>) {
+        let check = bs.into_iter().zip(dat.iter()).all(|(b, d)| {
+            if b != d.bs() {
+                false
+            } else {
+                true
+            }
+        });
+        assert!(check, "given batch shape does not equals the batch shape of data");
+        let ret = Self::cat(dim, dat);
+        let bs = ret.bs();
+        (ret, bs)
+    }
+
+    fn select_batch(self, bs: Vec<usize>, dim: isize, idx: Tensor<1, Int>) -> (Self, Vec<usize>) {
+        assert!(bs == self.bs, "given batch shape does not equals the batch shape of self");
+        let ret  = self.select(dim, idx);
+        let bs = ret.bs();
+        (ret, bs)
+    }
+
+    fn slice_batch(self, bs: Vec<usize>, dim: isize, range: std::ops::Range<usize>) -> (Self, Vec<usize>) {
+        assert!(bs == self.bs, "given batch shape does not equals the batch shape of self");
+        let ret  = self.slice(dim, range);
+        let bs = ret.bs();
+        (ret, bs)
+    }
+
+    fn unbind_batch(self, bs: Vec<usize>, dim: isize) -> (Vec<Self>, Vec<usize>) {
+        assert!(bs == self.bs, "given batch shape does not equals the batch shape of self");
+        let ret  = self.unbind(dim);
+        let bs = ret[0].bs();
+        (ret, bs)
+    }
+
+    fn zeros_like_batch(bs: Vec<usize>, dim: isize, capacity: usize, src: &Self) -> (Self, Vec<usize>) {
+        assert!(bs == src.bs(), "given batch shape does not equals the batch shape of src");
+        let ret = Self::zeros_like(dim, capacity, src);
+        let bs = ret.bs();
+        (ret, bs)
     }
 }

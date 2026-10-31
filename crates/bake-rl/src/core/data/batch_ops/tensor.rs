@@ -25,9 +25,8 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
         K::autodiff_t(self)
     }
 
-    fn cat_batch(bs: Vec<usize>, dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>) {
-        assert!(!dat.is_empty(), "given data vector is empty");
-        let dim = resolve_negative_index(bs.iter().product(), dim).unwrap();
+    fn cat_batch(bs: Vec<Vec<usize>>, dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>) {
+        let (bs, dim) = check_cat_batch(bs, dim, &dat).unwrap();
         let len = dat.len();
         let mut dims = dat[0].dims();
         let n_features: usize = dims[1..].iter().product();
@@ -52,7 +51,7 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
     }
 
     fn select_batch(self, bs: Vec<usize>, dim: isize, idx: Tensor<1, Int>) -> (Self, Vec<usize>) {
-        let dim = resolve_negative_index(bs.iter().product(), dim).unwrap();
+        let dim = resolve_negative_index(bs.len(), dim).unwrap();
         let len = idx.dims()[0];
         
         let mut dims = self.dims();
@@ -76,7 +75,7 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
     }
 
     fn slice_batch(self, bs: Vec<usize>, dim: isize, range: std::ops::Range<usize>) -> (Self, Vec<usize>) {
-        let dim = resolve_negative_index(bs.iter().product(), dim).unwrap();
+        let dim = resolve_negative_index(bs.len(), dim).unwrap();
         let len = range.end - range.start;
 
         let mut dims = self.dims();
@@ -100,7 +99,7 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
 
     fn unbind_batch(self, bs: Vec<usize>, dim: isize) -> (Vec<Self>, Vec<usize>) {
         assert!(!bs.is_empty(), "batch shape is empty");
-        let dim = resolve_negative_index(bs.iter().product(), dim).unwrap();
+        let dim = resolve_negative_index(bs.len(), dim).unwrap();
         
         let mut dims = self.dims();
         let n_features: usize = dims[1..].iter().product();
@@ -112,7 +111,7 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
         let parts =
             self
             .reshape([out, k, res])
-            .split(k, 1);
+            .split(1, 1);
 
         let mut shape = bs; shape[dim] = 1;
         dims[0] = shape.iter().product();
@@ -122,7 +121,7 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
     }
 
     fn zeros_like_batch(bs: Vec<usize>, dim: isize, capacity: usize, src: &Self) -> (Self, Vec<usize>) {
-        let dim = resolve_negative_index(bs.iter().product(), dim).unwrap();
+        let dim = resolve_negative_index(bs.len(), dim).unwrap();
         let mut shape = bs; shape[dim] = capacity;
         let mut tdims = src.dims(); tdims[0] = shape.iter().product();
 
