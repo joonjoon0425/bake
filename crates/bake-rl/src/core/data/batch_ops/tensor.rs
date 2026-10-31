@@ -26,23 +26,19 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
     }
 
     fn cat_batch(bs: Vec<Vec<usize>>, dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>) {
-        let (bs, dim) = check_cat_batch(bs, dim, &dat).unwrap();
-        let len = dat.len();
+        let (shape, dim) = check_cat_batch(&bs, dim, &dat).unwrap();
+        let ks: Vec<usize> = bs.iter().map(|b| b[dim]).collect();
         let mut dims = dat[0].dims();
         let n_features: usize = dims[1..].iter().product();
         // fold
-        let out = bs[..dim].iter().product();
-        let res = bs[dim + 1..].iter().product::<usize>() * n_features;
-        let t_vec = dat.into_iter().map(
-            |d| {
-                let k = bs[dim];
-                d.reshape([out, k, res])
+        let out = shape[..dim].iter().product();
+        let res = shape[dim + 1..].iter().product::<usize>() * n_features;
+        let t_vec = dat.into_iter().zip(ks).map(
+            |(t, k)| {
+                t.reshape([out, k, res])
             }
         ).collect();
 
-        // concatenated shape
-        let mut shape = bs;
-        shape[dim] = shape[dim] * len;
         // first dimension (batch axis) as # of batches
         dims[0] = shape.iter().product();
 
@@ -50,12 +46,16 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
         (cat, shape)
     }
 
+    fn check_batch(&self, bs: &[usize]) -> bool {
+        self.dims()[0] == bs.iter().product::<usize>()
+    }
+
     fn select_batch(self, bs: Vec<usize>, dim: isize, idx: Tensor<1, Int>) -> (Self, Vec<usize>) {
         let dim = resolve_negative_index(bs.len(), dim).unwrap();
         let len = idx.dims()[0];
         
         let mut dims = self.dims();
-        let n_features: usize = dims[..1].iter().product();
+        let n_features: usize = dims[1..].iter().product();
         
         let out: usize = bs[..dim].iter().product();
         let k = bs[dim];
@@ -79,7 +79,7 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
         let len = range.end - range.start;
 
         let mut dims = self.dims();
-        let n_features: usize = dims[..1].iter().product();
+        let n_features: usize = dims[1..].iter().product();
 
         let out: usize = bs[..dim].iter().product();
         let k = bs[dim];
@@ -113,7 +113,7 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
             .reshape([out, k, res])
             .split(1, 1);
 
-        let mut shape = bs; shape[dim] = 1;
+        let mut shape = bs; shape.remove(dim);
         dims[0] = shape.iter().product();
 
         let parts = parts.into_iter().map(|t| t.reshape(dims)).collect();

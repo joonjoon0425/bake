@@ -50,14 +50,14 @@ pub fn check_unsqueeze(mut shape: Vec<usize>, dim: isize) -> Result<(Vec<usize>,
 /// # Return
 /// - if cat_batch is valid, returns the catenated shape and resolved dimension
 /// - if not, returns error
-pub fn check_cat_batch<B: BatchOps>(bs: Vec<Vec<usize>>, dim: isize, dat: &Vec<B>) -> Result<(Vec<usize>, usize), String> {
+pub fn check_cat_batch<B: BatchOps>(bs: &[Vec<usize>], dim: isize, dat: &Vec<B>) -> Result<(Vec<usize>, usize), String> {
     if dat.is_empty() { Err("given dat vector is empty".to_string()) }
     else if dat.len() != bs.len() { Err("the number of batch shapes and dat vector does not matches".to_string()) }
     else {
         let dim = resolve_negative_index(bs[0].len(), dim)?;
         if check_batch_dim_except(&bs, dim) {
             let mut bs_res = bs[0].clone();
-            let bs_dim = bs.into_iter().map(|bs| bs[dim]).sum::<usize>();
+            let bs_dim = bs.iter().map(|bs| bs[dim]).sum::<usize>();
             bs_res[dim] = bs_dim;
             Ok((bs_res, dim))
         } else {

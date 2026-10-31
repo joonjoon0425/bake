@@ -7,6 +7,8 @@ use burn::prelude::*;
 /// - for fixed ranks like `burn::Tensor`: regard the first dimension as flattened batch shapes
 /// - for dynamic ranks: the batch shape matches the elements of tensor shape up to the length of the batch shape 
 pub trait BatchOps : Sized + Clone {
+    /// checks if given batch shape is compatible
+    fn check_batch(&self, bs: &[usize]) -> bool;
     /// concatenate along given batch axis
     /// # Arguments
     /// - bs: batch shape of dat
