@@ -7,7 +7,7 @@ use crate::core::data::batch_ops::{
     helper::*,
 };
 
-trait AutodiffKind: Basic {
+trait AutodiffKind: Basic + 'static {
     fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self>;
 }
 impl AutodiffKind for Float { fn autodiff_t<const D: usize>(t: Tensor<D, Self>) -> Tensor<D, Self> { t.autodiff() } }

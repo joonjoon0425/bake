@@ -85,7 +85,7 @@ impl<T: BatchOps> Batch<T> {
             }).collect();
         let dat = dat.into_iter().map(|b| b.leaf).collect();
         let ret = T::cat_batch(&bs, 0, dat);
-        let bs = bs_after_stack(&bs).unwrap();
+        let (bs, _) = bs_after_cat(&bs, 0).unwrap();
         Self {
             bs,
             leaf: ret

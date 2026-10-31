@@ -6,7 +6,7 @@ use burn::prelude::*;
 /// - most of the operations will get the batch shape as input
 /// - for fixed ranks like `burn::Tensor`: regard the first dimension as flattened batch shapes
 /// - for dynamic ranks: the batch shape matches the elements of tensor shape up to the length of the batch shape 
-pub trait BatchOps : Sized + Clone {
+pub trait BatchOps : Sized + Clone + 'static {
     /// checks if given batch shape is compatible
     fn check_batch(&self, bs: &[usize]) -> bool;
     /// reshape

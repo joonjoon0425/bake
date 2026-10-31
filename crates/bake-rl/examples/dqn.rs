@@ -13,7 +13,7 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::lunar_lander().seed(10)
+        GymnasiumEnvironmentConfig::cart_pole().seed(10)
     ]).init(&device);
     
     let mut tape = Tape::new(env, false);
@@ -27,11 +27,11 @@ pub fn main() {
     let mut exploration = EpsGreedy::new(seed, 1.0f32);
     let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
 
-    let total_steps = 1000000;
+    let total_steps = 500000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
-    let batch_size = 512;
+    let batch_size = 128;
 
     // temporary, until the logger is implemented...
     let mut reward = 0f32;
@@ -42,7 +42,7 @@ pub fn main() {
     let mut step_vec = vec![];
 
 
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.5);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
@@ -84,7 +84,7 @@ pub fn main() {
 
     // evaluation
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human").seed(10) ,
+        GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10) ,
     ]).init(&device);
 
     let mut tape = Tape::new(env, false);

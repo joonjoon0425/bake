@@ -21,7 +21,7 @@ pub extern crate burn;
 
 /// prelude module
 pub mod prelude {
-    pub use bake_rl::core::data::{Dict, Transition, Batch, BatchOps};
+    pub use bake_rl::core::data::{key, BatchDict, Transition, Batch, BatchOps};
     pub use bake_rl::core::constraint::DiscreteConstraint;
     pub use bake_rl::core::env::{
         Tape, Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig,

@@ -8,6 +8,7 @@ pub mod batch;
 pub use batch::{
     Batch,
     transition::Transition,
-    dict::Dict,
+    dict::BatchDict,
+    dict::key,
 };
 pub use batch_ops::BatchOps;
