@@ -92,7 +92,7 @@ impl AdvantageEstimator {
         let mut advs = Vec::with_capacity(deltas.len());
         let mut next = Tensor::zeros([bs[1]], &device);
         
-        for (delta, cont) in deltas.into_iter().zip(conts.into_iter()) {
+        for (delta, cont) in deltas.into_iter().zip(conts.into_iter()).rev() {
             next = delta + gamma * lambda * cont * next;
             advs.push(next.clone());
         }

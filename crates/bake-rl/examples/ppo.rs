@@ -7,9 +7,12 @@ use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
 use burn::optim::*;
+use rand::SeedableRng;
+use rand::rngs::SmallRng;
 
 pub fn main() {
     let seed: u64 = 120;
+    let mut rng = SmallRng::seed_from_u64(seed);
     let device = Device::default();
     device.seed(seed);
 
@@ -19,23 +22,23 @@ pub fn main() {
             c_e: 0.02,
             c_c: 0.0, 
             eps: 0.2,
-            advantage: AdvantageEstimator::Gae { lambda: 0.96 },
+            advantage: AdvantageEstimator::Gae { lambda: 0.95 },
             loss_fn: LossFn::MseLoss,
         };
-    let env = SynchronizedVectorEnvironmentConfig::new(
-        vec![GymnasiumEnvironmentConfig::lunar_lander()]
-    ).init(&device);
+    let mut vec = vec![];
+    for _ in 0..16 { vec.push(GymnasiumEnvironmentConfig::lunar_lander()) }
+    let env = SynchronizedVectorEnvironmentConfig::new(vec).init(&device);
 
-    let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, 84, env.action_space().n()], ActivationConfig::Relu, &device);
+    let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;
     let mut opt_a = AdamConfig::new().init();
     let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = Tape::new(env, false);
+    let mut tape = Tape::new(env, true);
 
-    let total_steps = 1000000;
+    let total_steps = 100000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
         
     // temporary, until the logger is implemented...
@@ -53,27 +56,27 @@ pub fn main() {
         let mut t = tape.step(action.clone());
         t.insert(key::log_prob, dist.log_probs(action)).unwrap();
 
-        reward = reward + t.reward.clone().into_scalar::<f32>();
+        reward = reward + t.reward.clone().slice(0..1).into_scalar::<f32>();
         step += 1.;
 
         buffer.push(t);
 
-        if buffer.len() >= 2048 {
+        if buffer.len() >= 1024 {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.normalized_advantage(&ac, batch.clone(), state.gamma);
             batch.insert(key::adv, adv).unwrap(); batch.insert(key::ret, ret).unwrap();
             for _ in 0..4 {
-                for minibatch in batch.minibatch(0, 128, seed, &device) {
+                for minibatch in batch.minibatch(0, 128, &mut rng, &device) {
                     let (net, loss) = ppo_loss(&state, ac, minibatch);
                     ac = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }
             }
         }
 
-        if tape.done().clone().into_scalar() {
+        if tape.done().clone().any().into_scalar() {
             reward_vec.push(reward);
             step_vec.push(step);
-            tape.reset(None);
+            tape.reset(Some(tape.done().clone()));
             reward = 0.;
             step = 0.;
         }
