@@ -51,13 +51,18 @@ impl<T: BatchOps> Batch<T> {
             ..self
         }
     }
+
+    /// assign in-place
+    pub fn assign_inplace(&mut self, dim: isize, idx: usize, src: Self) {
+        self.leaf.assign_inplace_batch(&self.bs, dim, idx, src.leaf, &src.bs);
+    }
     
     /// concatenate along the given batch axis;
     pub fn cat(dim: isize, dat: Vec<Self>) -> Self {
         assert!(!dat.is_empty(), "tried to cat empty data");
-        let bs = dat.iter().map(|d| d.bs.clone()).collect();
+        let bs: Vec<Vec<usize>> = dat.iter().map(|d| d.bs.clone()).collect();
         let dat = dat.into_iter().map(|b| b.leaf).collect();
-        let (ret, bs) = T::cat_batch(bs, dim, dat);
+        let (ret, bs) = T::cat_batch(&bs, dim, dat);
         Self {
             bs,
             leaf: ret
@@ -67,14 +72,14 @@ impl<T: BatchOps> Batch<T> {
     /// stack the elements, creating a new batch axis;
     pub fn stack(dat: Vec<Self>) -> Self {
         assert!(!dat.is_empty(), "tried to cat empty data");
-        let bs = dat.iter().map(
+        let bs: Vec<Vec<usize>> = dat.iter().map(
             |d| {
                 let mut bs = d.bs.clone();
                 bs.insert(0, 1);
                 bs
             }).collect();
         let dat = dat.into_iter().map(|b| b.leaf).collect();
-        let (ret, bs) = T::cat_batch(bs, 0, dat);
+        let (ret, bs) = T::cat_batch(&bs, 0, dat);
         Self {
             bs,
             leaf: ret
@@ -85,7 +90,7 @@ impl<T: BatchOps> Batch<T> {
     pub fn unbind(self, dim: isize) -> Vec<Self> {
         let bs = self.bs;
         let dat = self.leaf;
-        let (unbinded, bs) = dat.unbind_batch(bs, dim);
+        let (unbinded, bs) = dat.unbind_batch(&bs, dim);
         unbinded.into_iter().map(|u| Self {
             bs: bs.clone(),
             leaf: u
@@ -96,7 +101,7 @@ impl<T: BatchOps> Batch<T> {
     pub fn slice(self, dim: isize, range: std::ops::Range<usize>) -> Self {
         let bs = self.bs;
         let dat = self.leaf;
-        let (sliced, bs) = dat.slice_batch(bs, dim, range);
+        let (sliced, bs) = dat.slice_batch(&bs, dim, range);
         Self {
             bs,
             leaf: sliced
@@ -107,7 +112,7 @@ impl<T: BatchOps> Batch<T> {
     pub fn select(self, dim: isize, idx: Tensor<1, Int>) -> Self {
         let bs = self.bs;
         let dat = self.leaf;
-        let (selected, bs) = dat.select_batch(bs, dim, idx);
+        let (selected, bs) = dat.select_batch(&bs, dim, idx);
         Self {
             bs,
             leaf: selected
@@ -118,7 +123,7 @@ impl<T: BatchOps> Batch<T> {
     pub fn zeros_like(dim: isize, capacity: usize, data: &Self) -> Self {
         let bs = data.bs.clone();
         let data_leaf = &data.leaf;
-        let (z, bs) = T::zeros_like_batch(bs, dim, capacity, data_leaf);
+        let (z, bs) = T::zeros_like_batch(&bs, dim, capacity, data_leaf);
         Self {
             bs,
             leaf: z
@@ -128,8 +133,9 @@ impl<T: BatchOps> Batch<T> {
 
 /// of course, Batch is also Batchable...
 impl<T: BatchOps> BatchOps for Batch<T> {
-    fn assign_inplace(&mut self, src: Self, idx: usize) {
-        self.leaf.assign_inplace(src.leaf, idx);
+    fn assign_inplace_batch(&mut self, bs: &[usize], dim: isize, idx: usize, src: Self, src_bs: &[usize]) {
+        assert!(bs == self.bs && src_bs == src.bs, "given batch shapes do not equal the batch shapes of self/src");
+        self.leaf.assign_inplace_batch(bs, dim, idx, src.leaf, src_bs);
     }
 
     fn autodiff(self) -> Self {
@@ -139,7 +145,7 @@ impl<T: BatchOps> BatchOps for Batch<T> {
         }
     }
 
-    fn cat_batch(bs: Vec<Vec<usize>>, dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>) {
+    fn cat_batch(bs: &[Vec<usize>], dim: isize, dat: Vec<Self>) -> (Self, Vec<usize>) {
         let check = bs.into_iter().zip(dat.iter()).all(|(b, d)| {
             if b != d.bs() {
                 false
@@ -157,28 +163,28 @@ impl<T: BatchOps> BatchOps for Batch<T> {
         self.bs == bs
     }
 
-    fn select_batch(self, bs: Vec<usize>, dim: isize, idx: Tensor<1, Int>) -> (Self, Vec<usize>) {
+    fn select_batch(self, bs: &[usize], dim: isize, idx: Tensor<1, Int>) -> (Self, Vec<usize>) {
         assert!(bs == self.bs, "given batch shape does not equals the batch shape of self");
         let ret  = self.select(dim, idx);
         let bs = ret.bs.clone();
         (ret, bs)
     }
 
-    fn slice_batch(self, bs: Vec<usize>, dim: isize, range: std::ops::Range<usize>) -> (Self, Vec<usize>) {
+    fn slice_batch(self, bs: &[usize], dim: isize, range: std::ops::Range<usize>) -> (Self, Vec<usize>) {
         assert!(bs == self.bs, "given batch shape does not equals the batch shape of self");
         let ret  = self.slice(dim, range);
         let bs = ret.bs.clone();
         (ret, bs)
     }
 
-    fn unbind_batch(self, bs: Vec<usize>, dim: isize) -> (Vec<Self>, Vec<usize>) {
+    fn unbind_batch(self, bs: &[usize], dim: isize) -> (Vec<Self>, Vec<usize>) {
         assert!(bs == self.bs, "given batch shape does not equals the batch shape of self");
         let ret  = self.unbind(dim);
         let bs = ret[0].bs.clone();
         (ret, bs)
     }
 
-    fn zeros_like_batch(bs: Vec<usize>, dim: isize, capacity: usize, src: &Self) -> (Self, Vec<usize>) {
+    fn zeros_like_batch(bs: &[usize], dim: isize, capacity: usize, src: &Self) -> (Self, Vec<usize>) {
         assert!(bs == src.bs(), "given batch shape does not equals the batch shape of src");
         let ret = Self::zeros_like(dim, capacity, src);
         let bs = ret.bs.clone();
