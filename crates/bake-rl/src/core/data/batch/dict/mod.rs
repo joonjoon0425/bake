@@ -1,6 +1,6 @@
 //! dictionary typed BatchOps leaf
 use std::{any::Any, borrow::Cow, collections::BTreeMap, marker::PhantomData};
-use crate::core::data::{Batch, BatchOps};
+use crate::core::data::{Batch, BatchOps, batch_ops::helper::*};
 
 /// Dictionary which can hold `BatchOps` implements;
 /// - It can use two types of keys; string key and struct key
@@ -65,8 +65,8 @@ impl Dict {
     /// insert new item, with given string key
     /// # Returns
     /// - the previously saved value if it existed
-    fn insert<T: BatchOps>(&mut self, key: Cow<'static, str>, value: T) -> Option<DictLeaf> {
-        self.map.insert(key, DictLeaf {
+    fn insert<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Option<DictLeaf> {
+        self.map.insert(key.into(), DictLeaf {
             vtable: BatchOpsVTable::new::<T>(),
             value: Box::new(value)
         })
@@ -81,7 +81,7 @@ impl Dict {
     }
 
     /// get an item, with given key struct
-    pub fn get<T: BatchOps>(&self, key: Key<T>) -> Result<&T, String> {
+    pub fn get<T: BatchOps>(&self, key: &Key<T>) -> Result<&T, String> {
         let leaf = self.map.get(&key.name)
             .ok_or_else(|| format!("key: `{}` not found. Existing key and each types are: \n{}", key.name, self.describe_keys()))?;
         leaf.value.downcast_ref::<T>()
@@ -90,20 +90,18 @@ impl Dict {
 
     /// remove an item, with given string key
     pub fn remove_str<T: BatchOps>(&mut self, key: &str) -> Result<T, String> {
-        let leaf = self.map.remove(key)
-            .ok_or_else(|| format!("key: `{}` not found. Existing key and each types are: \n{}", key, self.describe_keys()))?;
-        leaf.value.downcast::<T>()
-            .map(|v| *v)
-            .map_err(|_| format!("type mismatch: expected {}, got {}", std::any::type_name::<T>(), leaf.vtable.type_name))
+        // check here
+        self.get_str::<T>(key)?;
+        let leaf = self.map.remove(key).unwrap();
+        Ok(*leaf.value.downcast::<T>().unwrap())
     }
 
     /// remove an item, with given key struct
-    pub fn remove<T: BatchOps>(&mut self, key: Key<T>) -> Result<T, String> {
-        let leaf = self.map.remove(&key.name)
-            .ok_or_else(|| format!("key: `{}` not found. Existing key and each types are: \n{}", key.name, self.describe_keys()))?;
-        leaf.value.downcast::<T>()
-            .map(|v| *v)
-            .map_err(|_| format!("type mismatch: expected {}, got {}", std::any::type_name::<T>(), leaf.vtable.type_name))
+    pub fn remove<T: BatchOps>(&mut self, key: &Key<T>) -> Result<T, String> {
+        // check here
+        self.get(key)?;
+        let leaf = self.map.remove(&key.name).unwrap();
+        Ok(*leaf.value.downcast::<T>().unwrap())
     }
 
     /// describe the key and its types
@@ -117,6 +115,14 @@ impl Dict {
 }
 
 impl Batch<Dict> {
+    /// create new empty `BatchDict`, with given batch shape
+    pub fn batch_dict(bs: Vec<usize>) -> Self {
+        Self {
+            bs,
+            leaf: Dict::new()
+        }
+    }
+
     /// describe the key and its types
     pub fn describe_keys(&self) -> String {
         self.leaf.describe_keys()
@@ -125,7 +131,7 @@ impl Batch<Dict> {
     /// insert new item, with given string key
     /// # Returns
     /// - the previously saved value if it existed
-    pub fn insert_str<T: BatchOps>(&mut self, key: Cow<'static, str>, value: T) -> Result<Option<DictLeaf>, String> {
+    pub fn insert_str<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Result<Option<DictLeaf>, String> {
         value.check_batch(&self.bs).ok_or("batch shape does not matches")?;
         Ok(self.leaf.insert(key, value))
     }
@@ -133,9 +139,11 @@ impl Batch<Dict> {
     /// insert new item, with given key struct
     /// # Returns
     /// - the previously saved value if it existed
-    pub fn insert<T: BatchOps>(&mut self, key: Key<T>, value: T) -> Result<Option<DictLeaf>, String> {
-        value.check_batch(&self.bs).ok_or("batch shape does not matches")?;
-        Ok(self.leaf.insert(key.name, value))
+    pub fn insert<T: BatchOps>(&mut self, key: Key<T>, value: T) -> Result<Option<T>, String> {
+        if !value.check_batch(&self.bs) {
+            return Err("batch shape does not matches".into())   
+        }
+        Ok(self.leaf.insert(key.name, value).map(|v| *v.value.downcast::<T>().unwrap()))
     }
 
     /// change the value of given string key, using a given closure
@@ -152,8 +160,18 @@ impl Batch<Dict> {
         Ok(())
     }
 
+    /// remove an item, with given string key
+    pub fn remove_str<T: BatchOps>(&mut self, key: &str) -> Result<T, String> {
+        self.leaf.remove_str(key)
+    }
+
+    /// remove an item, with given struct key
+    pub fn remove<T: BatchOps>(&mut self, key: &Key<T>) -> Result<T, String> {
+        self.leaf.remove(key)
+    }
+
     /// change the value of given key struct, using a given closure
-    pub fn modify<T: BatchOps, F: FnOnce(&mut T)>(&mut self, key: Key<T>, f: F) -> Result<(), String> {
+    pub fn modify<T: BatchOps, F: FnOnce(&mut T)>(&mut self, key: &Key<T>, f: F) -> Result<(), String> {
         if !self.leaf.map.contains_key(&key.name) {
             return Err(format!("key: `{}` not found. Existing key and each types are: \n{}", key.name, self.describe_keys()));
         }
@@ -251,7 +269,8 @@ impl BatchOps for Dict {
     }
 
     fn unbind_batch(self, bs: &[usize], dim: isize) -> Vec<Self> {
-        let n = bs[0];
+        let (_, d) = bs_after_unbind(bs, dim).unwrap();
+        let n = bs[d];
         let mut split: BTreeMap<Cow<'static, str>, (Vec<Erased>, BatchOpsVTable)> = BTreeMap::new();
         for (s, leaf) in self.map {
             let v = (leaf.vtable.unbind_batch)(leaf.value, bs, dim);
@@ -281,11 +300,11 @@ impl BatchOps for Dict {
         Dict { map }
     }
 
-    fn reshape_batch(self, _bs: &[usize], _new_bs: &[usize]) -> Self {
+    fn reshape_batch(self, bs: &[usize], new_bs: &[usize]) -> Self {
         let mut map = BTreeMap::new();
         for (s, leaf) in self.map {
             map.insert(s, DictLeaf {
-                value: (leaf.vtable.reshape_batch)(leaf.value, _bs, _new_bs),
+                value: (leaf.vtable.reshape_batch)(leaf.value, bs, new_bs),
                 vtable: leaf.vtable
             });
         }

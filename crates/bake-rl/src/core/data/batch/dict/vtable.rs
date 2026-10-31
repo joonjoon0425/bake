@@ -27,7 +27,7 @@ fn check_batch_erased<T: BatchOps>(e: &Erased, bs: &[usize]) -> bool {
 }
 
 fn reshape_batch_erased<T: BatchOps>(e: Erased, bs: &[usize], new_bs: &[usize]) -> Erased {
-    Box::new(e.downcast::<T>().expect("Dict shape mismatch in reshape_batch")
+    Box::new(e.downcast::<T>().expect("Dict type mismatch in reshape_batch")
     .reshape_batch(bs, new_bs))
 }
 

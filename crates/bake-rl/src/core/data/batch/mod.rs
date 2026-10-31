@@ -204,6 +204,7 @@ impl<T: BatchOps> BatchOps for Batch<T> {
 
 pub mod transition;
 pub mod dict;
+mod ops;
 
 #[cfg(test)]
 mod tests {

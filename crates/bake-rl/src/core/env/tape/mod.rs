@@ -58,6 +58,9 @@ impl<E: VectorEnvironment> Tape<E> {
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);
         let done = terminated.clone().bool_or(truncated.clone());
+        
+        let bs = vec![self.env.n_envs()];
+
         self.done = done.clone();
         self.info = info;
         let batch = Transition {
@@ -70,7 +73,8 @@ impl<E: VectorEnvironment> Tape<E> {
             next_constraint: self.constraint.clone(),
 
             terminated,
-            truncated
+            truncated,
+            extra: crate::core::data::BatchDict::batch_dict(bs.clone())
         };
         
         if self.autoreset {
@@ -80,7 +84,7 @@ impl<E: VectorEnvironment> Tape<E> {
             }
         };
 
-        Batch::new(batch, vec![self.env.n_envs()])
+        Batch::new(batch, bs)
     }
     /// returns the mask, which is true if the environment has terminated or truncated
     pub fn done(&self) -> &Tensor<1, Bool> {
