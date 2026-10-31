@@ -65,5 +65,6 @@ pub trait BatchOps : Sized + Clone {
     fn autodiff(self) -> Self;
 }
 
+pub mod empty;
 pub mod helper;
 pub mod tensor;

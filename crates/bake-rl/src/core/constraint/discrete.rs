@@ -41,3 +41,20 @@ impl DiscreteConstraint for Tensor<2, Bool> {
     }
 }
 
+impl DiscreteConstraint for () {
+    fn apply(self, values: Tensor<2>, _fill_value: f32) -> Tensor<2> {
+        values
+    }
+
+    fn is_possible(&self, action: Tensor<1, Int>) -> Tensor<1, Bool> {
+        Tensor::from_bool(vec![true; action.dims()[0]].as_slice(), &action.device() )
+    }
+
+    fn mean_dim(self, values: Tensor<2>) -> Tensor<1> {
+        values.mean_dim(1).squeeze_dim(1)
+    }
+
+    fn n_possible_actions(&self) -> Option<Tensor<1, Int>> {
+        None
+    }
+}

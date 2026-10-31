@@ -10,19 +10,16 @@ pub(crate) fn dueling(func_name: &Ident, generics: &Generics, self_ty: &Type, ou
     // dueling output check
     let dueling_out = quote_spanned! {
         out_span =>
-        let __out: (::bake_rl::core::data::BatchTensor<1>, ::bake_rl::core::data::BatchTensor<2>) = Self::#func_name(self, obs);
+        let __out: (::bake_rl::burn::prelude::Tensor<1>, ::bake_rl::burn::prelude::Tensor<2>) = Self::#func_name(self, obs);
     };
     quote! {
         impl #impl_generics ::bake_rl::deep::contract::DiscreteActionValue for #self_ty #where_clause {
-            fn action_values<C: ::bake_rl::core::constraint::discrete::DiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_rl::core::data::BatchTensor<2> {
+            fn action_values<C: ::bake_rl::core::constraint::discrete::DiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_rl::burn::prelude::Tensor<2> {
                 #dueling_out
                 let (value, advantage) = __out;
                 let mean = constraint.clone().mean_dim(advantage.clone());
-                let (value, bs) = ::bake_rl::core::data::DetachBatchDim::detach_batch_dim(value);
-                let mean = ::bake_rl::core::data::DetachBatchDim::detach_batch_dim(mean).0;
-                let advantage = ::bake_rl::core::data::DetachBatchDim::detach_batch_dim(advantage).0;
 
-                constraint.apply(::bake_rl::core::data::DetachBatchDim::attach_batch_dim(value.unsqueeze_dim(1) + advantage - mean.unsqueeze_dim(1), bs), -1e9)
+                constraint.apply(value.unsqueeze_dim(1) + advantage - mean.unsqueeze_dim(1), -1e9)
             }
         }
     }
@@ -33,11 +30,11 @@ pub(crate) fn plain(func_name: &Ident, generics: &Generics, self_ty: &Type, out_
     // dueling output check
     let plain_out = quote_spanned! {
         out_span =>
-        let __out: ::bake_rl::core::data::BatchTensor<2> = Self::#func_name(self, obs);
+        let __out: ::bake_rl::burn::prelude::Tensor<2> = Self::#func_name(self, obs);
     };
     quote! {
         impl #impl_generics ::bake_rl::deep::contract::DiscreteActionValue for #self_ty #where_clause {
-            fn action_values<C: ::bake_rl::core::constraint::discrete::DiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_rl::core::data::BatchTensor<2> {
+            fn action_values<C: ::bake_rl::core::constraint::discrete::DiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_rl::burn::prelude::Tensor<2> {
                 #plain_out
                 let action_values = __out;
                 constraint.apply(action_values, -1e9)

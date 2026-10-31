@@ -2,7 +2,7 @@
 use std::marker::PhantomData;
 
 use pyo3::{prelude::*, types::PyDict};
-use crate::{core::{constraint::Unconstrained, env::{Environment, EnvironmentConfig}}, env::gym::GymSpace};
+use crate::{core::{env::{Environment, EnvironmentConfig}}, env::gym::GymSpace};
 use burn::prelude::*;
 /// A struct for all gymnasium environments
 pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
@@ -16,7 +16,7 @@ pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
 impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnvironment<ObsSpace, ActionSpace> {
     type ObsSpace = ObsSpace;
     type ActionSpace = ActionSpace;
-    type Constraint = Unconstrained;
+    type Constraint = ();
     type Reward = Tensor<1>;
     type Info = ();
 
@@ -39,7 +39,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
             let (obs, _): (Bound<'_, PyAny>, Bound<'_, PyAny>) = tuple.extract().unwrap();
 
             let obs = self.obs_space.from_py(&obs).unwrap();
-            ((obs, Unconstrained), ())
+            ((obs, ()), ())
         });
     }
 
@@ -51,7 +51,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
             let (obs, reward, terminate, truncate, _) : (Bound<'_, PyAny>, f32, bool, bool, Bound<'_, PyAny>) = tuple.extract().unwrap();
             let obs = self.obs_space.from_py(&obs).unwrap();
             let reward = Tensor::from_floats([reward], &self.device);
-            ((obs, Unconstrained), reward, terminate, truncate, ())
+            ((obs, ()), reward, terminate, truncate, ())
         });
     }
 }

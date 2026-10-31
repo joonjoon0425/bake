@@ -1,5 +1,7 @@
 //! containers with batch dimension
 
+use std::ops::Deref;
+
 use burn::prelude::*;
 use crate::core::data::batch_ops::{BatchOps, helper::*};
 
@@ -8,6 +10,14 @@ use crate::core::data::batch_ops::{BatchOps, helper::*};
 pub struct Batch<T: BatchOps> {
     leaf: T,
     bs: Vec<usize>,
+}
+
+impl<T: BatchOps> Deref for Batch<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.leaf
+    }
 }
 
 impl<T: BatchOps> Batch<T> {

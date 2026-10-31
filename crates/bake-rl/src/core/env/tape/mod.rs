@@ -1,7 +1,7 @@
 //! The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
 //! - Especially useful for vector environments
 //! 
-use crate::core::{data::{Transition, BatchOps}, env::{VectorEnvironment, space::Space}};
+use crate::core::{data::{Transition, Batch}, env::{VectorEnvironment, space::Space}};
 use burn::prelude::*;
 /// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
 /// - Especially useful for vector environments
@@ -53,7 +53,7 @@ impl<E: VectorEnvironment> Tape<E> {
     }
     /// take one step and returns the transition and info
     /// - if `autoreset = true`, during the `step`, terminated or truncated environments are automatically reset
-    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> Transition<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward> {
+    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> Batch<Transition<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward>> {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);
@@ -80,7 +80,7 @@ impl<E: VectorEnvironment> Tape<E> {
             }
         };
 
-        batch
+        Batch::new(batch, vec![self.env.n_envs()])
     }
     /// returns the mask, which is true if the environment has terminated or truncated
     pub fn done(&self) -> &Tensor<1, Bool> {

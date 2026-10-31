@@ -49,7 +49,7 @@ pub fn main() {
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
         let batch = tape.step(action);
         
-        reward = reward + batch.reward.clone().detach_batch_dim().0.into_scalar::<f32>();
+        reward = reward + batch.reward.clone().into_scalar::<f32>();
         step += 1.;
 
         buffer.push(batch);
@@ -121,13 +121,12 @@ impl TestNet {
         }
     }
 
-    pub fn forward(&self, obs: BatchTensor<2>) -> BatchTensor<2> {
-        let (mut obs, bs) = obs.detach_batch_dim();
+    pub fn forward(&self, mut obs: Tensor<2>) -> Tensor<2> {
         let n = self.linear.len();
         for i in 0..(n - 1) {
             obs = self.activation.forward(self.linear[i].forward(obs));
         }
         obs = self.linear[n - 1].forward(obs);
-        obs.attach_batch_dim(bs)
+        obs
     }
 }
