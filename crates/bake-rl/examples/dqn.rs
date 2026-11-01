@@ -28,7 +28,7 @@ pub fn main() {
     let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();
         
-    let mut exploration = EpsGreedy::new(seed, 1.0f32);
+    let mut exploration = EpsGreedy::new(1.0f32);
     let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
 
     let total_steps = 500000;
@@ -41,7 +41,7 @@ pub fn main() {
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
-        let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
+        let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
         let (batch, info) = tape.step(action);
 
         buffer.push(batch);
@@ -77,7 +77,7 @@ pub fn main() {
     let mut eval = Greedy;
     for _ in 0..5 {
         loop {
-            let action = eval.sample(&online, tape.obs.clone(), tape.constraint.clone());
+            let action = online.action(&mut eval, tape.obs.clone(), tape.constraint.clone());
             tape.step(action);
             if tape.done().clone().into_scalar() {
                 tape.reset(None);

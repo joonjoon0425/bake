@@ -2,24 +2,19 @@
 //!
 use crate::core::{constraint::discrete::DiscreteConstraint};
 use burn::{Tensor, tensor::{Distribution, Int}};
-use rand::{RngExt, SeedableRng, rngs::SmallRng};
-
-use crate::deep::contract::DiscreteActionValue;
 use super::Exploration;
 
 /// An epsilon-greedy policy implementation
 pub struct EpsGreedy {
     eps: f32,
-    rng: SmallRng,
 }
 
 impl EpsGreedy {
     /// Create a new `EpsGreedy` policy. The epsilon is the probability of choosing action randomly
-    pub fn new(seed: u64, eps: f32) -> Self {
+    pub fn new(eps: f32) -> Self {
         if eps < 0.0 || eps > 1.0 { panic!("the eps must be between 0.0 and 1.0. Current eps is {}", eps) }
         Self {
             eps,
-            rng: SmallRng::seed_from_u64(seed)
         }
     }
 
@@ -31,15 +26,11 @@ impl EpsGreedy {
 }
 
 impl Exploration for EpsGreedy {
-    /// sample an action from given Q values.
-    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
-        let qvalues= qfunc.action_values(obs, constraint.clone());
-        if self.rng.random_range(0.0..1.0) < self.eps {
-            let random = Tensor::random_like(&qvalues, Distribution::Default);
-            let masked = constraint.apply(random, -1f32);
-            masked.argmax(1).squeeze_dim(1)
-        } else {
-            qvalues.argmax(1).squeeze_dim(1)
-        }
+    fn sample<C: DiscreteConstraint>(&mut self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int> {
+        let n = qvalues.dims()[0];
+        let r = Tensor::<1>::random([n], Distribution::Uniform(0., 1.), &qvalues.device()).lower_elem(self.eps);
+        let random_a = constraint.clone().apply(Tensor::random_like(&qvalues, Distribution::Default), -1e9).argmax(1).squeeze_dim(1);
+        let qvalues = constraint.apply(qvalues, -1e9).argmax(1).squeeze_dim(1);
+        qvalues.mask_where(r, random_a)
     }
 }

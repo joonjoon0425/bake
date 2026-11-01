@@ -1,11 +1,9 @@
 //! exploration traits and implementations
-use crate::core::constraint::discrete::DiscreteConstraint;
-use crate::deep::contract::DiscreteActionValue;
 use burn::prelude::*;
 /// A trait which all exploration strategies must implement
 pub trait Exploration {
-    /// sample an action using given q-function, observation and constraint
-    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int>;
+    /// sample an action using given discrete action values, with given constraint
+    fn sample<C: DiscreteConstraint>(&mut self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int>;
 }
 
 pub mod greedy;
@@ -16,3 +14,5 @@ pub use eps_greedy::EpsGreedy;
 
 pub mod boltzmann;
 pub use boltzmann::Boltzmann;
+
+use crate::core::constraint::DiscreteConstraint;

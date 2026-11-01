@@ -1,10 +1,8 @@
 //! boltzmann exploration
 //! 
-
-use crate::core::{constraint::discrete::DiscreteConstraint};
 use burn::{prelude::*, tensor::activation::softmax};
+use crate::core::constraint::DiscreteConstraint;
 
-use crate::deep::contract::DiscreteActionValue;
 use super::Exploration;
 
 /// Boltzmann (softmax) policy implementation
@@ -29,9 +27,9 @@ impl Boltzmann {
 }
 
 impl Exploration for Boltzmann {
-    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
-        let value = qfunc.action_values(obs, constraint);
-        let probs = softmax(value / self.temp, 1);
+    fn sample<C: DiscreteConstraint>(&mut self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int> {
+        let qvalues = constraint.apply(qvalues, -1e9);
+        let probs = softmax(qvalues / self.temp, 1);
         let actions = probs.categorical(1).squeeze_dim(1);
         actions
     }

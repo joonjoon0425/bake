@@ -1,16 +1,15 @@
 //! greedy policy implementation
-use crate::core::{constraint::discrete::DiscreteConstraint};
 use burn::prelude::*;
+use crate::core::constraint::DiscreteConstraint;
 
-use crate::deep::contract::DiscreteActionValue;
 use super::Exploration;
 
 /// A greedy policy implementation
 pub struct Greedy;
 
 impl Exploration for Greedy {
-    fn sample<Q: DiscreteActionValue>(&mut self, qfunc: &Q, obs: Q::Obs, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
-        let qvalues = qfunc.action_values(obs, constraint);
+    fn sample<C: DiscreteConstraint>(&mut self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int> {
+        let qvalues = constraint.apply(qvalues, -1e9);
         qvalues.argmax(1).squeeze_dim(1)
     }
 }

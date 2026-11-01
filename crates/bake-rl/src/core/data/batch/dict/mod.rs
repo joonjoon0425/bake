@@ -132,8 +132,11 @@ impl Batch<Dict> {
     /// # Returns
     /// - the previously saved value if it existed
     pub fn insert_str<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Result<Option<DictLeaf>, String> {
-        value.check_batch(&self.bs).ok_or("batch shape does not matches")?;
-        Ok(self.leaf.insert(key, value))
+        if !value.check_batch(&self.bs) {
+            Err("batch shape does not matches".into())
+        } else {
+            Ok(self.leaf.insert(key, value))
+        }
     }
 
     /// insert new item, with given key struct

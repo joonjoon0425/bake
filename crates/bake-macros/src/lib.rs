@@ -21,7 +21,7 @@ pub fn derive_batch_ops(input: TokenStream) -> TokenStream {
         .into()
 }
 
-/// This macro implements following traits;
+/// This macro implements following traits and functions;
 /// - `Network`
 /// - `DiscreteActionValue`
 /// # Field Arguments
