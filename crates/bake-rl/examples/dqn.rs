@@ -1,3 +1,4 @@
+use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::prelude::*;
 use bake_rl::deep::prelude::*;
@@ -15,8 +16,9 @@ pub fn main() {
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
         GymnasiumEnvironmentConfig::cart_pole().seed(10)
     ]).init(&device);
+    let env = RecordEpisodeStatistics::new(env);
     
-    let mut tape = Tape::new(env, false);
+    let mut tape = Tape::new(env, true);
 
     let state = DQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = TestNet::new(vec![tape.obs_space().shape()[1], 128, 84, tape.action_space().n()], ActivationConfig::Relu, &device);
@@ -33,24 +35,12 @@ pub fn main() {
     let sync_freq = 500;
     let batch_size = 128;
 
-    // temporary, until the logger is implemented...
-    let mut reward = 0f32;
-    let mut step = 0f32;
-    
-    // temporary, until the logger is implemented...
-    let mut reward_vec = vec![];
-    let mut step_vec = vec![];
-
-
     let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
         let action = exploration.sample(&online, tape.obs.clone(), tape.constraint.clone());
-        let batch = tape.step(action);
-        
-        reward = reward + batch.reward.clone().into_scalar::<f32>();
-        step += 1.;
+        let (batch, info) = tape.step(action);
 
         buffer.push(batch);
 
@@ -64,18 +54,12 @@ pub fn main() {
             target = online.clone();
         }
 
-        if tape.done().clone().into_scalar() {
-            reward_vec.push(reward);
-            step_vec.push(step);
-            tape.reset(None);
-            reward = 0.;
-            step = 0.;
-        }
-
-        if count % 5000 == 0 {
-            let avg_reward = reward_vec.iter().rev().take(100).sum::<f32>() / 100.;
-            let avg_step = step_vec.iter().rev().take(100).sum::<f32>() / 100.;
-            println!("{count},{avg_reward},{avg_step},{}", exploration.eps());
+        if count % 1 == 0 {
+            let (_, stats) = info;
+            // just show naively
+            for stat in stats {
+                println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
+            }
         }
 
         *exploration.eps_mut() = eps_sch.step() as f32;

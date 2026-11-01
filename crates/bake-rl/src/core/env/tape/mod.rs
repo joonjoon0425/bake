@@ -52,8 +52,10 @@ impl<E: VectorEnvironment> Tape<E> {
         self.info = info;
     }
     /// take one step and returns the transition and info
-    /// - if `autoreset = true`, during the `step`, terminated or truncated environments are automatically reset
-    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> Batch<Transition<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward>> {
+    /// - if `autoreset = true`
+    ///     - during the `step`, terminated or truncated environments are automatically reset
+    ///     - the returned `info` is the information before being automatically reset; if you read `info` from directly like `tape.info`, you will get the reset-info
+    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> (Batch<Transition<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward>>, E::Info) {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);
@@ -62,7 +64,7 @@ impl<E: VectorEnvironment> Tape<E> {
         let bs = vec![self.env.n_envs()];
 
         self.done = done.clone();
-        self.info = info;
+        self.info = info.clone();
         let batch = Transition {
             obs,
             action,
@@ -78,13 +80,13 @@ impl<E: VectorEnvironment> Tape<E> {
         };
         
         if self.autoreset {
-            // later, change this so that the synchronized vector environment holds an alredy-batched observation and constraints
+            // later, change this so that the synchronized vector environment holds an already-batched observation and constraints
             if done.clone().any().into_scalar::<bool>() {
                 self.reset(Some(done))
             }
         };
 
-        Batch::new(batch, bs)
+        (Batch::new(batch, bs), info)
     }
     /// returns the mask, which is true if the environment has terminated or truncated
     pub fn done(&self) -> &Tensor<1, Bool> {

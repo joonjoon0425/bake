@@ -1,5 +1,5 @@
 use bake_rl::core::distribution::Categorical;
-use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironmentConfig;
+use bake_rl::core::env::wrapper::{sync_env::SynchronizedVectorEnvironmentConfig, record_episode_statistics::RecordEpisodeStatistics};
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::prelude::*;
 use bake_rl::deep::prelude::*;
@@ -26,8 +26,8 @@ pub fn main() {
             loss_fn: LossFn::MseLoss,
         };
     let mut vec = vec![];
-    for _ in 0..16 { vec.push(GymnasiumEnvironmentConfig::lunar_lander()) }
-    let env = SynchronizedVectorEnvironmentConfig::new(vec).init(&device);
+    for _ in 0..16 { vec.push(GymnasiumEnvironmentConfig::cart_pole()) }
+    let env = RecordEpisodeStatistics::new(SynchronizedVectorEnvironmentConfig::new(vec).init(&device));
 
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
@@ -40,24 +40,12 @@ pub fn main() {
 
     let total_steps = 100000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
-        
-    // temporary, until the logger is implemented...
-    let mut reward = 0f32;
-    let mut step = 0f32;
-    
-    // temporary, until the logger is implemented...
-    let mut reward_vec = vec![];
-    let mut step_vec = vec![];
-
 
     for count in 0..total_steps {
         let dist = ac.dist(tape.obs.clone(), tape.constraint.clone());
         let action = dist.sample();
-        let mut t = tape.step(action.clone());
+        let (mut t, info) = tape.step(action.clone());
         t.insert(key::log_prob, dist.log_probs(action)).unwrap();
-
-        reward = reward + t.reward.clone().slice(0..1).into_scalar::<f32>();
-        step += 1.;
 
         buffer.push(t);
 
@@ -74,25 +62,21 @@ pub fn main() {
             }
         }
 
-        if tape.done().clone().any().into_scalar() {
-            reward_vec.push(reward);
-            step_vec.push(step);
-            tape.reset(Some(tape.done().clone()));
-            reward = 0.;
-            step = 0.;
-        }
-
-        if count % 5000 == 0 {
-            let avg_reward = reward_vec.iter().rev().take(100).sum::<f32>() / 100.;
-            let avg_step = step_vec.iter().rev().take(100).sum::<f32>() / 100.;
-            println!("{count},{avg_reward},{avg_step}");
+        if count % 1 == 0 {
+            let (_, stats) = info;
+            // just show naively
+            for stat in stats {
+                if stat.id == 0 {
+                    println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
+                }
+            }
         }
 
         state.c_e = c_e_sch.step() as f32;
     }
 
     let env = SynchronizedVectorEnvironmentConfig::new(
-        vec![GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human")]
+        vec![GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human")]
     ).init(&device);
 
     let mut tape = Tape::new(env, false);
