@@ -4,6 +4,13 @@ use crate::core::data::{Batch, BatchOps, batch_ops::helper::resolve_dim};
 
 impl<T: BatchOps> Batch<T> {
     /// create minibatch
+    /// # Arguments
+    /// - dim: the batch axis which the minibatch will be chosen
+    /// - size: size of each minibatch; if it does not divide the total number of minibatches, it does not drop out the last, shorter elements
+    /// - rng: random device
+    /// - device: device of tensor
+    /// # Returns
+    /// - minibatch iterator
     pub fn minibatch<'a>(&'a self, dim: isize, size: usize, rng: &mut SmallRng, device: &Device) -> impl Iterator<Item = Batch<T>> + 'a {
         let d = resolve_dim(self.bs().len(), dim).unwrap();
         let n = self.bs()[d];

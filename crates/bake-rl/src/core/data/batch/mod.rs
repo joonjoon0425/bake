@@ -44,6 +44,12 @@ impl<T: BatchOps> Batch<T> {
             leaf
         }
     }
+    
+    /// flatten the batch shape
+    pub fn flatten(self) -> Self {
+        let bs = vec![self.bs.clone().iter().product()];
+        self.reshape(bs)
+    }
 
     /// unsqueeze batch shape
     pub fn unsqueeze(self, dim: isize) -> Self {

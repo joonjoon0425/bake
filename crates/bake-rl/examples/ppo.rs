@@ -65,6 +65,7 @@ pub fn main() {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.normalized_advantage(&ac, batch.clone(), state.gamma);
             batch.insert(key::adv, adv).unwrap(); batch.insert(key::ret, ret).unwrap();
+            let batch = batch.flatten();
             for _ in 0..4 {
                 for minibatch in batch.minibatch(0, 128, &mut rng, &device) {
                     let (net, loss) = ppo_loss(&state, ac, minibatch);
