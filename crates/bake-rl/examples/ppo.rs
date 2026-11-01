@@ -26,7 +26,7 @@ pub fn main() {
             loss_fn: LossFn::MseLoss,
         };
     let mut vec = vec![];
-    for _ in 0..16 { vec.push(GymnasiumEnvironmentConfig::cart_pole()) }
+    for _ in 0..16 { vec.push(GymnasiumEnvironmentConfig::lunar_lander()) }
     let env = RecordEpisodeStatistics::new(SynchronizedVectorEnvironmentConfig::new(vec).init(&device));
 
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
@@ -76,7 +76,7 @@ pub fn main() {
     }
 
     let env = SynchronizedVectorEnvironmentConfig::new(
-        vec![GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human")]
+        vec![GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human")]
     ).init(&device);
 
     let mut tape = Tape::new(env, false);

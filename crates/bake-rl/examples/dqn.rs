@@ -1,3 +1,4 @@
+use bake_rl::core::env::wrapper::one_hot::OneHotObservation;
 use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::prelude::*;
@@ -14,8 +15,9 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::cart_pole().seed(10)
+        GymnasiumEnvironmentConfig::taxi().seed(10)
     ]).init(&device);
+    let env = OneHotObservation::new(env);
     let env = RecordEpisodeStatistics::new(env);
     
     let mut tape = Tape::new(env, true);
@@ -67,9 +69,9 @@ pub fn main() {
     }
 
     // evaluation
-    let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10) ,
-    ]).init(&device);
+    let env = OneHotObservation::new(SynchronizedVectorEnvironmentConfig::new(vec![
+        GymnasiumEnvironmentConfig::taxi().kwarg("render_mode", "human").seed(10) ,
+    ]).init(&device));
 
     let mut tape = Tape::new(env, false);
     let mut eval = Greedy;
