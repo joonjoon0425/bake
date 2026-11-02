@@ -66,9 +66,7 @@ pub fn main() {
             let (_, stats) = info;
             // just show naively
             for stat in stats {
-                if stat.id == 0 {
-                    println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
-                }
+                println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
             }
         }
 

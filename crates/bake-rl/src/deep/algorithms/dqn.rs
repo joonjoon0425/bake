@@ -48,6 +48,7 @@ where
     let next_qvalues = target.action_values(batch.next_obs, batch.next_constraint);
     let targets = (batch.reward + state.gamma * next_qvalues.max_dim(1).squeeze_dim(1) * (1f32 - batch.terminated.float())).detach();
 
+    // compute logging metrics
     let td_error = (targets.clone() - qvalues.clone()).detach();
     let q_mean = qvalues.clone().detach().mean();
 

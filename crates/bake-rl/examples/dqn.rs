@@ -1,4 +1,3 @@
-use bake_rl::core::env::wrapper::one_hot::OneHotObservation;
 use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::prelude::*;
@@ -15,29 +14,28 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
     let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::taxi().seed(10)
+        GymnasiumEnvironmentConfig::mountain_car().seed(10)
     ]).init(&device);
-    let env = OneHotObservation::new(env);
     let env = RecordEpisodeStatistics::new(env);
     
     let mut tape = Tape::new(env, true);
 
     let state = DQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
-    let mut online = TestNet::new(vec![tape.obs_space().shape()[1], 128, 84, tape.action_space().n()], ActivationConfig::Relu, &device);
+    let mut online = TestNet::new(vec![tape.obs_space().shape()[1], 64, 64, tape.action_space().n()], ActivationConfig::Relu, &device);
     let mut target = online.clone();
-    let lr = 2.5e-4;
+    let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
         
     let mut exploration = EpsGreedy::new(1.0f32);
-    let mut buffer = ReplayBufferConfig::prioritized(seed, 50000, 0.6, 0.4).with_priority_clip(1.0).init();
+    let mut buffer = ReplayBufferConfig::prioritized(seed, 100000, 0.6, 0.4).with_priority_clip(1.0).init();
 
-    let total_steps = 500000;
+    let total_steps = 800000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
-    let batch_size = 128;
+    let batch_size = 256;
 
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.5);
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
@@ -69,9 +67,9 @@ pub fn main() {
     }
 
     // evaluation
-    let env = OneHotObservation::new(SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::taxi().kwarg("render_mode", "human").seed(10) ,
-    ]).init(&device));
+    let env = SynchronizedVectorEnvironmentConfig::new(vec![
+        GymnasiumEnvironmentConfig::mountain_car().kwarg("render_mode", "human").seed(10) ,
+    ]).init(&device);
 
     let mut tape = Tape::new(env, false);
     let mut eval = Greedy;

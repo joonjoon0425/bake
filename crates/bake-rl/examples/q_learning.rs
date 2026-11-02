@@ -12,7 +12,7 @@ pub fn main() {
     let seed= 12;
     let device = Device::default();
     device.seed(seed);
-    let env = SynchronizedVectorEnvironmentConfig::new(vec![GymnasiumEnvironmentConfig::cliff_walking().seed(seed)]).init(&device);
+    let env = SynchronizedVectorEnvironmentConfig::new(vec![GymnasiumEnvironmentConfig::taxi().seed(seed)]).init(&device);
     let env = RecordEpisodeStatistics::new(env);
     let state = QLearningState { gamma: 0.99, alpha: 0.4 };
     let mut q = QTable::new(env.obs_space().n(), env.action_space().n());
@@ -34,7 +34,7 @@ pub fn main() {
         *eg.eps_mut() = eps_sch.step() as f32;
     }
 
-    let env = SynchronizedVectorEnvironmentConfig::new(vec![GymnasiumEnvironmentConfig::cliff_walking().kwarg("render_mode", "human")]).init(&device);
+    let env = SynchronizedVectorEnvironmentConfig::new(vec![GymnasiumEnvironmentConfig::taxi().kwarg("render_mode", "human")]).init(&device);
     let mut tape = Tape::new(env, false);
     let mut g = Greedy;
     for _ in 0..5 {
