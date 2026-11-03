@@ -34,7 +34,12 @@ impl Loss for DQNLoss { fn loss(&self) -> Tensor<1> { self.loss.clone() } }
 /// # Warning
 /// - Here, the given `online` and `target` is moved to autodiff device
 /// - The `online` will be moved to inner device when `update` is called
-pub fn dqn_loss<Q, Constraint>(state: &DQNState, online: Q, target: &Q, batch: Batch<Transition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>, batch_info: SampleInfo) -> (Q, DQNLoss)
+pub fn dqn_loss<Q, Constraint>(
+    state: &DQNState,
+    online: Q,
+    target: &Q,
+    batch: Batch<Transition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>, batch_info: SampleInfo
+) -> (Q, DQNLoss)
 where
     Q: DiscreteActionValue,
     Constraint: DiscreteConstraint
