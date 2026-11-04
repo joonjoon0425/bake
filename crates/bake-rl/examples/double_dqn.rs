@@ -113,7 +113,7 @@ impl DuelingTestNet {
 
     pub fn forward(&self, mut obs: Tensor<2>) -> (Tensor<1>, Tensor<2>) {
         let n = self.linear.len();
-        for i in 0..(n - 1) {
+        for i in 0..n {
             obs = self.activation.forward(self.linear[i].forward(obs));
         }
         let val = self.val.forward(obs.clone()).squeeze_dim(1);
