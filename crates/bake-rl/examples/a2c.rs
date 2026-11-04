@@ -8,7 +8,11 @@ use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
 use burn::optim::*;
 
+use std::time::Instant;
+
 pub fn main() {
+    let s = Instant::now();
+
     let seed: u64 = 120;
     let device = Device::default();
     device.seed(seed);
@@ -22,10 +26,10 @@ pub fn main() {
             loss_fn: LossFn::MseLoss,
         };
     let mut vec = vec![];
-    for _ in 0..16 { vec.push(GymnasiumEnvironmentConfig::cart_pole()) }
+    for _ in 0..1 { vec.push(GymnasiumEnvironmentConfig::cart_pole()) }
     let env = RecordEpisodeStatistics::new(SynchronizedVectorEnvironmentConfig::new(vec).init(&device));
 
-    let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
+    let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;
     let mut opt_a = AdamConfig::new().init();
@@ -34,24 +38,22 @@ pub fn main() {
     let mut buffer = RolloutBuffer::new();
     let mut tape = Tape::new(env, true);
 
-    let total_steps = 250000;
+    let total_steps = 500000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
-        let dist = ac.dist(tape.obs.clone(), tape.constraint.clone());
-        let action = dist.sample();
-        let (mut t, info) = tape.step(action.clone());
-        t.insert(key::log_prob, dist.log_probs(action)).unwrap();
+        let action = ac.action(tape.obs.clone(), tape.constraint.clone());
+        let (t, info) = tape.step(action);
 
         buffer.push(t);
 
-        if buffer.len() >= 512 {
+        if buffer.len() >= 128 {
             let batch = buffer.pop();
             let (net, loss) = a2c_loss(&state, ac, batch);
             ac = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);
         }
 
-        if count % 1 == 0 {
+        if count % 7 == 0 {
             let (_, stats) = info;
             // just show naively
             for stat in stats {
@@ -61,6 +63,10 @@ pub fn main() {
 
         state.c_e = c_e_sch.step() as f32;
     }
+
+    let d = s.elapsed();
+
+    println!("It took {}s", d.as_secs());
 
     let env = SynchronizedVectorEnvironmentConfig::new(
         vec![GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human")]
