@@ -1,8 +1,8 @@
 //! A sampler which uses Priority (PER)
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
-use crate::core::buffer::sampler::{SampleInfo, Sampler, SamplerConfig};
-use crate::core::buffer::replay::lazy_storage::LazyStorage;
+use crate::deep::buffer::sampler::{SampleInfo, Sampler, SamplerConfig};
+use crate::deep::buffer::replay::lazy_storage::LazyStorage;
 use crate::core::data::{Batch, BatchOps, Transition};
 
 /// A sampler which uses Priority (PER)

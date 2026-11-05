@@ -1,5 +1,5 @@
 [package]
-name = "bake-macros"
+name = "bake-rl-macros"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

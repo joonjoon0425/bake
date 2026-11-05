@@ -1,7 +1,7 @@
 //! various samplers for buffer
 
 use crate::core::data::{Batch, BatchOps, Transition};
-use crate::core::buffer::replay::lazy_storage::LazyStorage;
+use crate::deep::buffer::replay::lazy_storage::LazyStorage;
 use burn::prelude::*;
 
 /// A `Sampler` trait which all samplers for buffers must implement

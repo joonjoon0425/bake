@@ -2,6 +2,7 @@
 //! 
 
 pub mod algorithms;
+pub mod buffer;
 pub mod contract;
 pub mod loss;
 pub mod network;
@@ -14,4 +15,9 @@ pub mod prelude {
     pub use crate::deep::contract::*;
     pub use crate::deep::loss::{LossFn, Loss, ActorCriticLoss};
     pub use crate::deep::network::Network;
+    pub use crate::deep::buffer::sampler::{Sampler, SamplerConfig};
+    pub use crate::deep::buffer::{
+        replay::ReplayBufferConfig,
+        rollout::RolloutBuffer,
+    };
 }

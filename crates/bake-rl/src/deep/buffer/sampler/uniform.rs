@@ -1,8 +1,8 @@
 //! A basic sampler which treats all elements equally
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
-use crate::core::buffer::sampler::{SampleInfo, Sampler, SamplerConfig};
-use crate::core::buffer::replay::lazy_storage::LazyStorage;
+use crate::deep::buffer::sampler::{SampleInfo, Sampler, SamplerConfig};
+use crate::deep::buffer::replay::lazy_storage::LazyStorage;
 use crate::core::data::{Batch, BatchOps, Transition};
 
 /// A basic sampler which treats all elements equally

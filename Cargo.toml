@@ -3,8 +3,7 @@ resolver = "3"
 members = [
     "crates/bake",
     "crates/bake-rl",
-    "crates/bake-macros",
-    "crates/bake-common"
+    "crates/bake-rl-macros",
     ]
 
 [workspace.package]
@@ -16,8 +15,7 @@ repository = "https://github.com/joonjoon0425/bake"
 
 [workspace.dependencies]
 bake = { path = "crates/bake" }
-bake-common = { path = "crates/bake-common" }
-bake-macros = { path = "crates/bake-macros" }
+bake-rl-macros = { path = "crates/bake-rl-macros" }
 bake-rl = { path = "crates/bake-rl" }
 ndarray = "0.17.2"
 

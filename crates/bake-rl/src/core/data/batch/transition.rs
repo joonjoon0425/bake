@@ -2,7 +2,7 @@
 //! 
 use std::borrow::Cow;
 
-use bake_macros::BatchOps;
+use bake_rl_macros::BatchOps;
 use crate::core::data::{Batch, BatchDict, BatchOps, batch::dict::{DictLeaf, Key}};
 use burn::prelude::*;
 

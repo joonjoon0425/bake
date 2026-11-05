@@ -28,11 +28,6 @@ pub mod prelude {
         space::Space,
     };
     pub use bake_rl::core::distribution::Distribution;
-    pub use bake_rl::core::buffer::sampler::{Sampler, SamplerConfig};
-    pub use bake_rl::core::buffer::{
-        replay::ReplayBufferConfig,
-        rollout::RolloutBuffer,
-    };
     pub use bake_rl::core::exploration::{
         Boltzmann,
         EpsGreedy,
@@ -43,5 +38,5 @@ pub mod prelude {
         Scheduler,
         LinearScheduler,
     };
-    pub use bake_macros::{BatchOps, actor_critic, qnet, policy};
+    pub use bake_rl_macros::{BatchOps, actor_critic, qnet, policy};
 }

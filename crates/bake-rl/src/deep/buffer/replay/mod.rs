@@ -3,9 +3,10 @@ pub mod lazy_storage;
 
 use std::marker::PhantomData;
 use crate::core::{
-    buffer::sampler::{PrioritizedSampler, PrioritizedSamplerConfig, SampleInfo, Sampler, SamplerConfig, uniform::UniformSamplerConfig}, data::{Batch, BatchOps, Transition},
+    data::{Batch, BatchOps, Transition},
 };
-use crate::core::buffer::replay::lazy_storage::LazyStorage;
+use crate::deep::buffer::sampler::{Sampler, SamplerConfig, SampleInfo, PrioritizedSampler, PrioritizedSamplerConfig, UniformSamplerConfig};
+use crate::deep::buffer::replay::lazy_storage::LazyStorage;
 use burn::prelude::*;
 
 /// Replay buffer implementation

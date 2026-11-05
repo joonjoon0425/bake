@@ -1,6 +1,6 @@
 //! Deep Q-Network
 use burn::prelude::*;
-use crate::core::buffer::sampler::SampleInfo;
+use crate::deep::buffer::sampler::SampleInfo;
 use crate::core::constraint::DiscreteConstraint;
 use crate::core::data::{Transition, Batch, BatchOps};
 use crate::deep::{
