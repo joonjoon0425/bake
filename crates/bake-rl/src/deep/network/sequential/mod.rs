@@ -1,1 +1,0 @@
-//! An experimental sequential network container implementation with tuple
