@@ -1,0 +1,1 @@
+//! # `tabular`: collection of tabular rl algorithms

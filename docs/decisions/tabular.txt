@@ -1,0 +1,4 @@
+tabular와 deep의 component들이 계속 똑같은 것들이 두 번 쓰이는 것 같아서 어떻게든 하나로 합쳐보려 했지만 불가능했다.
+그래서 그냥 tabular 알고리즘의 성능(속도, 가벼움 등등)을 내려놓고 burn에 의존하는 방향으로 해서, 기존에 두 벌씩 존재하던 모듈들(explore, contract 등등)을 아예 하나로 사용하기로 했다.
+
+추가로 굳이 crates를 나눌 이유가 없어서 bake-rl 모듈 하나 아래에 core, env, deep, tabular, linear (아직 구현 안함) module들을 두기로 했다.

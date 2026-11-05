@@ -1,0 +1,14 @@
+commit 03b3cfd75c7c6bcd4e78bc34219e3eb8392302d9
+
+DO NOT ADD ANY FEATURES MORE BEFORE YOU CHECK IT BY YOURSELF.
+
+It's bit embarassing, but the max_priority_within_buffer was the one which Claude suggested to add and it implemented it for me, since I didn't know about it well.
+
+But it was only a feature on torchrl, and other frameworks were not implementing it. Even torchrl had an issue with that feature.
+
+From now on, check first, by yourself, and implement things by your own.
+
+Check papers and implement only the features which are present in papers
+
+부끄럽지만, 클로드가 추천해준 대로 구현을 한 feature였는데, 알고 보니 torchrl에서만 구현되어있는 거였고 논문에는 나오지 않은 것이었다.
+앞으로 내 눈으로 직접 확인하고 논문에 있는 것들만 구현하자. 반드시 논문 리딩 후 구현에 들어갈 것. 빨리 시험해 보고 싶어서 구현하게 되면 무너지게 되어있다. 빨리 해보고 싶으면 pytorch로 해보자.

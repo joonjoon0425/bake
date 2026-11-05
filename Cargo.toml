@@ -1,0 +1,22 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/bake",
+    "crates/bake-rl",
+    "crates/bake-rl-macros"
+]
+
+[workspace.package]
+version = "0.5.0"
+edition = "2024"
+authors = ["Hyoung Joon, Kim"]
+license = "MIT"
+repository = "https://github.com/joonjoon0425/bake"
+
+[workspace.dependencies]
+bake = { path = "crates/bake" }
+bake-rl = { path = "crates/bake-rl" }
+bake-rl-macros = { path = "crates/bake-rl-macros" }
+
+tch = "0.24.0"
+torch-sys = "0.24.0"
