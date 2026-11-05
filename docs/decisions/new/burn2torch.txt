@@ -1,0 +1,4 @@
+trying to change from burn to tch... The no-copying of torch tensor from python to rust was worth it, + dynamic rank
+
+I found very conflicting concept in tch... the alias.
+Burn automatically managed this by Copy-on-write, but tch does not do this for us...
