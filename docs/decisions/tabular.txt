@@ -2,3 +2,10 @@ tabular와 deep의 component들이 계속 똑같은 것들이 두 번 쓰이는 
 그래서 그냥 tabular 알고리즘의 성능(속도, 가벼움 등등)을 내려놓고 burn에 의존하는 방향으로 해서, 기존에 두 벌씩 존재하던 모듈들(explore, contract 등등)을 아예 하나로 사용하기로 했다.
 
 추가로 굳이 crates를 나눌 이유가 없어서 bake-rl 모듈 하나 아래에 core, env, deep, tabular, linear (아직 구현 안함) module들을 두기로 했다.
+
+20261106
+tabular 속도가 굉장히 느리기도 하고, 다른 프레임워크들을 참고해 본 결과 gymnasium은 numpy_to_torch, *_to_jax 등등의 구현을 제공하고 있었다. 결국 따로 따로 구현하는 것도 좋은 방향일 것 같다.
+다만 이번에는 이전처럼 Repr같은 것으로 하다가 다시 되돌리지 말고, 아예 구현을 두 벌씩 두자 (Space, Exploration, Constraint 등등).
+같은 이름으로 두며 구분을 모듈로 할 수 있게 하자. 구현 간 변환은 wrapper로 (environment wrapper) 하자.
+
+구분을 명확히 한다. tabular, deep이 아니라 데이터 표현을 기준으로 native, burn으로 나눈다. 나중에 ndarray가 들어와도 똑같이 유지할 수 있다.
