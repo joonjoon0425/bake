@@ -78,8 +78,8 @@ impl<const D: usize> ContinuousSpace<crate::core::Native, D> {
     /// - this is due to the fixed rank of `burn::Tensor`
     /// - Even if it is in `Native` representation, for unity
     pub fn native(shape: &[usize], low: ArrayD<f32>, high: ArrayD<f32>, seed: u64) -> Self {
-        assert!(shape[1..].iter().zip(low.shape()).all(|(s, l)| s == l), "`low` and given shape mismatch");
-        assert!(shape[1..].iter().zip(high.shape()).all(|(s, l)| s == l), "`high` and given shape mismatch");
+        assert!(shape.iter().zip(low.shape()).all(|(s, l)| s == l), "`low` and given shape mismatch");
+        assert!(shape.iter().zip(high.shape()).all(|(s, l)| s == l), "`high` and given shape mismatch");
         assert!(low.iter().zip(high.iter()).all(|(l, h)| l <= h), "Some elements of `low` is higher than `high`");
         Self { shape: shape.try_into().unwrap(), low, high, inner: SmallRng::seed_from_u64(seed) }
     }
@@ -143,7 +143,7 @@ impl<const D: usize> ToBurnSpace for ContinuousSpace<crate::core::Native, D> {
         let mut vec = Vec::with_capacity(shape[0]);
 
         for chunk in chunks {
-            vec.push(ArrayD::from_shape_vec(shape[1..].to_vec(), chunk.to_vec()).unwrap())
+            vec.push(ArrayD::from_shape_vec(shape.to_vec(), chunk.to_vec()).unwrap())
         }
         vec
     }

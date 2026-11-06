@@ -106,7 +106,7 @@ fn to_f32_ndarray<const D: usize>(obj: &Bound<'_, PyAny>) -> PyResult<ArrayD<f32
     let arr = np.call_method1("ascontiguousarray", (obj, "float32"))?;   // already float32 -> no copy
     
     let arr: PyReadonlyArrayDyn<f32> = arr.extract()?;
-    Ok(arr.as_array().into_owned())
+    Ok(arr.as_array().into_owned().insert_axis(Axis(0)))
 }
 
 /// any array-like (list, np.ndarray of u8 dtype) -> owned Tensor<D, Int>
@@ -125,8 +125,8 @@ fn to_u8_tensor<const D: usize>(obj: &Bound<'_, PyAny>, device: &Device) -> PyRe
 /// any array-like (list, np.ndarray of any float dtype) -> owned ArrayD<u8>
 fn to_u8_ndarray<const D: usize>(obj: &Bound<'_, PyAny>) -> PyResult<ArrayD<u8>> {
     let np = obj.py().import("numpy")?;
-    let arr = np.call_method1("ascontiguousarray", (obj, "float32"))?;   // already float32 -> no copy
+    let arr = np.call_method1("ascontiguousarray", (obj, "uint8"))?;   // already uint8 -> no copy
     
     let arr: PyReadonlyArrayDyn<u8> = arr.extract()?;
-    Ok(arr.as_array().into_owned())
+    Ok(arr.as_array().into_owned().insert_axis(Axis(0)))
 }

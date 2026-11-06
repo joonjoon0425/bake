@@ -1,5 +1,5 @@
-use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
-use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironment;
+use bake_rl::core::env::wrapper::vec::RecordEpisodeStatistics;
+use bake_rl::core::env::wrapper::SynchronizedVectorEnvironment;
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
@@ -38,7 +38,7 @@ pub fn main() {
     let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = VectorTape::new(env, false);
+    let mut tape = VectorTape::new(env, true);
 
     let total_steps = 500000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);

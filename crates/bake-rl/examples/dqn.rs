@@ -1,9 +1,9 @@
-use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
+use bake_rl::core::env::wrapper::vec::RecordEpisodeStatistics;
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::deep::prelude::*;
-use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironment;
+use bake_rl::core::env::wrapper::SynchronizedVectorEnvironment;
 use burn::nn::activation::ActivationConfig;
 use burn::prelude::*;
 use burn::nn::*;
@@ -22,7 +22,7 @@ pub fn main() {
     let mut tape = VectorTape::new(env, true);
 
     let state = DQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
-    let mut online = DuelingTestNet::new(vec![tape.obs_space().shape()[1], 64, 64, tape.action_space().n()], ActivationConfig::Relu, &device);
+    let mut online = TestNet::new(vec![tape.obs_space().shape()[1], 64, 64, tape.action_space().n()], ActivationConfig::Relu, &device);
     let mut target = online.clone();
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
@@ -86,39 +86,32 @@ pub fn main() {
 }
 
 #[derive(Module, Debug)]
-pub struct DuelingTestNet {
+pub struct TestNet {
     linear: Vec<Linear>,
-    adv: Linear,
-    val: Linear,
     activation: Activation
 }
 
-#[qnet(dueling)]
-impl DuelingTestNet {
+#[qnet]
+impl TestNet {
     pub fn new(dims: Vec<usize>, activation: ActivationConfig, device: &Device) -> Self {
         let n = dims.len();
         let mut lv = Vec::with_capacity(n);
-        for i in 0..(n - 2) {
+        for i in 0..(n - 1) {
             lv.push(LinearConfig::new(dims[i], dims[i + 1]).init(device));
         }
-        let adv = LinearConfig::new(dims[n - 2], dims[n - 1]).init(device); 
-        let val = LinearConfig::new(dims[n - 2], 1).init(device);
         Self {
             linear: lv,
-            adv,
-            val,
             activation: activation.init(device),
         }
     }
 
-    pub fn forward(&self, mut obs: Tensor<2>) -> (Tensor<1>, Tensor<2>) {
+    pub fn forward(&self, mut obs: Tensor<2>) -> Tensor<2> {
         let n = self.linear.len();
-        for i in 0..n {
+        for i in 0..(n - 1) {
             obs = self.activation.forward(self.linear[i].forward(obs));
         }
-        let val = self.val.forward(obs.clone()).squeeze_dim(1);
-        let adv = self.adv.forward(obs);
-        (val, adv)
+        obs = self.linear[n - 1].forward(obs);
+        obs
         // self.linear[n - 1].forward(obs)
     }
 }

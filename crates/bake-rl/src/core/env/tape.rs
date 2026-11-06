@@ -46,7 +46,7 @@ impl<E: Environment> Tape<E> {
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);
         let done = terminated || truncated;
 
-        self.done = done.clone();
+        self.done = done;
         self.info = info.clone();
         let transition = NativeTransition {
             obs,

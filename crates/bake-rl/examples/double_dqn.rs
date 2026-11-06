@@ -1,9 +1,9 @@
-use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
+use bake_rl::core::env::wrapper::vec::RecordEpisodeStatistics;
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::deep::prelude::*;
-use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironment;
+use bake_rl::core::env::wrapper::SynchronizedVectorEnvironment;
 use burn::nn::activation::ActivationConfig;
 use burn::prelude::*;
 use burn::nn::*;

@@ -103,7 +103,7 @@ impl<const D: usize> ToBurnSpace for ByteSpace<crate::core::Native, D> {
         let mut vec = Vec::with_capacity(shape[0]);
 
         for chunk in chunks {
-            vec.push(ArrayD::from_shape_vec(shape[1..].to_vec(), chunk.to_vec()).unwrap())
+            vec.push(ArrayD::from_shape_vec(shape.to_vec(), chunk.to_vec()).unwrap())
         }
         vec
     }

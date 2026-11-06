@@ -1,4 +1,5 @@
 use bake_rl::core::scheduler::{LinearScheduler, Scheduler};
+use bake_rl::core::env::wrapper::RecordEpisodeStatistics;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::tabular::prelude::*;
 
@@ -6,10 +7,11 @@ use burn::prelude::*;
 use bake_rl::tabular::qtable::QTable;
 
 pub fn main() {
-    let seed= 129;
+    let seed = 129;
     let device = Device::default();
     device.seed(seed);
     let env = GymnasiumEnvironmentConfig::taxi().seed(seed).init();
+    let env = RecordEpisodeStatistics::new(env);
     let state = QLearningState { gamma: 0.99, alpha: 0.4 };
     let mut q = QTable::new(env.obs_space().n(), env.action_space().n());
     let mut tape = Tape::new(env);
@@ -20,11 +22,14 @@ pub fn main() {
 
     for count in 0..total_steps {
         let action = q.action(&mut eg, tape.obs.clone(), tape.constraint.clone());
-        let (t, _) = tape.step(action);
-        let r = t.reward;
+        let (t, (_, stat)) = tape.step(action);
+
         qlearning_update(&state, &mut q, t);
 
-        println!("count: {count}, environment: {}, reward: {}", 0, r);
+        if tape.done() && let Some(stat) = stat {
+            println!("count: {count}, reward: {}, step: {}", stat.r, stat.s);
+            tape.reset();
+        }
         
         *eg.eps_mut() = eps_sch.step() as f32;
     }
