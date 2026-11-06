@@ -1,26 +1,50 @@
 //! Synchronized vector environment wrapper
-use crate::core::{data::BatchOps, env::{Environment, VectorEnvironment, space::Space}};
+use crate::core::data::BatchOps;
+use crate::core::env::{Environment, VectorEnvironment, space::NativeSpace, space::BurnSpace, space::ToBurnSpace};
 use burn::prelude::*;
 /// vectorize non-vector environment in a synchronized way 
 pub struct SynchronizedVectorEnvironment<E>
 where
-    E: Environment<ObsSpace: Space<Element: BatchOps>, ActionSpace: Space<Element: BatchOps>, Constraint: BatchOps, Reward: BatchOps>
+    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: BatchOps, Reward: BatchOps>
 {
     envs: Vec<E>,
-    obs_space: E::ObsSpace,
-    action_space: E::ActionSpace,
-    latest_obs: Option<Vec<<E::ObsSpace as Space>::Element>>,
+    obs_space: <E::ObsSpace as ToBurnSpace>::BurnSpace,
+    action_space: <E::ActionSpace as ToBurnSpace>::BurnSpace,
+    latest_obs: Option<Vec<<E::ObsSpace as NativeSpace>::Element>>,
     latest_constraint: Option<Vec<E::Constraint>>,
     latest_info: Option<Vec<E::Info>>,
     device: Device
 }
 
+impl<E> SynchronizedVectorEnvironment<E>
+where
+    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: BatchOps, Reward: BatchOps>
+{
+    /// create new `SynchronizedVectorEnvironment` from given envs 
+    pub fn new(envs: Vec<E>, device: &Device) -> Self {
+        assert!(!envs.is_empty(), "Given environment vector is empty");
+        let fst_env = &envs[0];
+        let obs_space = fst_env.obs_space().clone().to_burn();
+        let action_space = fst_env.action_space().clone().to_burn();
+        let device = device.clone();
+        Self {
+            envs,
+            obs_space,
+            action_space,
+            latest_obs: None,
+            latest_constraint: None,
+            latest_info: None,
+            device,
+        }
+    }
+}
+
 impl<E> VectorEnvironment for SynchronizedVectorEnvironment<E>
 where
-    E: Environment<ObsSpace: Space<Element: BatchOps>, ActionSpace: Space<Element: BatchOps>, Constraint: BatchOps, Reward: BatchOps>
+    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: BatchOps, Reward: BatchOps>
 {
-    type ObsSpace = E::ObsSpace;
-    type ActionSpace = E::ActionSpace;
+    type ObsSpace = <E::ObsSpace as ToBurnSpace>::BurnSpace;
+    type ActionSpace = <E::ActionSpace as ToBurnSpace>::BurnSpace;
     type Constraint = E::Constraint;
     type Reward = E::Reward;
     type Info = Vec<E::Info>;
@@ -37,7 +61,7 @@ where
         self.envs.len()
     }
 
-    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info) {
+    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as BurnSpace>::Element, Self::Constraint), Self::Info) {
         let bs = vec![vec![1]; self.n_envs()];
         match mask {
             Some(mask) => {
@@ -50,7 +74,8 @@ where
                     self.latest_constraint.as_mut().unwrap()[idx] = constraint;
                     self.latest_info.as_mut().unwrap()[idx] = info;
                 }
-                let obss = BatchOps::cat_batch(&bs, 0, self.latest_obs.clone().unwrap());
+                let latest_obs = self.latest_obs.clone().unwrap();
+                let obss = BatchOps::cat_batch(&bs, 0, );
                 let constraints = BatchOps::cat_batch(&bs, 0, self.latest_constraint.clone().unwrap());
                 ((obss, constraints), self.latest_info.clone().unwrap())
             }

@@ -1,7 +1,7 @@
 //! Proximal Policy Optimization
 
 use burn::prelude::*;
-use crate::core::data::{Batch, BatchOps, Transition, key};
+use crate::core::data::{Batch, BatchDict, BatchOps, Transition, key};
 use crate::deep::distribution::{Distribution, PossibleConstraint};
 use crate::deep::algorithms::advantage_estimator::AdvantageEstimator;
 use crate::deep::loss::{Loss, LossFn, ActorCriticLoss};
@@ -67,7 +67,7 @@ impl ActorCriticLoss for PPOLoss {
 /// - The ActorCritic will be move to inner device when `update` is called
 pub fn ppo_loss<Ac: ActorCritic>(
     state: &PPOState, ac: Ac,
-    minibatch: Batch<Transition<crate::core::Burn, Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>
+    minibatch: Batch<Transition<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>, Tensor<1, Bool>, BatchDict>>
 ) -> (Ac, PPOLoss) {
     let ac = ac.train();
     let (mut mb, _) = minibatch.autodiff().destruct();

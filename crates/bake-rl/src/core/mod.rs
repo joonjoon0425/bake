@@ -1,10 +1,10 @@
 //! # `core`: core components of `bake-rl`
 //!
 
-/// representation struct for rust native types
+/// representation struct for implementation which does not uses `burn`
 #[derive(Debug, Clone, Copy)]
 pub struct Native;
-/// representation struct for `burn` types
+/// representation struct for implementations which uses `burn`
 #[derive(Debug, Clone, Copy)]
 pub struct Burn;
 

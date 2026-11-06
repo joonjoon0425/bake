@@ -19,6 +19,7 @@ pub trait ActionSelectorRepr {
     /// inner types which each representation requires
     type Inner;
 }
+
 impl ActionSelectorRepr for crate::core::Native { type Inner = SmallRng; }
 impl ActionSelectorRepr for crate::core::Burn { type Inner = (); }
 

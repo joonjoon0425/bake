@@ -1,9 +1,9 @@
 //! Space for discrete elements
 
-use burn::{prelude::*, tensor::Distribution::Uniform};
+use burn::prelude::*;
 use rand::prelude::*;
 
-use super::Space;
+use super::{NativeSpace, BurnSpace};
 
 /// Discrete space
 #[derive(Debug, Clone)]
@@ -28,8 +28,16 @@ impl DiscreteSpace<crate::core::Burn> {
     }
     /// return the number of elements
     pub fn n(&self) -> usize { self.n }
-    /// return the device
-    pub fn device(&self) -> Device {
+}
+
+impl BurnSpace for DiscreteSpace<crate::core::Burn> {
+    type Element = Tensor<1, Int>;
+
+    fn sample(&self, n: usize) -> Self::Element {
+        Tensor::random([n], burn::tensor::Distribution::Uniform(0., self.n as f64), &self.inner)
+    }
+    
+    fn device(&self) -> Device {
         self.inner.clone()
     }
 }
@@ -43,15 +51,7 @@ impl DiscreteSpace<crate::core::Native> {
     pub fn n(&self) -> usize { self.n }
 }
 
-impl Space for DiscreteSpace<crate::core::Burn> {
-    type Element = Tensor<1, Int>;
-
-    fn sample(&mut self) -> Self::Element {
-        Tensor::random([1], Uniform(0., self.n as f64), &self.inner)
-    }
-}
-
-impl Space for DiscreteSpace<crate::core::Native> {
+impl NativeSpace for DiscreteSpace<crate::core::Native> {
     type Element = usize;
 
     fn sample(&mut self) -> Self::Element {

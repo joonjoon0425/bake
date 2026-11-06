@@ -1,20 +1,18 @@
 //! Trait for environment
 
-use crate::core::env::space::Space;
+use crate::core::env::space::NativeSpace;
 /// `Environment` trait which all non-vectorized environments must implement
 /// - For custom non-vetorized environment, implement this trait
-///     - If you use `Space` struct which implements `ToBatchedSpace` trait, your environment can be easily used as vectorized environment via the `SynchronizedVectorEnvironment` wrapper.
-///     - But note that it can be slower than the environment which was implemented using `VectorEnvironment` trait, since `SynchronizedVectorEnvironment` moves the data across host and device.
 /// - For custom vetorized environment, implement `VectorEnvironment` trait
 pub trait Environment {
     /// type of observation space
-    type ObsSpace: Space;
+    type ObsSpace: NativeSpace;
     /// type of action space
-    type ActionSpace: Space;
+    type ActionSpace: NativeSpace;
     /// type of constraint
-    type Constraint;
+    type Constraint: Clone;
     /// type of reward
-    type Reward;
+    type Reward: Clone;
     /// type of additional information, which is returned every `step` and `reset`
     type Info: Clone;
 
@@ -24,9 +22,9 @@ pub trait Environment {
     fn action_space(&self) -> &Self::ActionSpace;
 
     /// reset the environment and return the tuple ((obs, constraint), information)
-    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info);
+    fn reset(&mut self) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), Self::Info);
     /// take one step and returns the tuple ((obs, constraint), reward, terminated, truncated, information)
-    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info);
+    fn step(&mut self, action: <Self::ActionSpace as NativeSpace>::Element) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info);
 }
 
 /// the configuration trait for environments

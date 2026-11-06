@@ -23,5 +23,10 @@ pub mod prelude {
     };
     pub use crate::core::action_selector::{BurnDiscreteActionSelector, EpsGreedy, Boltzmann, Greedy};
     pub use crate::core::constraint::BurnDiscreteConstraint;
+    pub use crate::core::env::{Tape, VectorTape};
+    pub use crate::core::env::{Environment, VectorEnvironment, EnvironmentConfig, VectorEnvironmentConfig};
     pub use crate::deep::distribution::{Distribution, Categorical};
+
+
+    pub use bake_rl_macros::{actor_critic, policy, qnet};
 }

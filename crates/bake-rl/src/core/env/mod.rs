@@ -2,8 +2,12 @@
 
 pub mod space;
 pub mod wrapper;
-pub mod tape;
-pub use tape::VectorTape;
+
+mod vec_tape;
+pub use vec_tape::VectorTape;
+
+mod tape;
+pub use tape::Tape;
 
 mod env;
 pub use env::*;

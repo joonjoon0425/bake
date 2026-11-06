@@ -1,13 +1,13 @@
 //! various samplers for buffer
 
-use crate::core::data::{Batch, BatchOps, Transition};
+use crate::core::data::{Batch, BatchOps, Transition, BatchDict};
 use crate::deep::buffer::replay::lazy_storage::LazyStorage;
 use burn::prelude::*;
 
 /// A `Sampler` trait which all samplers for buffers must implement
 pub trait Sampler {
     /// sample n elements from given storage (currently only Batch type)
-    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>, SampleInfo)
+    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>>, SampleInfo)
     where
         Obs: BatchOps,
         Action: BatchOps,

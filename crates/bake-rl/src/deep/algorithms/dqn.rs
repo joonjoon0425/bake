@@ -2,7 +2,7 @@
 use burn::prelude::*;
 use crate::deep::buffer::sampler::SampleInfo;
 use crate::core::constraint::BurnDiscreteConstraint;
-use crate::core::data::{Transition, Batch, BatchOps};
+use crate::core::data::{Batch, BatchDict, BatchOps, Transition};
 use crate::deep::{
     contract::DiscreteActionValue,
     loss::{Loss, LossFn}
@@ -38,7 +38,7 @@ pub fn dqn_loss<Q, Constraint>(
     state: &DQNState,
     online: Q,
     target: &Q,
-    batch: Batch<Transition<crate::core::Burn, Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>, batch_info: SampleInfo
+    batch: Batch<Transition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>, Tensor<1, Bool>, BatchDict>>, batch_info: SampleInfo
 ) -> (Q, DQNLoss)
 where
     Q: DiscreteActionValue,

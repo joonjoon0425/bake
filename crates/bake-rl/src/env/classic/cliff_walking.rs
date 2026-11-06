@@ -70,17 +70,14 @@ impl Environment for CliffWalking {
 }
 
 /// configuration for cliffwalking
-pub struct CliffWalkingConfig { seed: u64 }
-impl CliffWalkingConfig {
-    /// create a new configuration
-    pub fn new(seed: u64) -> Self { Self { seed } }
-}
+#[derive(Debug, Clone, Copy)]
+pub struct CliffWalkingConfig;
 
 impl EnvironmentConfig for CliffWalkingConfig {
     type Environment = CliffWalking;
     fn init(self) -> Self::Environment {
-        let obs_space = DiscreteSpace::native(48, self.seed);
-        let action_space = DiscreteSpace::native(4, self.seed);
+        let obs_space = DiscreteSpace::native(48);
+        let action_space = DiscreteSpace::native(4);
         Self::Environment { pos: (0, 0), obs_space, action_space }
     }
 }

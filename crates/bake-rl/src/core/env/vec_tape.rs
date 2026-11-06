@@ -1,14 +1,11 @@
-//! The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
-//! - Especially useful for vector environments
-//! 
-use crate::core::{data::{Transition, Batch}, env::{VectorEnvironment, space::Space}};
+use crate::core::data::{Batch, BatchDict, Transition};
+use crate::core::env::{VectorEnvironment, space::BurnSpace};
 use burn::prelude::*;
-/// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage environment steps and resets.
-/// - Especially useful for vector environments
+/// The `VecTape` struct, which helps making transition tuple (s, a, r, s') and manage vector environment steps and resets.
 pub struct VectorTape<E: VectorEnvironment> {
     env: E,
     /// current observation
-    pub obs: <E::ObsSpace as Space>::Element,
+    pub obs: <E::ObsSpace as BurnSpace>::Element,
     /// current constraint
     pub constraint: E::Constraint,
     /// current information of the environment
@@ -55,7 +52,7 @@ impl<E: VectorEnvironment> VectorTape<E> {
     /// - if `autoreset = true`
     ///     - during the `step`, terminated or truncated environments are automatically reset
     ///     - the returned `info` is the information before being automatically reset; if you read `info` from directly like `tape.info`, you will get the reset-info
-    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> (Batch<Transition<crate::core::Burn, <E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward>>, E::Info) {
+    pub fn step(&mut self, action: <E::ActionSpace as BurnSpace>::Element) -> (Batch<Transition<<E::ObsSpace as BurnSpace>::Element, <E::ActionSpace as BurnSpace>::Element, E::Constraint, E::Reward, Tensor<1, Bool>, BatchDict>>, E::Info) {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);

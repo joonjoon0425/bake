@@ -8,7 +8,7 @@ use burn::prelude::*;
 
 /// the transition (s, a, r, s')
 #[derive(BatchOps, Debug, Clone)]
-pub struct Transition<Repr: TransitionRepr, Obs, Action, Constraint, Reward> {
+pub struct Transition<Obs, Action, Constraint, Reward, Flag, Extra> {
     /// observation
     pub obs: Obs,
     /// action
@@ -24,26 +24,18 @@ pub struct Transition<Repr: TransitionRepr, Obs, Action, Constraint, Reward> {
     pub next_constraint: Constraint,
 
     /// terminated
-    pub terminated: Repr::Flag,
+    pub terminated: Flag,
     /// truncated
-    pub truncated: Repr::Flag,
+    pub truncated: Flag,
 
     /// extra values
-    pub extra: Repr::Extra,
+    pub extra: Extra,
 }
 
-/// transition representation
-pub trait TransitionRepr: Clone + 'static {
-    /// boolean flag
-    type Flag;
-    /// dictionaru type for extra
-    type Extra;
-}
+pub type NativeTransition<Obs, Action, Constraint, Reward> = Transition<Obs, Action, Constraint, Reward, bool, ()>;
+pub type BurnTransition<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> = Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>;
 
-impl TransitionRepr for crate::core::Native { type Extra = (); type Flag = bool; }
-impl TransitionRepr for crate::core::Burn { type Extra = BatchDict; type Flag = Tensor<1, Bool>; }
-
-impl<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>> {
+impl<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> Batch<BurnTransition<Obs, Action, Constraint, Reward>> {
     /// return the current device of `Transition`
     pub fn device(&self) -> Device {
         self.leaf.terminated.device()

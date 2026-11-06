@@ -7,7 +7,7 @@ pub mod batch;
 
 pub use batch::{
     Batch,
-    transition::Transition,
+    transition::{Transition, NativeTransition, BurnTransition},
     dict::BatchDict,
     dict::key,
 };

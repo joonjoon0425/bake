@@ -73,7 +73,7 @@ pub(crate) fn policy_impl(func_name: &Ident, generics: &Generics, self_ty: &Type
         impl #impl_generics ::bake_rl::deep::contract::Policy for #self_ty #where_clause {
             type Dist = #dist_ty;
 
-            fn dist<C: ::bake_rl::core::distribution::PossibleConstraint<Self::Dist>>(&self, obs: Self::Obs, constraint: C) -> Self::Dist {
+            fn dist<C: ::bake_rl::deep::distribution::PossibleConstraint<Self::Dist>>(&self, obs: Self::Obs, constraint: C) -> Self::Dist {
                 let params = Self::#func_name(self, obs);
                 #make_dist_out
             }

@@ -3,7 +3,7 @@ use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use burn::prelude::*;
 use crate::deep::buffer::sampler::{SampleInfo, Sampler, SamplerConfig};
 use crate::deep::buffer::replay::lazy_storage::LazyStorage;
-use crate::core::data::{Batch, BatchOps, Transition};
+use crate::core::data::{Batch, BatchDict, BatchOps, Transition};
 
 /// A basic sampler which treats all elements equally
 pub struct UniformSampler {
@@ -18,7 +18,7 @@ impl UniformSampler {
 impl Sampler for UniformSampler {
     /// # Panic
     /// panics when the length of the storage is smaller than n
-    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>, SampleInfo)
+    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>>, SampleInfo)
     where
         Obs: BatchOps,
         Action: BatchOps,

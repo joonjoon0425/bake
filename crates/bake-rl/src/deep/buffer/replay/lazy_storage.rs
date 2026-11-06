@@ -1,6 +1,6 @@
 //! lazy storage type
 
-use crate::core::data::{Transition, BatchOps, Batch};
+use crate::core::data::{Batch, BatchDict, BatchOps, Transition};
 use burn::prelude::*;
 /// lazy-initialization storage
 #[derive(Debug)]
@@ -8,7 +8,7 @@ pub struct LazyStorage<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Re
     capacity: usize,
     head: usize,
     /// for lazy initialization, we make it optional
-    buffer: Option<Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>>,
+    buffer: Option<Batch<Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>>>,
     /// the amount of data
     n: usize,
 }
@@ -19,14 +19,14 @@ impl<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> La
     /// initialize the internal buffer with given buffer
     /// # Panic
     /// - If you call init more than once
-    pub fn init(&mut self, buffer: Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>) {
+    pub fn init(&mut self, buffer: Batch<Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>>) {
         if self.buffer.is_some() { panic!("Cannot call LazyStorage::init more than once") }
         self.buffer = Some(buffer);
     }
     /// return the number of data a LazyStorage is holding
     pub fn n(&self) -> usize { self.n }
     /// Push a givn transition into buffer and return the pushed indices
-    pub fn push(&mut self, t: Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>) -> (usize, usize) {
+    pub fn push(&mut self, t: Batch<Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>>) -> (usize, usize) {
         let batch_size = *t.bs().get(0).unwrap_or(&1);
         if self.buffer.is_none() {
             assert!(self.capacity % batch_size== 0, "the number of environments (or batch size) must divide the capacity of buffer.");
@@ -40,7 +40,7 @@ impl<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> La
         (index, batch_size)
     }
     /// return the data of selected indices
-    pub fn select(&self, indices: Tensor<1, Int>) -> Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>> {
+    pub fn select(&self, indices: Tensor<1, Int>) -> Batch<Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>> {
         self.buffer.clone().unwrap().select(0, indices)
     }
     /// return current device of buffer

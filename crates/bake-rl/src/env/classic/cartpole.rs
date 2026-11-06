@@ -90,8 +90,8 @@ impl Environment for CartPole {
  
         ((self.obs(), self.mask.clone()), ())
     }
- 
-    fn step(&mut self, action: Tensor<1, Int>) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Tensor<1>, bool, bool, ()) {
+
+    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
         let action = action.into_scalar::<u64>() as usize;
         debug_assert!(
             (0..N_ACTIONS).contains(&action),
@@ -124,7 +124,7 @@ impl Environment for CartPole {
             terminated,
             truncated,
             ()
-        )
+        )   
     }
 
     fn obs_space(&self) -> &Self::ObsSpace {
@@ -146,10 +146,10 @@ pub struct CartPoleConfig {
 
 impl CartPoleConfig {
     /// create a new `CartPoleConfig`
-    pub fn new(seed: u64, device: Device) -> Self {
+    pub fn new(seed: u64, device: &Device) -> Self {
         Self {
             seed,
-            device
+            device: device.clone()
         }
     }
 }

@@ -1,4 +1,8 @@
+use bake_rl::core::data::Batch;
+use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::deep::prelude::*;
+use bake_rl::env::classic::cartpole::CartPoleConfig;
+
 use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
@@ -22,8 +26,7 @@ pub fn main() {
             loss_fn: LossFn::MseLoss,
         };
     let mut vec = vec![];
-    for _ in 0..1 { vec.push(GymnasiumEnvironmentConfig::cart_pole()) }
-    let env = RecordEpisodeStatistics::new(SynchronizedVectorEnvironmentConfig::new(vec).init(&device));
+    let env = CartPoleConfig::new(12, &device).init();
 
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
@@ -32,7 +35,7 @@ pub fn main() {
     let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = Tape::new(env, true);
+    let mut tape = Tape::new(env);
 
     let total_steps = 500000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
@@ -41,7 +44,7 @@ pub fn main() {
         let action = ac.action(tape.obs.clone(), tape.constraint.clone());
         let (t, info) = tape.step(action);
 
-        buffer.push(t);
+        buffer.push(Batch::new(t, vec![1]));
 
         if buffer.len() >= 128 {
             let batch = buffer.pop();
@@ -64,17 +67,18 @@ pub fn main() {
 
     println!("It took {}s", d.as_secs());
 
-    let env = SynchronizedVectorEnvironmentConfig::new(
-        vec![GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human")]
-    ).init(&device);
+    let env = SynchronizedVectorEnvironment::new(
+        vec![GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human")],
+        &device
+    ).init();
 
-    let mut tape = Tape::new(env, false);
+    let mut tape = Tape::new(env);
     for _ in 0..5 {
         loop {
             let action = ac.dist(tape.obs.clone(), tape.constraint.clone()).mode();
             tape.step(action);
             if tape.done().clone().into_scalar() {
-                tape.reset(None);
+                tape.reset();
                 break;
             }
         }
