@@ -1,7 +1,4 @@
 //! Space for continuous elements
-
-use crate::core::data::BatchOps;
-
 use super::Space;
 use burn::{prelude::*, tensor::Distribution::Uniform};
 /// Continuous space with feature rank (D - 1)
@@ -13,15 +10,21 @@ pub struct ContinuousSpace<const D: usize> {
     shape: Vec<usize>,
     low: Tensor<D>,
     high: Tensor<D>,
+    dtype: burn::tensor::DType,
 }
 
 impl<const D: usize> ContinuousSpace<D> {
-    /// create a new continuous space, with feature rank (D - 1)
+    /// create a new continuous space, with feature rank (D - 1) as `Burn` representation
     /// # Warning
     /// - note that D is (feature rank + 1)
     /// - this is due to the fixed rank of `burn::Tensor`
-    pub fn new(shape: &[usize], low: Tensor<D>, high: Tensor<D>, device: &Device) -> Self {
-        Self { shape: shape.try_into().unwrap(), low, high, device: device.clone() }
+    pub fn burn(shape: &[usize], low: Tensor<D>, high: Tensor<D>, device: &Device) -> Self {
+        assert!(shape.iter().zip(low.dims()).all(|(s, l)| *s == l), "`low` and given shape mismatch");
+        assert!(shape.iter().zip(high.dims()).all(|(s, l)| *s == l), "`high` and given shape mismatch");
+        assert!(low.dtype() == high.dtype(), "`low` and `high` dtype mismatch");
+        assert!(low.clone().lower_equal(high.clone()).all().into_scalar::<bool>(), "Some elements of `low` is higher than `high`");
+        let dtype = low.dtype();
+        Self { shape: shape.try_into().unwrap(), low, high, device: device.clone(), dtype }
     }
     /// return the shape
     /// # Warning
@@ -37,22 +40,17 @@ impl<const D: usize> ContinuousSpace<D> {
     pub fn high(&self) -> &Tensor<D> {
         &self.high
     }
+    /// return the device
+    pub fn device(&self) -> Device {
+        self.device.clone()
+    }
 }
 
 impl<const D: usize> Space for ContinuousSpace<D> {
     type Element = Tensor<D>;
 
-    fn device(&self) -> Device {
-        self.device.clone()
-    }
-
-    fn sample(&self, num: usize) -> Self::Element {
-        let vec = (0..num).into_iter()
-            .map(|_| {
-                let s = Tensor::random(self.shape(), Uniform(0., 1.), &self.device);
-                (self.high.clone() - self.low.clone()) * s + self.low.clone()
-            })
-            .collect();
-        BatchOps::cat_batch(&vec![vec![1]; num], 0, vec)
+    fn sample(&mut self) -> Self::Element {
+        let s = Tensor::random(self.shape(), Uniform(0., 1.), (&self.device, self.dtype));
+        (self.high.clone() - self.low.clone()) * s + self.low.clone()
     }
 }

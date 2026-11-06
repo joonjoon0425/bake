@@ -18,7 +18,7 @@ impl UniformSampler {
 impl Sampler for UniformSampler {
     /// # Panic
     /// panics when the length of the storage is smaller than n
-    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<Obs, Action, Constraint, Reward>>, SampleInfo)
+    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>, SampleInfo)
     where
         Obs: BatchOps,
         Action: BatchOps,

@@ -1,5 +1,5 @@
 //! A trait for parametrized policy
-use crate::core::distribution::{Distribution, PossibleConstraint};
+use crate::deep::distribution::{Distribution, PossibleConstraint};
 use crate::deep::network::Network;
 /// a parametrized policy
 pub trait Policy: Network {

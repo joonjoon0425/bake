@@ -1,8 +1,8 @@
 //! Advantage estimator
 use burn::prelude::*;
 use crate::deep::contract::ActorCritic;
+use crate::deep::distribution::{Distribution, PossibleConstraint};
 use crate::core::data::{Batch, BatchOps, Transition};
-use crate::core::distribution::{Distribution, PossibleConstraint};
 
 /// advantage estimation
 #[derive(Debug, Clone)]
@@ -27,7 +27,7 @@ impl AdvantageEstimator {
     pub fn advantage<Ac: ActorCritic>(
         &self,
         ac: &Ac,
-        t: Batch<Transition<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
+        t: Batch<Transition<crate::core::Burn, Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
         gamma: f32
     ) -> (Tensor<1>, Tensor<1>) {
         match self {
@@ -43,7 +43,7 @@ impl AdvantageEstimator {
     pub fn normalized_advantage<Ac: ActorCritic>(
         &self,
         ac: &Ac,
-        t: Batch<Transition<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
+        t: Batch<Transition<crate::core::Burn, Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
         gamma: f32
     ) -> (Tensor<1>, Tensor<1>) {
         let (adv, ret) = self.advantage(ac, t, gamma);
@@ -53,7 +53,7 @@ impl AdvantageEstimator {
 
     fn td0<Ac: ActorCritic>(
         ac: &Ac,
-        t: Batch<Transition<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
+        t: Batch<Transition<crate::core::Burn, Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
         gamma: f32
     ) -> (Tensor<1>, Tensor<1>) {
         let t = t.destruct().0;
@@ -67,7 +67,7 @@ impl AdvantageEstimator {
 
     fn td1<Ac: ActorCritic>(
         ac: &Ac,
-        t: Batch<Transition<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
+        t: Batch<Transition<crate::core::Burn, Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
         gamma: f32
     ) -> (Tensor<1>, Tensor<1>) {
         Self::gae(ac, t, gamma, 1.)
@@ -75,7 +75,7 @@ impl AdvantageEstimator {
 
     fn gae<Ac: ActorCritic>(
         ac: &Ac,
-        t: Batch<Transition<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
+        t: Batch<Transition<crate::core::Burn, Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>>>,
         gamma: f32, lambda: f32
     ) -> (Tensor<1>, Tensor<1>) {
         let device = t.device();

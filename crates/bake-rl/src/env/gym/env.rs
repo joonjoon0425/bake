@@ -20,10 +20,6 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
     type Reward = Tensor<1>;
     type Info = ();
 
-    fn device(&self) -> Device {
-        self.device.clone()
-    }
-
     fn obs_space(&self) -> &Self::ObsSpace {
         &self.obs_space
     }
@@ -98,7 +94,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> GymnasiumEnvironmentConfig<ObsSp
 impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfig for GymnasiumEnvironmentConfig<ObsSpace, ActionSpace> {
     type Environment = GymnasiumEnvironment<ObsSpace, ActionSpace>;
     
-    fn init(self, device: &Device) -> Self::Environment {
+    fn init(self) -> Self::Environment {
         return Python::attach(|py| {
             let gym = py.import("gymnasium").expect("gymnasium module is not installed in current environment");
             let spec = py.import("gymnasium.envs.registration").expect("gymnasium.envs.registration module not found");

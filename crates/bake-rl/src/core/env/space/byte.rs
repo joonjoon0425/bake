@@ -1,6 +1,4 @@
 //! Byte (u8) space
-use crate::core::data::BatchOps;
-
 use super::Space;
 use burn::prelude::*;
 
@@ -12,11 +10,11 @@ pub struct ByteSpace<const D: usize> {
 }
 
 impl<const D: usize> ByteSpace<D> {
-    /// create a new byte space, with feature rank (D - 1)
+    /// create a new byte space, with feature rank (D - 1) with `Burn` representation
     /// # Warning
     /// - note that D is (feature rank + 1)
     /// - this is due to the fixed rank of `burn::Tensor`
-    pub fn new(shape: &[usize], device: &Device) -> Self {
+    pub fn burn(shape: &[usize], device: &Device) -> Self {
         Self { shape: shape.try_into().unwrap(), device: device.clone() }
     }
     /// return the shape
@@ -25,21 +23,16 @@ impl<const D: usize> ByteSpace<D> {
     pub fn shape(&self) -> &[usize] {
         &self.shape
     }
+    /// return the device
+    pub fn device(&self) -> Device {
+        self.device.clone()
+    }
 }
 
 impl<const D: usize> Space for ByteSpace<D> {
     type Element = Tensor<D, Int>;
 
-    fn sample(&self, num: usize) -> Self::Element {
-        let vec = (0..num).into_iter()
-            .map(|_| 
-                Tensor::random(self.shape(), burn::tensor::Distribution::Uniform(0., 255.), (&self.device, burn::tensor::DType::U8))
-            )
-            .collect();
-        BatchOps::cat_batch(&vec![vec![1]; num], 0, vec)
-    }
-
-    fn device(&self) -> Device {
-        self.device.clone()
+    fn sample(&mut self) -> Self::Element {
+        Tensor::random(self.shape(), burn::tensor::Distribution::Uniform(0., 255.), (&self.device, burn::tensor::DType::U8))
     }
 }

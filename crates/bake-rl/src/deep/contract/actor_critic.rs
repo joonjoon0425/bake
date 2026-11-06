@@ -1,5 +1,5 @@
 //! The trait for actor-critic methods
-use crate::core::distribution::PossibleConstraint;
+use crate::deep::distribution::PossibleConstraint;
 use crate::deep::contract::{policy::Policy, state_value::StateValue};
 use burn::prelude::*;
 /// The special trait for actor-critic methods

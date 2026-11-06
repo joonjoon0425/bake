@@ -1,7 +1,7 @@
 //! Double Deep Q-Network
 use burn::prelude::*;
 use crate::deep::buffer::sampler::SampleInfo;
-use crate::core::constraint::DiscreteConstraint;
+use crate::core::constraint::BurnDiscreteConstraint;
 use crate::core::data::{Transition, Batch, BatchOps};
 use crate::deep::{
     contract::DiscreteActionValue,
@@ -38,11 +38,11 @@ pub fn double_dqn_loss<Q, Constraint>(
     state: &DoubleDQNState,
     online: Q,
     target: &Q,
-    batch: Batch<Transition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>, batch_info: SampleInfo
+    batch: Batch<Transition<crate::core::Burn, Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>, batch_info: SampleInfo
 ) -> (Q, DoubleDQNLoss)
 where
     Q: DiscreteActionValue,
-    Constraint: DiscreteConstraint
+    Constraint: BurnDiscreteConstraint
 {
     let online = online.train();
     let batch = batch.autodiff().destruct().0;

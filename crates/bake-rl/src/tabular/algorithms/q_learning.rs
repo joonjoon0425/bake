@@ -1,6 +1,5 @@
 //! Q-Learning
-use burn::prelude::*;
-use crate::core::{constraint::DiscreteConstraint, data::Transition};
+use crate::core::{constraint::NativeDiscreteConstraint, data::Transition};
 use crate::tabular::qtable::QTable;
 
 /// state struct for QLearning
@@ -13,10 +12,8 @@ pub struct QLearningState {
 }
 
 /// update q table using Q-Learning algorithm
-pub fn qlearning_update(state: &QLearningState, qtable: &mut QTable, t: Transition<Tensor<1, Int>, Tensor<1, Int>, impl DiscreteConstraint, Tensor<1>>) {
-    let obs = t.obs.into_scalar::<u64>() as usize;
-    let action = t.action.into_scalar::<u64>() as usize;
-    let target = (t.reward + state.gamma * qtable.qvalues(t.next_obs, t.next_constraint).max_dim(1).squeeze_dim(0) * t.terminated.bool_not().float()).into_scalar::<f32>();
-    let qvalue = qtable.qvalue(obs, action);
-    qtable.update(obs, action, state.alpha * (target - qvalue) + qvalue);
+pub fn qlearning_update(state: &QLearningState, qtable: &mut QTable, t: Transition<crate::core::Native, usize, usize, impl NativeDiscreteConstraint, f32>) {
+    let target = t.reward + if t.terminated { 0f32 } else { state.gamma * super::argmax_max(&qtable.qvalues(t.next_obs, t.next_constraint)).1 };
+    let qvalue = qtable.qvalue(t.obs, t.action);
+    qtable.update(t.obs, t.action, state.alpha * (target - qvalue) + qvalue);
 }

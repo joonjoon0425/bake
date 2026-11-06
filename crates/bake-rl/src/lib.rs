@@ -18,25 +18,3 @@ pub mod tabular;
 /// re-exportation
 extern crate self as bake_rl;
 pub extern crate burn;
-
-/// prelude module
-pub mod prelude {
-    pub use bake_rl::core::data::{key, BatchDict, Transition, Batch, BatchOps};
-    pub use bake_rl::core::constraint::DiscreteConstraint;
-    pub use bake_rl::core::env::{
-        Tape, Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig,
-        space::Space,
-    };
-    pub use bake_rl::core::distribution::Distribution;
-    pub use bake_rl::core::exploration::{
-        Boltzmann,
-        EpsGreedy,
-        Greedy,
-        Exploration,
-    };
-    pub use bake_rl::core::scheduler::{
-        Scheduler,
-        LinearScheduler,
-    };
-    pub use bake_rl_macros::{BatchOps, actor_critic, qnet, policy};
-}

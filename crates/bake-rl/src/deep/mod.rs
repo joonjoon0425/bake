@@ -4,6 +4,7 @@
 pub mod algorithms;
 pub mod buffer;
 pub mod contract;
+pub mod distribution;
 pub mod loss;
 pub mod network;
 
@@ -20,4 +21,7 @@ pub mod prelude {
         replay::ReplayBufferConfig,
         rollout::RolloutBuffer,
     };
+    pub use crate::core::action_selector::{BurnDiscreteActionSelector, EpsGreedy, Boltzmann, Greedy};
+    pub use crate::core::constraint::BurnDiscreteConstraint;
+    pub use crate::deep::distribution::{Distribution, Categorical};
 }

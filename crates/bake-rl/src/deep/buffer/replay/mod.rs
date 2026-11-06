@@ -35,7 +35,7 @@ where
     }
 
     /// Push a givn transition into buffer
-    pub fn push(&mut self, t: Batch<Transition<Obs, Action, Constraint, Reward>>) {
+    pub fn push(&mut self, t: Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>) {
         let (index, n) = self.storage.push(t);
         self.sampler.after_push(index, n);
     }
@@ -44,7 +44,7 @@ where
     pub fn n(&self) -> usize { return self.storage.n() }
 
     /// sample given amount of batches from buffer. If the buffer's length is shorter than `batch_size`, returns None.
-    pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Transition<Obs, Action, Constraint, Reward>>, SampleInfo)> {
+    pub fn sample(&mut self, batch_size: usize) -> Option<(Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>, SampleInfo)> {
         let len = self.n();
         if len < batch_size { return None; }
         Some(self.sampler.sample(batch_size, &self.storage))

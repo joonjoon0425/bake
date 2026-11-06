@@ -7,9 +7,9 @@ use burn::prelude::*;
 ///     - But note that it can be slower than the environment which was implemented using `VectorEnvironment` trait, since `SynchronizedVectorEnvironment` moves the data across host and device.
 pub trait VectorEnvironment {
     /// type of observation space
-    type ObsSpace: Space;
+    type ObsSpace: Space<Element: BatchOps>;
     /// type of action space
-    type ActionSpace: Space;
+    type ActionSpace: Space<Element: BatchOps>;
     /// type of constraint
     type Constraint: BatchOps;
     /// type of reward
@@ -39,5 +39,5 @@ pub trait VectorEnvironmentConfig {
     /// the environment which configuration is about
     type Environment: VectorEnvironment;
     /// create a new environment
-    fn init(self, device: &Device) -> Self::Environment;
+    fn init(self) -> Self::Environment;
 }

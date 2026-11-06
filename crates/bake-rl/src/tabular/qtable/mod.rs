@@ -1,7 +1,5 @@
 //! A action value (Q value) table for tabular algorithms
-use burn::prelude::*;
-
-use crate::core::{constraint::DiscreteConstraint, exploration::Exploration};
+use crate::core::{constraint::NativeDiscreteConstraint, action_selector::NativeDiscreteActionSelector};
 /// Q Table
 #[derive(Debug, Clone)]
 pub struct QTable {
@@ -23,14 +21,8 @@ impl QTable {
     }
 
     /// return a q values of given observation
-    /// # Warning
-    /// - note that the first axis will always be 1
-    pub fn qvalues(&self, obs: Tensor<1, Int>, constraint: impl DiscreteConstraint) -> Tensor<2> {
-        let device = obs.device();
-        let obs = obs.into_scalar::<u64>() as usize;
-        let start = obs * self.n_action;
-        let qvalues = self.table[start..start + self.n_action].to_vec();
-        let qvalues = Tensor::<1>::from_floats(qvalues.as_slice(), &device).unsqueeze_dim(0);
+    pub fn qvalues(&self, obs: usize, constraint: impl NativeDiscreteConstraint) -> Vec<f32> {
+        let qvalues = &self.table[obs * self.n_action..(obs + 1) * self.n_action];
         constraint.apply(qvalues, -1e9)
     }
 
@@ -40,9 +32,9 @@ impl QTable {
     }
 
     /// sample an action using given exploration strategy
-    pub fn action<E: Exploration>(&self, exploration: &mut E, obs: Tensor<1, Int>, constraint: impl DiscreteConstraint) -> Tensor<1, Int> {
+    pub fn action<A: NativeDiscreteActionSelector>(&self, action_selector: &mut A, obs: usize, constraint: impl NativeDiscreteConstraint) -> usize {
         let qvalues = self.qvalues(obs, constraint.clone());
-        exploration.sample(qvalues, constraint)
+        action_selector.sample(&qvalues, constraint)
     }
 
     /// update the inner table

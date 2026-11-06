@@ -1,7 +1,3 @@
-use bake_rl::core::distribution::Categorical;
-use bake_rl::core::env::wrapper::{sync_env::SynchronizedVectorEnvironmentConfig, record_episode_statistics::RecordEpisodeStatistics};
-use bake_rl::env::gym::GymnasiumEnvironmentConfig;
-use bake_rl::prelude::*;
 use bake_rl::deep::prelude::*;
 use burn::prelude::*;
 use burn::nn::*;

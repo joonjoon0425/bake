@@ -1,16 +1,12 @@
 //! Space for specifications of elements
 //! - The `Space` corresponds to the `space` of Farama Foundation's `gymnasium`.
-//! 
-use burn::prelude::*;
-use crate::core::data::BatchOps;
+
 /// `Space` trait for specifying the properties of observation space and action space
 pub trait Space: Clone {
     /// the type of element
-    type Element: BatchOps;
-    /// sample `n` random elements
-    fn sample(&self, num: usize) -> Self::Element;
-    /// return the device of space
-    fn device(&self) -> Device;
+    type Element: 'static;
+    /// sample a random element
+    fn sample(&mut self) -> Self::Element;
 }
 
 pub mod discrete;

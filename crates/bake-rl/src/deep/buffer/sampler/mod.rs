@@ -7,7 +7,7 @@ use burn::prelude::*;
 /// A `Sampler` trait which all samplers for buffers must implement
 pub trait Sampler {
     /// sample n elements from given storage (currently only Batch type)
-    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<Obs, Action, Constraint, Reward>>, SampleInfo)
+    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<crate::core::Burn, Obs, Action, Constraint, Reward>>, SampleInfo)
     where
         Obs: BatchOps,
         Action: BatchOps,

@@ -3,7 +3,7 @@
 pub mod space;
 pub mod wrapper;
 pub mod tape;
-pub use tape::Tape;
+pub use tape::VectorTape;
 
 mod env;
 pub use env::*;

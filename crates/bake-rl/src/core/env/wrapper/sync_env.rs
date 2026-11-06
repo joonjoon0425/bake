@@ -1,8 +1,11 @@
 //! Synchronized vector environment wrapper
-use crate::core::{data::BatchOps, env::{Environment, EnvironmentConfig, VectorEnvironment, VectorEnvironmentConfig, space::Space}};
+use crate::core::{data::BatchOps, env::{Environment, VectorEnvironment, space::Space}};
 use burn::prelude::*;
 /// vectorize non-vector environment in a synchronized way 
-pub struct SynchronizedVectorEnvironment<E: Environment> {
+pub struct SynchronizedVectorEnvironment<E>
+where
+    E: Environment<ObsSpace: Space<Element: BatchOps>, ActionSpace: Space<Element: BatchOps>, Constraint: BatchOps, Reward: BatchOps>
+{
     envs: Vec<E>,
     obs_space: E::ObsSpace,
     action_space: E::ActionSpace,
@@ -12,7 +15,10 @@ pub struct SynchronizedVectorEnvironment<E: Environment> {
     device: Device
 }
 
-impl<E: Environment> VectorEnvironment for SynchronizedVectorEnvironment<E> {
+impl<E> VectorEnvironment for SynchronizedVectorEnvironment<E>
+where
+    E: Environment<ObsSpace: Space<Element: BatchOps>, ActionSpace: Space<Element: BatchOps>, Constraint: BatchOps, Reward: BatchOps>
+{
     type ObsSpace = E::ObsSpace;
     type ActionSpace = E::ActionSpace;
     type Constraint = E::Constraint;
@@ -102,45 +108,5 @@ impl<E: Environment> VectorEnvironment for SynchronizedVectorEnvironment<E> {
 
     fn device(&self) -> Device {
         self.device.clone()
-    }
-}
-
-/// configuration for `SynchronizedVectorEnvironment`
-pub struct SynchronizedVectorEnvironmentConfig<C>
-where
-    C: EnvironmentConfig<Environment: Environment>
-{
-    configs: Vec<C>,
-}
-
-impl<C> SynchronizedVectorEnvironmentConfig<C> 
-where
-    C: EnvironmentConfig<Environment: Environment>
-{
-    /// create a new `SynchronizedVectorEnvironmentConfig` from given configurations
-    pub fn new(configs: Vec<C>) -> Self { Self { configs } }
-}
-
-impl<C> VectorEnvironmentConfig for SynchronizedVectorEnvironmentConfig<C>
-where
-    C: EnvironmentConfig<Environment: Environment>,
-    SynchronizedVectorEnvironment<C::Environment> : VectorEnvironment,
-{
-    type Environment = SynchronizedVectorEnvironment<C::Environment>;
-
-    fn init(self, device: &Device) -> Self::Environment {
-        let envs: Vec<<C as EnvironmentConfig>::Environment> = self.configs.into_iter().map(|c| c.init(device)).collect();
-        let obs_space = envs[0].obs_space().clone();
-        let action_space = envs[0].action_space().clone();
-
-        Self::Environment {
-            envs,
-            device: device.clone(),
-            latest_obs: None,
-            latest_constraint: None,
-            latest_info: None,
-            obs_space,
-            action_space
-        }
     }
 }

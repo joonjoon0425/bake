@@ -1,7 +1,5 @@
 //! Cliff Walking
-
-use burn::prelude::*;
-use crate::core::env::space::DiscreteSpace;
+use crate::core::env::space::{Space, DiscreteSpace};
 use crate::core::env::{Environment, EnvironmentConfig};
 
 /// A 4 * 12 cliff walking environment implementation
@@ -11,29 +9,27 @@ use crate::core::env::{Environment, EnvironmentConfig};
 /// - When the agent meets a cliff, the agent is moved back to the start position with reward of -100
 pub struct CliffWalking {
     pos: (usize, usize),
-    obs_space: DiscreteSpace,
-    action_space: DiscreteSpace,
-    device: Device,
+    obs_space: DiscreteSpace<crate::core::Native>,
+    action_space: DiscreteSpace<crate::core::Native>,
 }
 
 impl CliffWalking {
-    fn pos2tensor(&self) -> Tensor<1, Int> { Tensor::from_ints([self.pos.1 * 12 + self.pos.0], &self.device) }
+    fn pos2usize(&self) -> usize { self.pos.1 * 12 + self.pos.0 }
 }
 
 impl Environment for CliffWalking {
     type Constraint = ();
-    type ObsSpace = DiscreteSpace;
-    type ActionSpace = DiscreteSpace;
+    type ObsSpace = DiscreteSpace<crate::core::Native>;
+    type ActionSpace = DiscreteSpace<crate::core::Native>;
     type Info = ();
-    type Reward = Tensor<1>;
+    type Reward = f32;
 
-    fn reset(&mut self) -> ((Tensor<1, Int>, Self::Constraint), ()) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), ()) {
         self.pos = (0, 0);
-        ((self.pos2tensor(), ()), ())
+        ((self.pos2usize(), ()), ())
     }
 
-    fn step(&mut self, action: Tensor<1, Int>) -> ((Tensor<1, Int>, Self::Constraint), Tensor<1>, bool, bool, ()) {
-        let action = action.into_scalar();
+    fn step(&mut self, action: usize) -> ((usize, Self::Constraint), f32, bool, bool, ()) {
         assert!(action == 0 || action == 1 || action == 2 || action == 3);
         let mut next_pos: (isize, isize) = (self.pos.0 as isize, self.pos.1 as isize);
 
@@ -61,7 +57,7 @@ impl Environment for CliffWalking {
         }
 
         self.pos = (next_pos.0 as usize, next_pos.1 as usize);
-        ((self.pos2tensor(), ()), Tensor::from_floats([reward], &self.device), terminated, false, ())
+        ((self.pos2usize(), ()), reward, terminated, false, ())
     }
 
     fn obs_space(&self) -> &Self::ObsSpace {
@@ -71,24 +67,20 @@ impl Environment for CliffWalking {
     fn action_space(&self) -> &Self::ActionSpace {
         &self.action_space
     }
-
-    fn device(&self) -> Device {
-        self.device.clone()
-    }
 }
 
 /// configuration for cliffwalking
-pub struct CliffWalkingConfig;
+pub struct CliffWalkingConfig { seed: u64 }
 impl CliffWalkingConfig {
     /// create a new configuration
-    pub fn new() -> Self { Self }
+    pub fn new(seed: u64) -> Self { Self { seed } }
 }
 
 impl EnvironmentConfig for CliffWalkingConfig {
     type Environment = CliffWalking;
-    fn init(self, device: &Device) -> Self::Environment {
-        let obs_space = DiscreteSpace::new(48, device);
-        let action_space = DiscreteSpace::new(4, device);
-        Self::Environment { pos: (0, 0), obs_space, action_space, device: device.clone() }
+    fn init(self) -> Self::Environment {
+        let obs_space = DiscreteSpace::native(48, self.seed);
+        let action_space = DiscreteSpace::native(4, self.seed);
+        Self::Environment { pos: (0, 0), obs_space, action_space }
     }
 }

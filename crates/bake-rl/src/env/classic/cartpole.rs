@@ -57,7 +57,7 @@ pub struct CartPole {
     device: Device,
 
     obs_space: ContinuousSpace<2>,
-    action_space: DiscreteSpace,
+    action_space: DiscreteSpace<crate::core::Burn>,
 }
  
 impl CartPole {
@@ -74,7 +74,7 @@ impl CartPole {
  
 impl Environment for CartPole {
     type ObsSpace = ContinuousSpace<2>;
-    type ActionSpace = DiscreteSpace;
+    type ActionSpace = DiscreteSpace<crate::core::Burn>;
     type Constraint = ();
     type Reward = Tensor<1>;
     type Info = ();
@@ -134,49 +134,42 @@ impl Environment for CartPole {
     fn action_space(&self) -> &Self::ActionSpace {
         &self.action_space
     }
-
-    fn device(&self) -> Device {
-        self.device.clone()
-    }
 }
 
 /// configuration struct for `CartPole` environment
 /// # Configurations
 /// - seed: seed for randomness. 12 for default
 pub struct CartPoleConfig {
-    seed: Option<u64>
+    device: Device,
+    seed: u64,
 }
 
 impl CartPoleConfig {
     /// create a new `CartPoleConfig`
-    pub fn new() -> Self {
+    pub fn new(seed: u64, device: Device) -> Self {
         Self {
-            seed: None
+            seed,
+            device
         }
     }
-    /// set seed for `CartPole`
-    pub fn seed(mut self, seed: u64) -> Self {
-        self.seed = Some(seed);
-        self
-    } 
 }
 
 impl EnvironmentConfig for CartPoleConfig {
     type Environment = CartPole;
-    fn init(self, device: &Device) -> Self::Environment {
-        let obs_space = ContinuousSpace::new(&[1, 4], Tensor::from_floats([[-f32::INFINITY; 4]], device), Tensor::from_floats([[f32::INFINITY; 4]], device), device);
-        let action_space = DiscreteSpace::new(2, device);
+    fn init(self) -> Self::Environment {
+        let obs_space = ContinuousSpace::burn(&[1, 4], Tensor::from_floats([[-f32::INFINITY; 4]], &self.device), Tensor::from_floats([[f32::INFINITY; 4]], &self.device), &self.device);
+        let action_space = DiscreteSpace::burn(2, &self.device);
         CartPole {
             x: 0.0,
             x_dot: 0.0,
             theta: 0.0,
             theta_dot: 0.0,
             steps: 0,
-            rng: StdRng::seed_from_u64(*self.seed.as_ref().unwrap_or(&12)),
+            rng: StdRng::seed_from_u64(self.seed),
             mask: (),
             obs_space,
             action_space,
-            device: device.clone()
+            device: self.device
         }
     }
 }

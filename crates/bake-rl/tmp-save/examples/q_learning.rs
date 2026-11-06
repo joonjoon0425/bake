@@ -1,7 +1,7 @@
 use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
-use bake_rl::core::env::{Tape, VectorEnvironment, VectorEnvironmentConfig};
+use bake_rl::core::env::{VectorTape, VectorEnvironment, VectorEnvironmentConfig};
 use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironmentConfig;
-use bake_rl::core::exploration::{EpsGreedy, Greedy};
+use bake_rl::core::action_selector::{EpsGreedy, Greedy};
 use bake_rl::core::scheduler::{LinearScheduler, Scheduler};
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use burn::prelude::*;
@@ -16,7 +16,7 @@ pub fn main() {
     let env = RecordEpisodeStatistics::new(env);
     let state = QLearningState { gamma: 0.99, alpha: 0.4 };
     let mut q = QTable::new(env.obs_space().n(), env.action_space().n());
-    let mut tape = Tape::new(env, true);
+    let mut tape = VectorTape::new(env, true);
 
     let total_steps = 100000;
     let mut eg = EpsGreedy::new(1.0);
@@ -35,7 +35,7 @@ pub fn main() {
     }
 
     let env = SynchronizedVectorEnvironmentConfig::new(vec![GymnasiumEnvironmentConfig::taxi().kwarg("render_mode", "human")]).init(&device);
-    let mut tape = Tape::new(env, false);
+    let mut tape = VectorTape::new(env, false);
     let mut g = Greedy;
     for _ in 0..5 {
         loop {
