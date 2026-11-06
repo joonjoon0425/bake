@@ -1,8 +1,10 @@
+use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
 use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironment;
 use bake_rl::core::scheduler::LinearScheduler;
+use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
-use bake_rl::env::classic::cartpole::CartPoleConfig;
 
+use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
@@ -26,9 +28,9 @@ pub fn main() {
             loss_fn: LossFn::MseLoss,
         };
 
-    let mut vec = vec![];
-    let env = CartPoleConfig::new(12).init();
+    let env = GymnasiumEnvironmentConfig::cart_pole().seed(seed).init();
     let env = SynchronizedVectorEnvironment::new(vec![env], &device);
+    let env = RecordEpisodeStatistics::new(env);
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;
@@ -68,18 +70,16 @@ pub fn main() {
 
     println!("It took {}s", d.as_secs());
 
-    let env = SynchronizedVectorEnvironment::new(
-        vec![GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human")],
-        &device
-    ).init();
+    let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").init();
+    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
 
-    let mut tape = Tape::new(env);
+    let mut tape = VectorTape::new(env, false);
     for _ in 0..5 {
         loop {
             let action = ac.dist(tape.obs.clone(), tape.constraint.clone()).mode();
             tape.step(action);
             if tape.done().clone().into_scalar() {
-                tape.reset();
+                tape.reset(None);
                 break;
             }
         }

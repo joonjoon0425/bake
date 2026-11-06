@@ -1,8 +1,9 @@
 use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
+use bake_rl::core::scheduler::LinearScheduler;
+use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
-use bake_rl::prelude::*;
 use bake_rl::deep::prelude::*;
-use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironmentConfig;
+use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironment;
 use burn::nn::activation::ActivationConfig;
 use burn::prelude::*;
 use burn::nn::*;
@@ -13,12 +14,12 @@ pub fn main() {
     let seed = 140;
     let device = Device::default();
     device.seed(seed);
-    let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::cart_pole().seed(10)
-    ]).init(&device);
+
+    let env = GymnasiumEnvironmentConfig::cart_pole().seed(seed).init();
+    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
     let env = RecordEpisodeStatistics::new(env);
     
-    let mut tape = Tape::new(env, true);
+    let mut tape = VectorTape::new(env, true);
 
     let state = DoubleDQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = DuelingTestNet::new(vec![tape.obs_space().shape()[1], 64, 64, tape.action_space().n()], ActivationConfig::Relu, &device);
@@ -26,7 +27,7 @@ pub fn main() {
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
         
-    let mut exploration = EpsGreedy::new(1.0f32);
+    let mut exploration = EpsGreedy::burn(1.0f32);
     let mut buffer = ReplayBufferConfig::prioritized(seed, 100000, 0.6, 0.4).with_priority_clip(1.0).init();
 
     let total_steps = 800000;
@@ -67,11 +68,10 @@ pub fn main() {
     }
 
     // evaluation
-    let env = SynchronizedVectorEnvironmentConfig::new(vec![
-        GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10) ,
-    ]).init(&device);
+    let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10).init();
+    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
 
-    let mut tape = Tape::new(env, false);
+    let mut tape = VectorTape::new(env, false);
     let mut eval = Greedy;
     for _ in 0..5 {
         loop {

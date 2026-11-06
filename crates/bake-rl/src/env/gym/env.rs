@@ -2,16 +2,16 @@
 use std::marker::PhantomData;
 
 use pyo3::{prelude::*, types::PyDict};
-use crate::{core::{env::{Environment, EnvironmentConfig}}, env::gym::GymSpace};
-/// A struct for all gymnasium environments
-pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
+use crate::{core::{env::{Environment, EnvironmentConfig}}, env::gym::NativeGymSpace};
+/// A struct for all non-vector gymnasium environments
+pub struct GymnasiumEnvironment<ObsSpace: NativeGymSpace, ActionSpace: NativeGymSpace> {
     env: Py<PyAny>,
 
     obs_space: ObsSpace,
     action_space: ActionSpace,
 }
 
-impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnvironment<ObsSpace, ActionSpace> {
+impl<ObsSpace: NativeGymSpace, ActionSpace: NativeGymSpace> Environment for GymnasiumEnvironment<ObsSpace, ActionSpace> {
     type ObsSpace = ObsSpace;
     type ActionSpace = ActionSpace;
     type Constraint = ();
@@ -26,7 +26,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
         &self.action_space
     }
 
-    fn reset(&mut self) -> ((<Self::ObsSpace as crate::core::env::space::Space>::Element, Self::Constraint), Self::Info) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as crate::core::env::space::NativeSpace>::Element, Self::Constraint), Self::Info) {
         return Python::attach(|py| {
             let env = self.env.bind(py);
             let tuple = env.call_method1("reset", ()).unwrap();
@@ -37,7 +37,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
         });
     }
 
-    fn step(&mut self, action: <Self::ActionSpace as crate::core::env::space::Space>::Element) -> ((<Self::ObsSpace as crate::core::env::space::Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
+    fn step(&mut self, action: <Self::ActionSpace as crate::core::env::space::NativeSpace>::Element) -> ((<Self::ObsSpace as crate::core::env::space::NativeSpace>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
         return Python::attach(|py| {
             let env = self.env.bind(py);
             let action = self.action_space.to_py(py, action).unwrap();
@@ -50,21 +50,20 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
 }
 
 ///the configuration struct for gymnasium environments
-pub struct GymnasiumEnvironmentConfig<ObsSpace: GymSpace, ActionSpace: GymSpace> {
+pub struct GymnasiumEnvironmentConfig<ObsSpace: NativeGymSpace, ActionSpace: NativeGymSpace> {
     kwargs: Py<PyDict>,
     spec: &'static str,
     seed: u64,
-    device: Option<burn::prelude::Device>,
     _p: PhantomData<(ObsSpace, ActionSpace)>,
 }
 
-impl<ObsSpace: GymSpace, ActionSpace: GymSpace> GymnasiumEnvironmentConfig<ObsSpace, ActionSpace> {
+impl<ObsSpace: NativeGymSpace, ActionSpace: NativeGymSpace> GymnasiumEnvironmentConfig<ObsSpace, ActionSpace> {
     /// create a new environment config for Gymnasium environment
     /// - takes `EnvSpec` of environments, in .json format
     pub fn new(spec: &'static str) -> Self {
         return Python::attach(|py| {
             let kwargs = PyDict::new(py);
-            Self { kwargs: kwargs.unbind(), _p: PhantomData, spec, seed: 12, device: None }
+            Self { kwargs: kwargs.unbind(), _p: PhantomData, spec, seed: 12 }
         });
     }
 
@@ -73,12 +72,6 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> GymnasiumEnvironmentConfig<ObsSp
     /// - 12
     pub fn seed(mut self, seed: u64) -> Self {
         self.seed = seed;
-        self
-    }
-
-    /// set device
-    pub fn device(mut self, device: &burn::prelude::Device) -> Self {
-        self.device = Some(device.clone());
         self
     }
 
@@ -95,7 +88,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> GymnasiumEnvironmentConfig<ObsSp
     }
 }
 
-impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfig for GymnasiumEnvironmentConfig<ObsSpace, ActionSpace> {
+impl<ObsSpace: NativeGymSpace, ActionSpace: NativeGymSpace> EnvironmentConfig for GymnasiumEnvironmentConfig<ObsSpace, ActionSpace> {
     type Environment = GymnasiumEnvironment<ObsSpace, ActionSpace>;
     
     fn init(self) -> Self::Environment {
@@ -111,10 +104,10 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfig for GymnasiumE
             env.call_method("reset", (), Some(&kwargs)).unwrap();
 
             let obs_space = env.getattr("observation_space").unwrap();
-            let obs_space = ObsSpace::from_gym(&obs_space, self.device.as_ref()).unwrap();
+            let obs_space = ObsSpace::from_gym(&obs_space, self.seed).unwrap();
 
             let action_space = env.getattr("action_space").unwrap();
-            let action_space = ActionSpace::from_gym(&action_space, self.device.as_ref()).unwrap();
+            let action_space = ActionSpace::from_gym(&action_space, self.seed).unwrap();
             GymnasiumEnvironment {
                 env: env.unbind(),
                 obs_space,

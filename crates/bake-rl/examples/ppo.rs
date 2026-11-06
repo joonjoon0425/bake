@@ -1,7 +1,8 @@
-use bake_rl::core::distribution::Categorical;
-use bake_rl::core::env::wrapper::{sync_env::SynchronizedVectorEnvironmentConfig, record_episode_statistics::RecordEpisodeStatistics};
+use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironment;
+use bake_rl::core::env::wrapper::record_episode_statistics::RecordEpisodeStatistics;
+use bake_rl::core::scheduler::LinearScheduler;
+use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
-use bake_rl::prelude::*;
 use bake_rl::deep::prelude::*;
 use burn::prelude::*;
 use burn::nn::*;
@@ -25,9 +26,10 @@ pub fn main() {
             advantage: AdvantageEstimator::Gae { lambda: 0.95 },
             loss_fn: LossFn::MseLoss,
         };
-    let mut vec = vec![];
-    for _ in 0..16 { vec.push(GymnasiumEnvironmentConfig::lunar_lander()) }
-    let env = RecordEpisodeStatistics::new(SynchronizedVectorEnvironmentConfig::new(vec).init(&device));
+    let mut env = vec![];
+    for i in 0..16 { env.push(GymnasiumEnvironmentConfig::lunar_lander().seed(i).init()) }
+    let env = SynchronizedVectorEnvironment::new(env, &device);
+    let env = RecordEpisodeStatistics::new(env);
 
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
@@ -36,7 +38,7 @@ pub fn main() {
     let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = Tape::new(env, true);
+    let mut tape = VectorTape::new(env, true);
 
     let total_steps = 100000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
@@ -72,12 +74,10 @@ pub fn main() {
 
         state.c_e = c_e_sch.step() as f32;
     }
+    let env = GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human").init();
+    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
 
-    let env = SynchronizedVectorEnvironmentConfig::new(
-        vec![GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human")]
-    ).init(&device);
-
-    let mut tape = Tape::new(env, false);
+    let mut tape = VectorTape::new(env, false);
     for _ in 0..5 {
         loop {
             let action = ac.dist(tape.obs.clone(), tape.constraint.clone()).mode();

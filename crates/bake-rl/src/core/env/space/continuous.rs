@@ -78,8 +78,8 @@ impl<const D: usize> ContinuousSpace<crate::core::Native, D> {
     /// - this is due to the fixed rank of `burn::Tensor`
     /// - Even if it is in `Native` representation, for unity
     pub fn native(shape: &[usize], low: ArrayD<f32>, high: ArrayD<f32>, seed: u64) -> Self {
-        assert!(shape.iter().zip(low.shape()).all(|(s, l)| s == l), "`low` and given shape mismatch");
-        assert!(shape.iter().zip(high.shape()).all(|(s, l)| s == l), "`high` and given shape mismatch");
+        assert!(shape[1..].iter().zip(low.shape()).all(|(s, l)| s == l), "`low` and given shape mismatch");
+        assert!(shape[1..].iter().zip(high.shape()).all(|(s, l)| s == l), "`high` and given shape mismatch");
         assert!(low.iter().zip(high.iter()).all(|(l, h)| l <= h), "Some elements of `low` is higher than `high`");
         Self { shape: shape.try_into().unwrap(), low, high, inner: SmallRng::seed_from_u64(seed) }
     }

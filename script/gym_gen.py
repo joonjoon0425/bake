@@ -8,14 +8,14 @@ import importlib
 
 def rust_space_strs(space):
     if isinstance(space, gym.spaces.Discrete):
-        return ("DiscreteSpace<crate::core::Native>", "DiscreteSpace<crate::core::Burn>")
+        return "DiscreteSpace<crate::core::Native>"
     elif isinstance(space, gym.spaces.Box):
         if isinstance(space.dtype, (np.dtypes.Float32DType, np.dtypes.Float64DType)):
             n = len(space.shape)
-            return (f"ContinuousSpace<{n + 1}>", )
+            return f"ContinuousSpace<crate::core::Native, {n + 1}>"
         elif isinstance(space.dtype, np.dtypes.UByteDType):
             n = len(space.shape)
-            return (f"ByteSpace<{n + 1}>", )
+            return f"ByteSpace<crate::core::Native, {n + 1}>"
         else:
             raise NotImplementedError(f"The given space is Box, but dtype {type(space.dtype)} is not supported currently")
     else:
@@ -53,11 +53,9 @@ for env_name, env_info in d.items():
     spec_name = env_name.upper() + "_SPEC"
     impl_str = ""
     try:
-        obs_space_strs = rust_space_strs(env.observation_space)
-        action_space_strs = rust_space_strs(env.action_space)
-        for obs_space_str in obs_space_strs:
-            for action_space_str in action_space_strs:
-                impl_str += \
+        obs_space_str = rust_space_strs(env.observation_space)
+        action_space_str = rust_space_strs(env.action_space)
+        impl_str += \
 f"""impl GymnasiumEnvironmentConfig<{obs_space_str}, {action_space_str}> {{
     /// `{env_info['id']}` environment
     /// - `ObsSpace`: `{obs_space_str}`

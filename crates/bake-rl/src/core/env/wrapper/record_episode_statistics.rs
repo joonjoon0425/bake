@@ -1,7 +1,7 @@
 //! Episode statistics recording wrpper
 use burn::prelude::*;
 use crate::core::env::VectorEnvironment;
-
+use crate::core::env::space::BurnSpace;
 /// records the episode-related statistics of vector environments, for scalar rewards
 /// # What it records?
 /// - Just as Gymnasium's `RecordEpisodeStatistics`, it records reward, step, wall-clock time and done masks, through the `Info`
@@ -61,7 +61,7 @@ impl<E: VectorEnvironment<Reward = Tensor<1>>> VectorEnvironment for RecordEpiso
         self.env.n_envs()
     }
 
-    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as crate::prelude::Space>::Element, Self::Constraint), Self::Info) {
+    fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as BurnSpace>::Element, Self::Constraint), Self::Info) {
         match mask.clone() {
             Some(mask) => {
                 self.record_reward.inplace(|r| r.mask_fill(mask.clone(), 0.));
@@ -76,7 +76,7 @@ impl<E: VectorEnvironment<Reward = Tensor<1>>> VectorEnvironment for RecordEpiso
         ((o, c), (i, vec![]))
     }
 
-    fn step(&mut self, action: <Self::ActionSpace as crate::prelude::Space>::Element) -> ((<Self::ObsSpace as crate::prelude::Space>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
+    fn step(&mut self, action: <Self::ActionSpace as BurnSpace>::Element) -> ((<Self::ObsSpace as BurnSpace>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
         let ((o, c), r, ter, tru, i) = self.env.step(action);
         self.record_reward.inplace(|s| s + r.clone());
         self.record_step.inplace(|s| s + 1);
