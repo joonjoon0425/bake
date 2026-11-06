@@ -1,5 +1,5 @@
 //! Cliff Walking with masks at the boundaries
-use crate::core::env::space::{DiscreteSpace, Space};
+use crate::core::env::space::{DiscreteSpace, NativeSpace};
 use crate::core::env::{Environment, EnvironmentConfig};
 /// CliffWalking with mask implementation
 /// - All feature are same but on the boundary, the agent receives an mask.
@@ -24,7 +24,7 @@ impl Environment for MaskedCliffWalking {
     type Reward = f32;
     type Info = ();
 
-    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), Self::Info) {
         self.pos = (0, 0);
         ((self.pos2usize(), [false, true, false, true]), ())
     }
@@ -88,8 +88,8 @@ pub struct MaskedCliffWalkingConfig;
 impl EnvironmentConfig for MaskedCliffWalkingConfig {
     type Environment = MaskedCliffWalking;
     fn init(self) -> Self::Environment {
-        let obs_space = DiscreteSpace::native(48);
-        let action_space = DiscreteSpace::native(4);
+        let obs_space = DiscreteSpace::native(48,0);
+        let action_space = DiscreteSpace::native(4, 0);
         Self::Environment { pos: (0, 0), obs_space, action_space }
     }
 }

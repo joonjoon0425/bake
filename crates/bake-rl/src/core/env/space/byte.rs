@@ -1,5 +1,5 @@
 //! Byte (u8) space
-use super::{BurnSpace, NativeSpace};
+use super::{BurnSpace, NativeSpace, ToBurnSpace};
 use burn::prelude::*;
 use rand::prelude::*;
 use ndarray::prelude::*;
@@ -12,7 +12,10 @@ pub struct ByteSpace<Repr: ByteSpaceRepr, const D: usize> {
 }
 
 /// Byte Space Representation
-pub trait ByteSpaceRepr { type Inner; }
+pub trait ByteSpaceRepr { 
+    /// inner types which each representation requires
+    type Inner;
+}
 impl ByteSpaceRepr for crate::core::Native { type Inner = SmallRng; }
 impl ByteSpaceRepr for crate::core::Burn { type Inner = Device; }
 
@@ -72,5 +75,36 @@ impl<const D: usize> NativeSpace for ByteSpace<crate::core::Native, D> {
         let elems: Vec<u8> = (0..n_elems).into_iter().map(|_| self.inner.random_range(0u8..255u8)).collect();
         let s = ArrayD::from_shape_vec(self.shape(), elems).unwrap();
         s
+    }
+}
+
+impl<const D: usize> ToBurnSpace for ByteSpace<crate::core::Native, D> {
+    type BurnSpace = ByteSpace<crate::core::Burn, D>;
+
+    fn into_burn(self, device: &Device) -> Self::BurnSpace {
+        let shape = self.shape;
+        Self::BurnSpace::burn(&shape, device)
+    }
+
+    fn bind(elems: Vec<Self::Element>, device: &Device) -> <Self::BurnSpace as BurnSpace>::Element {
+        assert!(!elems.is_empty(), "ToBurnSpace::bind: given Vec<{}> is empty", std::any::type_name::<Self>());
+        let n = elems.len();
+        let mut shape = elems[0].shape().to_vec(); shape[0] = n;
+        let native = elems.into_iter().flatten().collect();
+        Tensor::from_data(TensorData::new(native, shape), (device, burn::tensor::DType::U8))
+    }
+
+    fn unbind(elem: <Self::BurnSpace as BurnSpace>::Element) -> Vec<Self::Element> {
+        let shape = elem.dims();
+        let n_elem = shape.iter().skip(1).product();
+        let flattened = elem.into_data().try_into_vec_as::<u8>().unwrap();
+        
+        let chunks = flattened.chunks_exact(n_elem);
+        let mut vec = Vec::with_capacity(shape[0]);
+
+        for chunk in chunks {
+            vec.push(ArrayD::from_shape_vec(shape[1..].to_vec(), chunk.to_vec()).unwrap())
+        }
+        vec
     }
 }

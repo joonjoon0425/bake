@@ -4,11 +4,11 @@
 //! The action space is discrete with two actions (`0` = push left, `1` = push right),
 //! so the mask is always all-true; it exists only so that mask-aware networks
 //! (e.g. dueling) can be exercised on an unmasked task.
-use burn::prelude::*;
+use ndarray::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use crate::core::env::space::ContinuousSpace;
 use crate::core::env::space::DiscreteSpace;
-use crate::core::env::space::Space;
+use crate::core::env::space::NativeSpace;
 
 use crate::core::env::Environment;
 use crate::core::env::EnvironmentConfig;
@@ -54,16 +54,14 @@ pub struct CartPole {
     /// so this avoids rebuilding it on every step.
     mask: <Self as Environment>::Constraint,
 
-    device: Device,
-
-    obs_space: ContinuousSpace<2>,
-    action_space: DiscreteSpace<crate::core::Burn>,
+    obs_space: ContinuousSpace<crate::core::Native, 2>,
+    action_space: DiscreteSpace<crate::core::Native>,
 }
  
 impl CartPole {
     /// Build the observation tensor from the current state.
-    fn obs(&self) -> Tensor<2> {
-        Tensor::from_floats([[self.x, self.x_dot, self.theta, self.theta_dot]], &self.device)
+    fn obs(&self) -> ArrayD<f32> {
+        ArrayD::from_shape_vec(vec![1, 4], vec![self.x, self.x_dot, self.theta, self.theta_dot]).unwrap()
     }
  
     /// Whether the current state is outside the failure thresholds.
@@ -73,13 +71,13 @@ impl CartPole {
 }
  
 impl Environment for CartPole {
-    type ObsSpace = ContinuousSpace<2>;
-    type ActionSpace = DiscreteSpace<crate::core::Burn>;
+    type ObsSpace = ContinuousSpace<crate::core::Native, 2>;
+    type ActionSpace = DiscreteSpace<crate::core::Native>;
     type Constraint = ();
-    type Reward = Tensor<1>;
+    type Reward = f32;
     type Info = ();
 
-    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), ()) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), ()) {
         let mut sample = || self.rng.random_range(-INIT_RANGE..INIT_RANGE);
  
         self.x = sample();
@@ -91,8 +89,7 @@ impl Environment for CartPole {
         ((self.obs(), self.mask.clone()), ())
     }
 
-    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
-        let action = action.into_scalar::<u64>() as usize;
+    fn step(&mut self, action: <Self::ActionSpace as NativeSpace>::Element) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
         debug_assert!(
             (0..N_ACTIONS).contains(&action),
             "action out of range: {action}"
@@ -120,7 +117,7 @@ impl Environment for CartPole {
  
         (
             (self.obs(), self.mask.clone()),
-            Tensor::from_floats([1.0], &self.device),
+            1.0,
             terminated,
             truncated,
             ()
@@ -140,16 +137,14 @@ impl Environment for CartPole {
 /// # Configurations
 /// - seed: seed for randomness. 12 for default
 pub struct CartPoleConfig {
-    device: Device,
     seed: u64,
 }
 
 impl CartPoleConfig {
     /// create a new `CartPoleConfig`
-    pub fn new(seed: u64, device: &Device) -> Self {
+    pub fn new(seed: u64) -> Self {
         Self {
             seed,
-            device: device.clone()
         }
     }
 }
@@ -157,8 +152,10 @@ impl CartPoleConfig {
 impl EnvironmentConfig for CartPoleConfig {
     type Environment = CartPole;
     fn init(self) -> Self::Environment {
-        let obs_space = ContinuousSpace::burn(&[1, 4], Tensor::from_floats([[-f32::INFINITY; 4]], &self.device), Tensor::from_floats([[f32::INFINITY; 4]], &self.device), &self.device);
-        let action_space = DiscreteSpace::burn(2, &self.device);
+        let low = ArrayD::from_shape_vec(vec![1, 4], vec![-f32::INFINITY; 4]).unwrap();
+        let high = ArrayD::from_shape_vec(vec![1, 4], vec![f32::INFINITY; 4]).unwrap();
+        let obs_space = ContinuousSpace::native(&[1, 4], low, high, self.seed);
+        let action_space = DiscreteSpace::native(2, self.seed);
         CartPole {
             x: 0.0,
             x_dot: 0.0,
@@ -169,7 +166,6 @@ impl EnvironmentConfig for CartPoleConfig {
             mask: (),
             obs_space,
             action_space,
-            device: self.device
         }
     }
 }

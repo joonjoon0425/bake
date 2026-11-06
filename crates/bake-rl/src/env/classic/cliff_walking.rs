@@ -1,5 +1,5 @@
 //! Cliff Walking
-use crate::core::env::space::{Space, DiscreteSpace};
+use crate::core::env::space::{NativeSpace, DiscreteSpace};
 use crate::core::env::{Environment, EnvironmentConfig};
 
 /// A 4 * 12 cliff walking environment implementation
@@ -24,7 +24,7 @@ impl Environment for CliffWalking {
     type Info = ();
     type Reward = f32;
 
-    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), ()) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), ()) {
         self.pos = (0, 0);
         ((self.pos2usize(), ()), ())
     }
@@ -76,8 +76,8 @@ pub struct CliffWalkingConfig;
 impl EnvironmentConfig for CliffWalkingConfig {
     type Environment = CliffWalking;
     fn init(self) -> Self::Environment {
-        let obs_space = DiscreteSpace::native(48);
-        let action_space = DiscreteSpace::native(4);
+        let obs_space = DiscreteSpace::native(48, 0);
+        let action_space = DiscreteSpace::native(4, 0);
         Self::Environment { pos: (0, 0), obs_space, action_space }
     }
 }

@@ -3,7 +3,7 @@
 use burn::prelude::*;
 use rand::prelude::*;
 
-use super::{NativeSpace, BurnSpace};
+use super::{NativeSpace, BurnSpace, ToBurnSpace};
 
 /// Discrete space
 #[derive(Debug, Clone)]
@@ -56,5 +56,23 @@ impl NativeSpace for DiscreteSpace<crate::core::Native> {
 
     fn sample(&mut self) -> Self::Element {
         self.inner.random_range(0..self.n)
+    }
+}
+
+impl ToBurnSpace for DiscreteSpace<crate::core::Native> {
+    type BurnSpace = DiscreteSpace<crate::core::Burn>;
+
+    fn into_burn(self, device: &Device) -> Self::BurnSpace {
+        Self::BurnSpace::burn(self.n, device)
+    }
+
+    fn bind(elems: Vec<Self::Element>, device: &Device) -> <Self::BurnSpace as BurnSpace>::Element {
+        assert!(!elems.is_empty(), "ToBurnSpace::bind: given Vec<{}> is empty", std::any::type_name::<Self>());
+        Tensor::from_ints(&elems[..], device)
+    }
+
+    fn unbind(elem: <Self::BurnSpace as BurnSpace>::Element) -> Vec<Self::Element> {
+        let native = elem.into_data().try_into_vec_as::<u64>().unwrap();
+        native.into_iter().map(|u| u as usize).collect()
     }
 }

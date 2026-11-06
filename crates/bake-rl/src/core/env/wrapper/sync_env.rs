@@ -1,11 +1,11 @@
 //! Synchronized vector environment wrapper
-use crate::core::data::BatchOps;
+use crate::core::env::wrapper::into_burn::ToBurn;
 use crate::core::env::{Environment, VectorEnvironment, space::NativeSpace, space::BurnSpace, space::ToBurnSpace};
 use burn::prelude::*;
 /// vectorize non-vector environment in a synchronized way 
 pub struct SynchronizedVectorEnvironment<E>
 where
-    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: BatchOps, Reward: BatchOps>
+    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: ToBurn, Reward: ToBurn>
 {
     envs: Vec<E>,
     obs_space: <E::ObsSpace as ToBurnSpace>::BurnSpace,
@@ -18,14 +18,14 @@ where
 
 impl<E> SynchronizedVectorEnvironment<E>
 where
-    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: BatchOps, Reward: BatchOps>
+    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: ToBurn, Reward: ToBurn>
 {
     /// create new `SynchronizedVectorEnvironment` from given envs 
     pub fn new(envs: Vec<E>, device: &Device) -> Self {
         assert!(!envs.is_empty(), "Given environment vector is empty");
         let fst_env = &envs[0];
-        let obs_space = fst_env.obs_space().clone().to_burn();
-        let action_space = fst_env.action_space().clone().to_burn();
+        let obs_space = fst_env.obs_space().clone().into_burn(device);
+        let action_space = fst_env.action_space().clone().into_burn(device);
         let device = device.clone();
         Self {
             envs,
@@ -41,12 +41,12 @@ where
 
 impl<E> VectorEnvironment for SynchronizedVectorEnvironment<E>
 where
-    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: BatchOps, Reward: BatchOps>
+    E: Environment<ObsSpace: ToBurnSpace, ActionSpace: ToBurnSpace, Constraint: ToBurn, Reward: ToBurn>
 {
     type ObsSpace = <E::ObsSpace as ToBurnSpace>::BurnSpace;
     type ActionSpace = <E::ActionSpace as ToBurnSpace>::BurnSpace;
-    type Constraint = E::Constraint;
-    type Reward = E::Reward;
+    type Constraint = <E::Constraint as ToBurn>::BurnElem;
+    type Reward = <E::Reward as ToBurn>::BurnElem;
     type Info = Vec<E::Info>;
 
     fn obs_space(&self) -> &Self::ObsSpace {
@@ -62,7 +62,6 @@ where
     }
 
     fn reset(&mut self, mask: Option<Tensor<1, Bool>>) -> ((<Self::ObsSpace as BurnSpace>::Element, Self::Constraint), Self::Info) {
-        let bs = vec![vec![1]; self.n_envs()];
         match mask {
             Some(mask) => {
                 let mask = mask.try_into_vec_as().unwrap();
@@ -75,9 +74,10 @@ where
                     self.latest_info.as_mut().unwrap()[idx] = info;
                 }
                 let latest_obs = self.latest_obs.clone().unwrap();
-                let obss = BatchOps::cat_batch(&bs, 0, );
-                let constraints = BatchOps::cat_batch(&bs, 0, self.latest_constraint.clone().unwrap());
-                ((obss, constraints), self.latest_info.clone().unwrap())
+                let latest_constraint = self.latest_constraint.clone().unwrap();
+                let obs = <E::ObsSpace as ToBurnSpace>::bind(latest_obs, &self.device);
+                let constraint = ToBurn::bind(latest_constraint, &self.device);
+                ((obs, constraint), self.latest_info.clone().unwrap())
             }
             None => {
                 let mut latest_obs = Vec::with_capacity(self.n_envs());
@@ -93,18 +93,17 @@ where
                 self.latest_obs = Some(latest_obs.clone());
                 self.latest_constraint = Some(latest_constraint.clone());
                 self.latest_info = Some(latest_info.clone());
-                let obss = BatchOps::cat_batch(&bs, 0, latest_obs);
-                let constraints = BatchOps::cat_batch(&bs, 0, latest_constraint);
-                ((obss, constraints), latest_info)
+                let obs = <E::ObsSpace as ToBurnSpace>::bind(latest_obs, &self.device);
+                let constraint = ToBurn::bind(latest_constraint, &self.device);
+                ((obs, constraint), latest_info)
             }
         }
         
     }
 
-    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
+    fn step(&mut self, action: <Self::ActionSpace as BurnSpace>::Element) -> ((<Self::ObsSpace as BurnSpace>::Element, Self::Constraint), Self::Reward, Tensor<1, Bool>, Tensor<1, Bool>, Self::Info) {
         let n_envs = self.n_envs();
-        let actions = action.unbind_batch(&[n_envs], 0);
-        let bs = vec![vec![1]; n_envs];
+        let actions = <E::ActionSpace as ToBurnSpace>::unbind(action);
         // assertion
         assert!(n_envs == actions.len(), "the number of environment and the number of given action does not matches");
 
@@ -121,14 +120,16 @@ where
             terminated.push(term);
             truncated.push(trunc);
         }
-        let rewards = BatchOps::cat_batch(&bs, 0, rewards);
+        let rewards = ToBurn::bind(rewards, &self.device);
         let terminated = Tensor::from_bool(terminated.as_slice(), &self.device);
         let truncated = Tensor::from_bool(truncated.as_slice(), &self.device);
 
-        let obss = BatchOps::cat_batch(&bs, 0, self.latest_obs.clone().unwrap());
-        let constraints = BatchOps::cat_batch(&bs, 0, self.latest_constraint.clone().unwrap());
-        let infos= self.latest_info.clone();
-        ((obss, constraints), rewards, terminated, truncated, infos.unwrap())
+
+        let latest_obs = self.latest_obs.clone().unwrap();
+        let latest_constraint = self.latest_constraint.clone().unwrap();
+        let obs = <E::ObsSpace as ToBurnSpace>::bind(latest_obs, &self.device);
+        let constraint = ToBurn::bind(latest_constraint, &self.device);
+        ((obs, constraint), rewards, terminated, truncated, self.latest_info.clone().unwrap())
     }
 
     fn device(&self) -> Device {

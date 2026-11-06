@@ -1,7 +1,7 @@
 //! Space for specifications of elements
 //! - The `Space` corresponds to the `space` of Farama Foundation's `gymnasium`.
 use crate::core::data::BatchOps;
-
+use burn::prelude::*;
 /// `NativeSpace` trait for specifying the properties of observation space and action space, with `Native` representation
 pub trait NativeSpace: Clone {
     /// the type of element
@@ -22,11 +22,12 @@ pub trait BurnSpace: Clone {
 
 /// conversion from `NativeSpace` to `BurnSpace`
 pub trait ToBurnSpace: NativeSpace {
+    /// Burn Space
     type BurnSpace: BurnSpace;
     /// convert from `NativeSpace` to `BurnSpace`
-    fn to_burn(self) -> Self::BurnSpace;
+    fn into_burn(self, device: &Device) -> Self::BurnSpace;
     /// convert elements to `Burn`
-    fn bind(elems: Vec<Self::Element>) -> <Self::BurnSpace as BurnSpace>::Element;
+    fn bind(elems: Vec<Self::Element>, device: &Device) -> <Self::BurnSpace as BurnSpace>::Element;
     /// convert elements to `Native`
     fn unbind(elem: <Self::BurnSpace as BurnSpace>::Element) -> Vec<Self::Element>;
 }

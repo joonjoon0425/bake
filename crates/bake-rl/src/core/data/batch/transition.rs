@@ -32,7 +32,10 @@ pub struct Transition<Obs, Action, Constraint, Reward, Flag, Extra> {
     pub extra: Extra,
 }
 
+/// type alias for native(non-vector) transition struct
 pub type NativeTransition<Obs, Action, Constraint, Reward> = Transition<Obs, Action, Constraint, Reward, bool, ()>;
+/// type alias for burn(vector) transition struct
+#[allow(type_alias_bounds)]
 pub type BurnTransition<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> = Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>;
 
 impl<Obs: BatchOps, Action: BatchOps, Constraint: BatchOps, Reward: BatchOps> Batch<BurnTransition<Obs, Action, Constraint, Reward>> {

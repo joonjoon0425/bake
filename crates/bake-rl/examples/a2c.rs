@@ -1,4 +1,4 @@
-use bake_rl::core::data::Batch;
+use bake_rl::core::env::wrapper::sync_env::SynchronizedVectorEnvironment;
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::deep::prelude::*;
 use bake_rl::env::classic::cartpole::CartPoleConfig;
@@ -25,9 +25,10 @@ pub fn main() {
             advantage: AdvantageEstimator::Gae { lambda: 0.95 },
             loss_fn: LossFn::MseLoss,
         };
-    let mut vec = vec![];
-    let env = CartPoleConfig::new(12, &device).init();
 
+    let mut vec = vec![];
+    let env = CartPoleConfig::new(12).init();
+    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;
@@ -35,7 +36,7 @@ pub fn main() {
     let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new();
-    let mut tape = Tape::new(env);
+    let mut tape = VectorTape::new(env, false);
 
     let total_steps = 500000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
@@ -44,7 +45,7 @@ pub fn main() {
         let action = ac.action(tape.obs.clone(), tape.constraint.clone());
         let (t, info) = tape.step(action);
 
-        buffer.push(Batch::new(t, vec![1]));
+        buffer.push(t);
 
         if buffer.len() >= 128 {
             let batch = buffer.pop();

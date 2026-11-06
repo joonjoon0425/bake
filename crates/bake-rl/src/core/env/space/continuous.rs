@@ -1,5 +1,5 @@
 //! Space for continuous elements
-use super::{NativeSpace, BurnSpace};
+use super::{NativeSpace, BurnSpace, ToBurnSpace};
 use burn::{prelude::*, tensor::Distribution::Uniform};
 use rand::prelude::*;
 use ndarray::prelude::*;
@@ -17,7 +17,9 @@ pub struct ContinuousSpace<Repr: ContinuousSpaceRepr, const D: usize> {
 
 /// Continuous Space Representation
 pub trait ContinuousSpaceRepr {
+    /// lower, upper bound type
     type Bound<const D: usize>;
+    /// inner types which each representation requires
     type Inner;
 }
 
@@ -107,5 +109,42 @@ impl<const D: usize> NativeSpace for ContinuousSpace<crate::core::Native, D> {
         let elems: Vec<f32> = (0..n_elems).into_iter().map(|_| self.inner.random_range(0f32..1f32)).collect();
         let s = ArrayD::from_shape_vec(self.shape(), elems).unwrap();
         (self.high.clone() - self.low.clone()) * s + self.low.clone()
+    }
+}
+
+impl<const D: usize> ToBurnSpace for ContinuousSpace<crate::core::Native, D> {
+    type BurnSpace = ContinuousSpace<crate::core::Burn, D>;
+
+    fn into_burn(self, device: &Device) -> Self::BurnSpace {
+        let shape = self.shape;
+        let low = self.low.into_iter().collect();
+        let low = Tensor::from_data(TensorData::new(low, &shape), device);
+
+        let high = self.high.into_iter().collect();
+        let high = Tensor::from_data(TensorData::new(high, &shape), device);
+
+        Self::BurnSpace::burn(&shape, low, high, device)
+    }
+
+    fn bind(elems: Vec<Self::Element>, device: &Device) -> <Self::BurnSpace as BurnSpace>::Element {
+        assert!(!elems.is_empty(), "ToBurnSpace::bind: given Vec<{}> is empty", std::any::type_name::<Self>());
+        let n = elems.len();
+        let mut shape = elems[0].shape().to_vec(); shape[0] = n;
+        let native = elems.into_iter().flatten().collect();
+        Tensor::from_data(TensorData::new(native, shape), device)
+    }
+
+    fn unbind(elem: <Self::BurnSpace as BurnSpace>::Element) -> Vec<Self::Element> {
+        let shape = elem.dims();
+        let n_elem = shape.iter().skip(1).product();
+        let flattened = elem.into_data().try_into_vec_as::<f32>().unwrap();
+        
+        let chunks = flattened.chunks_exact(n_elem);
+        let mut vec = Vec::with_capacity(shape[0]);
+
+        for chunk in chunks {
+            vec.push(ArrayD::from_shape_vec(shape[1..].to_vec(), chunk.to_vec()).unwrap())
+        }
+        vec
     }
 }
