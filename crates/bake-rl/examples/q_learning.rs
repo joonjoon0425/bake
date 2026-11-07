@@ -26,7 +26,7 @@ pub fn main() {
 
         qlearning_update(&state, &mut q, t);
 
-        if tape.done() && let Some(stat) = stat {
+        if count % 100 == 0 && tape.done() && let Some(stat) = stat {
             println!("count: {count}, reward: {}, step: {}", stat.r, stat.s);
             tape.reset();
         }
