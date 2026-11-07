@@ -23,7 +23,7 @@ pub trait ContinuousSpaceRepr {
     type Inner;
 }
 
-impl ContinuousSpaceRepr for crate::core::Native { type Bound<const D: usize> = ArrayD<f32>; type Inner = SmallRng; }
+impl ContinuousSpaceRepr for crate::core::Native { type Bound<const D: usize> = ArrayD<f32>; type Inner = (); }
 impl ContinuousSpaceRepr for crate::core::Burn { type Bound<const D: usize> = Tensor<D>; type Inner = Device; }
 
 impl<const D: usize> ContinuousSpace<crate::core::Burn, D> {
@@ -33,8 +33,8 @@ impl<const D: usize> ContinuousSpace<crate::core::Burn, D> {
     /// - this is due to the fixed rank of `burn::Tensor`
     /// - Even if it is in `Native` representation, for unity
     pub fn burn(shape: &[usize], low: Tensor<D>, high: Tensor<D>, device: &Device) -> Self {
-        assert!(shape.iter().zip(low.dims()).all(|(s, l)| *s == l), "`low` and given shape mismatch");
-        assert!(shape.iter().zip(high.dims()).all(|(s, l)| *s == l), "`high` and given shape mismatch");
+        assert!(shape == low.dims(), "`low` and given shape mismatch");
+        assert!(shape == high.dims(), "`high` and given shape mismatch");
         assert!(low.dtype() == high.dtype(), "`low` and `high` dtype mismatch");
         assert!(low.clone().lower_equal(high.clone()).all().into_scalar::<bool>(), "Some elements of `low` is higher than `high`");
         Self { shape: shape.try_into().unwrap(), low, high, inner: device.clone() }
@@ -77,11 +77,11 @@ impl<const D: usize> ContinuousSpace<crate::core::Native, D> {
     /// - note that D is (feature rank + 1)
     /// - this is due to the fixed rank of `burn::Tensor`
     /// - Even if it is in `Native` representation, for unity
-    pub fn native(shape: &[usize], low: ArrayD<f32>, high: ArrayD<f32>, seed: u64) -> Self {
-        assert!(shape.iter().zip(low.shape()).all(|(s, l)| s == l), "`low` and given shape mismatch");
-        assert!(shape.iter().zip(high.shape()).all(|(s, l)| s == l), "`high` and given shape mismatch");
+    pub fn native(shape: &[usize], low: ArrayD<f32>, high: ArrayD<f32>) -> Self {
+        assert!(shape == low.shape(), "`low` and given shape mismatch");
+        assert!(shape == high.shape(), "`high` and given shape mismatch");
         assert!(low.iter().zip(high.iter()).all(|(l, h)| l <= h), "Some elements of `low` is higher than `high`");
-        Self { shape: shape.try_into().unwrap(), low, high, inner: SmallRng::seed_from_u64(seed) }
+        Self { shape: shape.try_into().unwrap(), low, high, inner: () }
     }
     /// return the shape
     /// # Warning
@@ -104,9 +104,9 @@ impl<const D: usize> ContinuousSpace<crate::core::Native, D> {
 impl<const D: usize> NativeSpace for ContinuousSpace<crate::core::Native, D> {
     type Element = ArrayD<f32>;
 
-    fn sample(&mut self) -> Self::Element {
+    fn sample<R: Rng>(&self, mut rng: R) -> Self::Element {
         let n_elems = self.shape.iter().product();
-        let elems: Vec<f32> = (0..n_elems).into_iter().map(|_| self.inner.random_range(0f32..1f32)).collect();
+        let elems: Vec<f32> = (0..n_elems).into_iter().map(|_| rng.random_range(0f32..1f32)).collect();
         let s = ArrayD::from_shape_vec(self.shape(), elems).unwrap();
         (self.high.clone() - self.low.clone()) * s + self.low.clone()
     }

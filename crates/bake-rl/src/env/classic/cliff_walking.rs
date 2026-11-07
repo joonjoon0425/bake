@@ -76,8 +76,8 @@ pub struct CliffWalkingConfig;
 impl EnvironmentConfig for CliffWalkingConfig {
     type Environment = CliffWalking;
     fn init(self) -> Self::Environment {
-        let obs_space = DiscreteSpace::native(48, 0);
-        let action_space = DiscreteSpace::native(4, 0);
+        let obs_space = DiscreteSpace::native(48);
+        let action_space = DiscreteSpace::native(4);
         Self::Environment { pos: (0, 0), obs_space, action_space }
     }
 }

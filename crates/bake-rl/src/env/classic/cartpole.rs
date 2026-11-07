@@ -154,8 +154,8 @@ impl EnvironmentConfig for CartPoleConfig {
     fn init(self) -> Self::Environment {
         let low = ArrayD::from_shape_vec(vec![1, 4], vec![-f32::INFINITY; 4]).unwrap();
         let high = ArrayD::from_shape_vec(vec![1, 4], vec![f32::INFINITY; 4]).unwrap();
-        let obs_space = ContinuousSpace::native(&[1, 4], low, high, self.seed);
-        let action_space = DiscreteSpace::native(2, self.seed);
+        let obs_space = ContinuousSpace::native(&[1, 4], low, high);
+        let action_space = DiscreteSpace::native(2);
         CartPole {
             x: 0.0,
             x_dot: 0.0,

@@ -18,7 +18,7 @@ pub trait DiscreteSpaceRepr {
     type Inner;
 }
 
-impl DiscreteSpaceRepr for crate::core::Native { type Inner = SmallRng; }
+impl DiscreteSpaceRepr for crate::core::Native { type Inner = (); }
 impl DiscreteSpaceRepr for crate::core::Burn { type Inner = Device; }
 
 impl DiscreteSpace<crate::core::Burn> {
@@ -44,8 +44,8 @@ impl BurnSpace for DiscreteSpace<crate::core::Burn> {
 
 impl DiscreteSpace<crate::core::Native> {
     /// create a new `DiscreteSpace` with `Native` representation
-    pub fn native(n: usize, seed: u64) -> Self {
-        Self { n, inner: SmallRng::seed_from_u64(seed) }
+    pub fn native(n: usize) -> Self {
+        Self { n, inner: () }
     }
     /// return the number of elements
     pub fn n(&self) -> usize { self.n }
@@ -54,8 +54,8 @@ impl DiscreteSpace<crate::core::Native> {
 impl NativeSpace for DiscreteSpace<crate::core::Native> {
     type Element = usize;
 
-    fn sample(&mut self) -> Self::Element {
-        self.inner.random_range(0..self.n)
+    fn sample<R: Rng>(&self, mut rng: R) -> Self::Element {
+        rng.random_range(0..self.n)
     }
 }
 

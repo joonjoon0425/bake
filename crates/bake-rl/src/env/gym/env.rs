@@ -104,10 +104,10 @@ impl<ObsSpace: NativeGymSpace, ActionSpace: NativeGymSpace> EnvironmentConfig fo
             env.call_method("reset", (), Some(&kwargs)).unwrap();
 
             let obs_space = env.getattr("observation_space").unwrap();
-            let obs_space = ObsSpace::from_gym(&obs_space, self.seed).unwrap();
+            let obs_space = ObsSpace::from_gym(&obs_space).unwrap();
 
             let action_space = env.getattr("action_space").unwrap();
-            let action_space = ActionSpace::from_gym(&action_space, self.seed).unwrap();
+            let action_space = ActionSpace::from_gym(&action_space).unwrap();
             GymnasiumEnvironment {
                 env: env.unbind(),
                 obs_space,

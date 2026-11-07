@@ -8,7 +8,7 @@ use burn::prelude::*;
 /// `NativeGymSpace` trait which can be build from Gymnasium spaces
 pub trait NativeGymSpace: NativeSpace + Sized {
     /// build the rust space from a python `gymnasium.spaces.*` object
-    fn from_gym(space: &Bound<'_, PyAny>, seed: u64) -> PyResult<Self>;
+    fn from_gym(space: &Bound<'_, PyAny>) -> PyResult<Self>;
     /// traslate rust data into bounded python data
     fn to_py<'py>(&self, py: Python<'py>, data: Self::Element) -> PyResult<Bound<'py, PyAny>>;
     /// traslate python data into rust data
@@ -16,12 +16,12 @@ pub trait NativeGymSpace: NativeSpace + Sized {
 }
 
 impl NativeGymSpace for DiscreteSpace<crate::core::Native> {
-    fn from_gym(space: &Bound<'_, PyAny>, seed: u64) -> PyResult<Self> {
+    fn from_gym(space: &Bound<'_, PyAny>) -> PyResult<Self> {
         let start: i64 = space.getattr("start")?.extract()?;
         if start != 0 {
             return Err(PyValueError::new_err(format!("Discrete(start={start}) is not supported")));
         }
-        Ok(DiscreteSpace::native(space.getattr("n")?.extract()?, seed))
+        Ok(DiscreteSpace::native(space.getattr("n")?.extract()?))
     }
 
     fn to_py<'py>(&self, py: Python<'py>, data: Self::Element) -> PyResult<Bound<'py, PyAny>> {
@@ -35,7 +35,7 @@ impl NativeGymSpace for DiscreteSpace<crate::core::Native> {
 }
 
 impl<const D: usize> NativeGymSpace for ContinuousSpace<crate::core::Native, D> {
-    fn from_gym(space: &Bound<'_, PyAny>, seed: u64) -> PyResult<Self> {
+    fn from_gym(space: &Bound<'_, PyAny>) -> PyResult<Self> {
         let mut shape: Vec<usize> = vec![1];
         shape.extend_from_slice(&space.getattr("shape")?.extract::<Vec<usize>>()?);
         if shape.len() != D {
@@ -44,7 +44,7 @@ impl<const D: usize> NativeGymSpace for ContinuousSpace<crate::core::Native, D> 
         
         let low = to_f32_ndarray::<D>(&space.getattr("low")?)?;
         let high = to_f32_ndarray::<D>(&space.getattr("high")?)?;
-        Ok(ContinuousSpace::native(&shape, low, high, seed))
+        Ok(ContinuousSpace::native(&shape, low, high))
     }
 
     fn to_py<'py>(&self, py: Python<'py>, data: Self::Element) -> PyResult<Bound<'py, PyAny>> {
@@ -63,13 +63,13 @@ impl<const D: usize> NativeGymSpace for ContinuousSpace<crate::core::Native, D> 
 }
 
 impl<const D: usize> NativeGymSpace for ByteSpace<crate::core::Native, D> {
-    fn from_gym(space: &Bound<'_, PyAny>, seed: u64) -> PyResult<Self> {
+    fn from_gym(space: &Bound<'_, PyAny>) -> PyResult<Self> {
         let mut shape: Vec<usize> = vec![1];
         shape.extend_from_slice(&space.getattr("shape")?.extract::<Vec<usize>>()?);
         if shape.len() != D {
             return Err(PyValueError::new_err(format!("rank mismatch: python shape {shape:?}, rust rank {D}")))
         }
-        Ok(ByteSpace::native(&shape, seed))
+        Ok(ByteSpace::native(&shape))
     }
 
     fn from_py(&self, py_data: &Bound<'_, PyAny>) -> PyResult<Self::Element> {

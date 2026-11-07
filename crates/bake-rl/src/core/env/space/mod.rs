@@ -2,12 +2,14 @@
 //! - The `Space` corresponds to the `space` of Farama Foundation's `gymnasium`.
 use crate::core::data::BatchOps;
 use burn::prelude::*;
+use rand::Rng;
+
 /// `NativeSpace` trait for specifying the properties of observation space and action space, with `Native` representation
 pub trait NativeSpace: Clone {
     /// the type of element
     type Element: Clone + 'static;
     /// sample an random element
-    fn sample(&mut self) -> Self::Element;
+    fn sample<R: Rng>(&self, rng: R) -> Self::Element;
 }
 
 /// `BurnSpace` trait for specifying the properties of observation space and action space, with `Burn` representation
