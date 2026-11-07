@@ -70,7 +70,7 @@ impl<const D: usize> ByteSpace<crate::core::Native, D> {
 impl<const D: usize> NativeSpace for ByteSpace<crate::core::Native, D> {
     type Element = ArrayD<u8>;
 
-    fn sample<R: Rng>(&self, mut rng: R) -> Self::Element {
+    fn sample<R: Rng>(&self, rng: &mut R) -> Self::Element {
         let n_elems = self.shape.iter().product();
         let elems: Vec<u8> = (0..n_elems).into_iter().map(|_| rng.random_range(0u8..255u8)).collect();
         let s = ArrayD::from_shape_vec(self.shape(), elems).unwrap();

@@ -9,7 +9,7 @@ pub trait NativeSpace: Clone {
     /// the type of element
     type Element: Clone + 'static;
     /// sample an random element
-    fn sample<R: Rng>(&self, rng: R) -> Self::Element;
+    fn sample<R: Rng>(&self, rng: &mut R) -> Self::Element;
 }
 
 /// `BurnSpace` trait for specifying the properties of observation space and action space, with `Burn` representation

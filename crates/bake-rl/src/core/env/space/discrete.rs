@@ -54,7 +54,7 @@ impl DiscreteSpace<crate::core::Native> {
 impl NativeSpace for DiscreteSpace<crate::core::Native> {
     type Element = usize;
 
-    fn sample<R: Rng>(&self, mut rng: R) -> Self::Element {
+    fn sample<R: Rng>(&self, rng: &mut R) -> Self::Element {
         rng.random_range(0..self.n)
     }
 }

@@ -104,7 +104,7 @@ impl<const D: usize> ContinuousSpace<crate::core::Native, D> {
 impl<const D: usize> NativeSpace for ContinuousSpace<crate::core::Native, D> {
     type Element = ArrayD<f32>;
 
-    fn sample<R: Rng>(&self, mut rng: R) -> Self::Element {
+    fn sample<R: Rng>(&self, rng: &mut R) -> Self::Element {
         let n_elems = self.shape.iter().product();
         let elems: Vec<f32> = (0..n_elems).into_iter().map(|_| rng.random_range(0f32..1f32)).collect();
         let s = ArrayD::from_shape_vec(self.shape(), elems).unwrap();
