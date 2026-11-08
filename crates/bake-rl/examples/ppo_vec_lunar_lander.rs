@@ -28,7 +28,7 @@ pub fn main() {
             loss_fn: LossFn::MseLoss,
         };
     let mut env = vec![];
-    for i in 0..1 { env.push(GymnasiumEnvironmentConfig::cart_pole().seed(i).init()) }
+    for i in 0..16 { env.push(GymnasiumEnvironmentConfig::lunar_lander().seed(i).init()) }
     let env = SynchronizedVectorEnvironment::new(env, &device);
     let env = RecordEpisodeStatistics::new(env);
 
@@ -42,7 +42,7 @@ pub fn main() {
     let sampler = ShuffleSampler;
     let mut tape = VectorTape::new(env, true);
 
-    let total_steps = 500000;
+    let total_steps = 100000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
@@ -81,7 +81,7 @@ pub fn main() {
 
     println!("It took {}s", d.as_secs());
 
-    let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").init();
+    let env = GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human").init();
     let env = SynchronizedVectorEnvironment::new(vec![env], &device);
 
     let mut tape = VectorTape::new(env, false);
