@@ -2,10 +2,10 @@
 use burn::prelude::*;
 use crate::core::constraint::BurnDiscreteConstraint;
 use crate::core::data::{Batch, BatchOps, BurnTransition};
-use crate::core::data::key;
 use crate::deep::{
     contract::DiscreteActionValue,
-    loss::{Loss, LossFn}
+    loss::{Loss, LossFn},
+    loss::weight::LossWeight,
 };
 
 /// state for Double Deep Q-Network algorithm
@@ -34,18 +34,20 @@ impl Loss for DoubleDQNLoss { fn loss(&self) -> Tensor<1> { self.loss.clone() } 
 /// # Warning
 /// - Here, the given `online` and `target` is moved to autodiff device
 /// - The `online` will be moved to inner device when `update` is called
-pub fn double_dqn_loss<Q, Constraint>(
+pub fn double_dqn_loss<Q, Constraint, SampleInfo>(
     state: &DoubleDQNState,
     online: Q,
     target: &Q,
-    batch: Batch<BurnTransition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>
+    batch: Batch<BurnTransition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>,
+    info: SampleInfo,
 ) -> (Q, DoubleDQNLoss)
 where
     Q: DiscreteActionValue,
-    Constraint: BurnDiscreteConstraint
+    Constraint: BurnDiscreteConstraint,
+    SampleInfo: LossWeight,
 {
     let online = online.train();
-    let mut batch = batch.autodiff().destruct().0;
+    let batch = batch.autodiff().destruct().0;
 
     let qvalues = online.action_values(batch.obs, batch.constraint);
     let qvalues = qvalues.gather(1, batch.action.unsqueeze_dim(1)).squeeze_dim::<1>(1);
@@ -60,16 +62,9 @@ where
     let td_error = (targets.clone() - qvalues.clone()).detach();
     let q_mean = qvalues.clone().detach().mean();
 
-    let is_weights = batch.extra.remove(&key::is_weight).ok();
-    match is_weights {
-        Some(is_weights) => {
-            let is_weights = is_weights.autodiff();
-            let loss = (state.loss_fn.forward_no_reduction(qvalues, targets) * is_weights).mean();
-            (online, DoubleDQNLoss { loss, td_error, q_mean })
-        },
-        None => {
-            let loss = state.loss_fn.forward(qvalues, targets);
-            (online, DoubleDQNLoss { loss, td_error, q_mean })
-        }
-    }
+    let is_weights = info;
+    let is_weights = is_weights.autodiff();
+    let loss = is_weights.apply(state.loss_fn.forward_no_reduction(qvalues, targets)).mean();
+    (online, DoubleDQNLoss { loss, td_error, q_mean })
+    
 }

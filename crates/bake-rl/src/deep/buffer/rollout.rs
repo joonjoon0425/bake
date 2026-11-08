@@ -1,48 +1,55 @@
 //! rollout buffer
 
-use crate::deep::buffer::storage::ring::RingStorage;
+use crate::deep::buffer::writer::{Writer, linear::LinearWriter};
 use crate::core::data::{Batch, BatchOps};
 
 /// rollout buffer
 pub struct RolloutBuffer<T: BatchOps> {
-    time_step: usize,
-    storage: RingStorage<T>,
+    rollout_size: usize,
+    head: usize,
+    storage: Option<Batch<T>>,
+    writer: LinearWriter,
 }
 
 impl<T: BatchOps> RolloutBuffer<T> {
     /// create new rollout buffer of given capacity, with given sampler
-    pub fn new(time_step: usize) -> Self {
+    pub fn new(rollout_size: usize) -> Self {
         Self {
-            time_step,
-            storage: RingStorage::new(),
+            rollout_size,
+            head: 0,
+            storage: None,
+            writer: LinearWriter,
         }
     }
 
     /// push given data into buffer
     pub fn push(&mut self, data: Batch<T>) {
-        if self.storage.is_init() {
-            let data = data.unsqueeze(0);
-            self.storage.write(data);
-        } else {
-            let data = data.unsqueeze(0);
-            let storage = Batch::zeros_like(0, self.time_step, &data);
-            self.storage.init(storage);
-            self.storage.write(data);
+        let data = data.unsqueeze(0);
+        let (head, _) = self.writer.index(self.rollout_size, self.head, 1).unwrap();
+        match &mut self.storage {
+            Some(storage) => {
+                storage.assign_inplace(0, self.head, data);
+            },
+            None => {
+                let mut storage = Batch::zeros_like(0, self.rollout_size, &data);
+                storage.assign_inplace(0, self.head, data);
+                self.storage = Some(storage);
+            }
         }
+        self.head = head;
     }
 
     /// return current length of the buffer
-    pub fn len(&self) -> usize { self.storage.len() }
+    pub fn len(&self) -> usize { self.head }
 
     /// checks if the buffer is full
-    pub fn is_full(&self) -> bool { self.time_step == self.len() }
-
+    pub fn is_full(&self) -> bool { self.rollout_size == self.len() }
 
     /// pop the buffer
     /// # Panics
-    /// - when the internal storage is not initialized
+    /// - when the internal storage empty
     pub fn pop(&mut self) -> Batch<T> {
-        let batch = std::mem::replace(&mut self.storage, RingStorage::new());
-        batch.try_into_batch().unwrap()
+        self.head = 0;
+        self.storage.take().unwrap()
     }
 }

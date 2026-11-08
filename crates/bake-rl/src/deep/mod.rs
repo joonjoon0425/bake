@@ -17,10 +17,10 @@ pub mod prelude {
     pub use crate::deep::loss::{LossFn, Loss, ActorCriticLoss};
     pub use crate::deep::network::Network;
     pub use crate::deep::buffer::sampler::{
-        ReplayBufferSampler,
-        RolloutBufferSampler,
+        Sampler,
+        EpochSampler,
         uniform::UniformSampler,
-        slice::SliceSampler,
+        suffle::ShuffleSampler,
     };
     pub use crate::deep::buffer::{
         replay::ReplayBuffer,

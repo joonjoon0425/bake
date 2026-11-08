@@ -1,12 +1,9 @@
-//! circular, ring storage
+//! circular, ring writer
 
 use std::borrow::Cow;
 use crate::core::data::{Batch, BatchOps, BurnTransition, batch::dict::{DictLeaf, Key}};
 
-/// ring-like storage
-/// - wraps over when the pre-allocated storage is full
-/// - allocates lazely
-/// - used for replay buffer and rollout buffer
+
 #[derive(Debug, Clone)]
 pub struct RingStorage<T: BatchOps> {
     head: usize,

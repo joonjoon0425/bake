@@ -35,7 +35,7 @@ pub fn main() {
     let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new(1024);
-    let sampler = SliceSampler;
+    let sampler = ShuffleSampler;
     let mut tape = VectorTape::new(env, true);
 
     let total_steps = 100000;
@@ -49,14 +49,14 @@ pub fn main() {
 
         buffer.push(t);
 
-        if buffer.len() >= 1024 {
+        if buffer.is_full() {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.normalized_advantage(&ac, batch.clone(), state.gamma);
             batch.insert(key::adv, adv).unwrap(); batch.insert(key::ret, ret).unwrap();
             let batch = batch.flatten();
             for _ in 0..4 {
                 for minibatch in sampler.iter(128, &batch, &device) {
-                    let (net, loss) = ppo_loss(&state, ac, minibatch);
+                    let (net, loss) = ppo_loss(&state, ac, minibatch.sample);
                     ac = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }
             }

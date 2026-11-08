@@ -2,6 +2,9 @@
 //! - used in computing the loss of deep reinforcement learning algorithms
 
 use burn::prelude::*;
+
+pub mod weight;
+
 /// total loss
 pub trait Loss {
     /// returns the loss

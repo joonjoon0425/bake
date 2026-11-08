@@ -1,13 +1,18 @@
-//! slicing sampler
+//! shuffle sampler
 use crate::core::data::{Batch, BatchOps};
 use burn::prelude::*;
-use super::RolloutBufferSampler;
-/// make sliced samples
-pub struct SliceSampler;
+use super::{EpochSampler, Sample};
 
-impl RolloutBufferSampler for SliceSampler {
-    fn iter<'a, T: BatchOps>(&self, chunk_size: usize, batch: &'a Batch<T>, device: &Device) -> impl Iterator<Item = Batch<T>> + 'a {
-        let len = batch.batch_shape().iter().product::<usize>();
+/// make shuffled minibatch samples
+/// # Warning
+/// - currently does not drop leftovers
+pub struct ShuffleSampler;
+
+impl EpochSampler for ShuffleSampler {
+    type SampleInfo = ();
+
+    fn iter<'a, T: BatchOps>(&self, chunk_size: usize, batch: &'a Batch<T>, device: &Device) -> impl Iterator<Item = Sample<T, ()>> + 'a {
+        let len = batch.batch_shape()[0];
         let rand_float = Tensor::<1>::random([len], burn::tensor::Distribution::Uniform(0.0, 1.0), device);
         let perm = rand_float.argsort(0);
         SliceSamplerIterator {
@@ -29,7 +34,7 @@ pub struct SliceSamplerIterator<'a, T: BatchOps> {
 }
 
 impl<'a, T: BatchOps> Iterator for SliceSamplerIterator<'a, T> {
-    type Item = Batch<T>;
+    type Item = Sample<T, ()>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.counter >= self.end {
@@ -38,7 +43,7 @@ impl<'a, T: BatchOps> Iterator for SliceSamplerIterator<'a, T> {
             let stop = (self.counter + self.size).min(self.end);
             let idx = self.perm.clone().slice(self.counter..stop);
             self.counter = stop;
-            Some(self.batch.clone().flatten().select(0, idx))
+            Some(Sample { sample: self.batch.clone().select(0, idx.clone()), indices: idx, info: () })
         }
     }
 }

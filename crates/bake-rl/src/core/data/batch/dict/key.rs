@@ -39,7 +39,3 @@ pub const ret: Key<Tensor<1>> = Key::const_key("ret");
 /// key for log_prob
 #[allow(non_upper_case_globals)]
 pub const log_prob: Key<Tensor<1>> = Key::const_key("log_prob");
-
-/// key for log_prob
-#[allow(non_upper_case_globals)]
-pub const is_weight: Key<Tensor<1>> = Key::const_key("is_weight");

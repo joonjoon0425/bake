@@ -44,8 +44,8 @@ pub fn main() {
 
         buffer.push(batch);
 
-        if count >= warmup && count % update_freq == 0 && let Some(batch) = buffer.sample(batch_size) {
-            let (net, loss) = double_dqn_loss(&state, online, &target, batch);
+        if count >= warmup && count % update_freq == 0 && let Some(sample) = buffer.sample(batch_size) {
+            let (net, loss) = double_dqn_loss(&state, online, &target, sample.sample, sample.info);
             online = net.update(loss, lr, &mut opt);
         }
 

@@ -19,15 +19,15 @@ impl<const D: usize, K: AutodiffKind> BatchOps for Tensor<D, K> {
         let d = resolve_dim(bs.len(), dim).unwrap();
         assert!(
             check_batch_dim_except(&[bs.to_vec(), src_bs.to_vec()], d),
-            "assign_batch: batch shapes {bs:?} and {src_bs:?} differ outside axis {d}"
+            "assign_inplace_batch: batch shapes {bs:?} and {src_bs:?} differ outside axis {d}"
         );
         assert!(
             idx + src_bs[d] <= bs[d],
-            "assign_batch: {} elements from index {idx} exceed axis {d} of size {}", src_bs[d], bs[d]
+            "assign_inplace_batch: {} elements from index {idx} exceed axis {d} of size {}", src_bs[d], bs[d]
         );
         let dims = self.dims();
-        assert!(dims[1..] == src.dims()[1..], "assign_batch: feature dims {:?} and {:?} differ", &dims[1..], &src.dims()[1..]);
-        assert!(self.check_batch(bs) && src.check_batch(src_bs), "assign_batch: tensor rows do not match the given batch shapes");
+        assert!(dims[1..] == src.dims()[1..], "assign_inplace_batch: feature dims {:?} and {:?} differ", &dims[1..], &src.dims()[1..]);
+        assert!(self.check_batch(bs) && src.check_batch(src_bs), "assign_inplace_batch: tensor rows do not match the given batch shapes");
 
         // fold: [out, k, res]
         let n_features: usize = dims[1..].iter().product();
