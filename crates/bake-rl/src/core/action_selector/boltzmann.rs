@@ -17,17 +17,17 @@ pub struct Boltzmann<Repr: ActionSelectorRepr> {
 
 impl<Repr: ActionSelectorRepr> Boltzmann<Repr> {
     /// get current temperature of Boltzmann policy
-    pub fn temp(&self) -> f32 { self.temp }
+    pub fn temperature(&self) -> f32 { self.temp }
 
     /// get the mutable reference of temperature of Boltzmann policy
-    pub fn temp_mut(&mut self) -> &mut f32 { &mut self.temp }
+    pub fn temperature_mut(&mut self) -> &mut f32 { &mut self.temp }
 }
 
 /// `Burn` repr
 impl Boltzmann<crate::core::Burn> {
     /// create a new `Boltzmann` policy with `Burn` representation. The higher the temperature, more uniform-like the policy.
     pub fn burn(temp: f32) -> Self {
-        if temp < 0.0 { panic!("the temp must be bigger than 0.0. Current temp is {}", temp) } 
+        if temp < 0.0 { panic!("the temperature must be bigger than 0.0. Current temperature is {}", temp) } 
         Self {
             temp,
             inner: ()
@@ -48,7 +48,7 @@ impl BurnDiscreteActionSelector for Boltzmann<crate::core::Burn> {
 impl Boltzmann<crate::core::Native> {
     /// create a new `Boltzmann` policy with `Native` representation. The higher the temperature, more uniform-like the policy.
     pub fn native(temp: f32, seed: u64) -> Self {
-        if temp < 0.0 { panic!("the temp must be bigger than 0.0. Current temp is {}", temp) } 
+        if temp < 0.0 { panic!("the temperature must be bigger than 0.0. Current temperature is {}", temp) } 
         Self {
             temp,
             inner: SmallRng::seed_from_u64(seed)

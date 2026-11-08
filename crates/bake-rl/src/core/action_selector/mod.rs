@@ -26,8 +26,8 @@ impl ActionSelectorRepr for crate::core::Burn { type Inner = (); }
 pub mod greedy;
 pub use greedy::Greedy;
 
-pub mod eps_greedy;
-pub use eps_greedy::EpsGreedy;
+pub mod epsilon_greedy;
+pub use epsilon_greedy::EpsilonGreedy;
 
 pub mod boltzmann;
 pub use boltzmann::Boltzmann;

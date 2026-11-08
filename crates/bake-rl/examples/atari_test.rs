@@ -4,7 +4,7 @@ use bake_rl::core::env::{Environment, EnvironmentConfig};
 use rand::prelude::*;
 
 pub fn main() {
-    let mut env = GymnasiumEnvironmentConfig::montezuma_revenge_preprocessed().kwarg("render_mode", "human").init();
+    let mut env = GymnasiumEnvironmentConfig::mario_bros_preprocessed().kwarg("render_mode", "human").init();
     let mut rng = SmallRng::seed_from_u64(12);
 
     env.reset();

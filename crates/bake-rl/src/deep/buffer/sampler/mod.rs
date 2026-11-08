@@ -1,43 +1,23 @@
-//! various samplers for buffer
-
-use crate::core::data::{Batch, BatchOps, Transition, BatchDict};
-use crate::deep::buffer::replay::lazy_storage::LazyStorage;
-use burn::prelude::*;
-
-/// A `Sampler` trait which all samplers for buffers must implement
-pub trait Sampler {
-    /// sample n elements from given storage (currently only Batch type)
-    fn sample<Obs, Action, Constraint, Reward>(&mut self, sample_size: usize, storage: &LazyStorage<Obs, Action, Constraint, Reward>) -> (Batch<Transition<Obs, Action, Constraint, Reward, Tensor<1, Bool>, BatchDict>>, SampleInfo)
-    where
-        Obs: BatchOps,
-        Action: BatchOps,
-        Constraint: BatchOps,
-        Reward: BatchOps;
-
-    /// when a new element is pushed into buffer. no-op for base
-    fn after_push(&mut self, _index: usize, _n: usize) { }
-}
-
-/// A common trait for Sampler configuration
-pub trait SamplerConfig {
-    /// Sampler
-    type SamplerType: Sampler;
-
-    /// creates a sampler
-    fn init(self, seed: u64, capacity: usize) -> Self::SamplerType;
-}
-
-/// A struct holding the information of samples
-#[derive(Debug, Clone)]
-pub struct SampleInfo {
-    /// the indices of sample as a member of given buffer
-    pub indices: Vec<usize>,
-    /// importance weights
-    pub is_weights: Option<Tensor<1>>,
-}
+//! sampler structs
 
 pub mod uniform;
-pub use uniform::{UniformSampler, UniformSamplerConfig};
-
 pub mod prioritized;
-pub use prioritized::{PrioritizedSampler, PrioritizedSamplerConfig};
+pub mod slice;
+
+use crate::core::data::{Batch, BatchOps};
+use burn::prelude::*;
+use super::storage::ring::RingStorage;
+
+/// sampler trait for replay buffers
+pub trait ReplayBufferSampler {
+    /// returns the sample with given batch size
+    fn sample<T: BatchOps>(&self, batch_size: usize, storage: &RingStorage<T>, device: &Device) -> Batch<T>;
+}
+
+/// sampler trait for rollout buffers
+pub trait RolloutBufferSampler {
+    /// return the iterator of minibatch samples
+    /// # Warning
+    /// - samples as if all batch shapes were flattened
+    fn iter<'a, T: BatchOps>(&self, chunk_size: usize, batch: &'a Batch<T>, device: &Device) -> impl Iterator<Item = Batch<T>> + 'a;
+}

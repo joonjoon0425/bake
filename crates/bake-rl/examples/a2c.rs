@@ -37,7 +37,7 @@ pub fn main() {
     let mut opt_a = AdamConfig::new().init();
     let mut opt_c = AdamConfig::new().init();
 
-    let mut buffer = RolloutBuffer::new();
+    let mut buffer = RolloutBuffer::new(128);
     let mut tape = VectorTape::new(env, true);
 
     let total_steps = 500000;
@@ -49,7 +49,7 @@ pub fn main() {
 
         buffer.push(t);
 
-        if buffer.len() >= 128 {
+        if buffer.is_full() {
             let batch = buffer.pop();
             let (net, loss) = a2c_loss(&state, ac, batch);
             ac = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);

@@ -7,7 +7,8 @@ use crate::core::data::{Batch, BatchOps, batch_ops::helper::*};
 /// - when using the struct key, user do not have to specify type for `insert` `get`, `remove` and `modify`.
 /// - when using the string key, user has to specify type for `insert_str`, `get_str`, `remove_str` and `modify_str`.
 pub type BatchDict = Batch<Dict>;
-type Erased = Box<dyn Any>;
+/// erased `BatchOps` type
+pub type ErasedBatchOps = Box<dyn Any>;
 
 /// typed key struct
 #[derive(Debug, Clone)]
@@ -19,23 +20,23 @@ pub struct Key<T> {
 /// BatchOps vtable
 #[derive(Debug, Clone)]
 pub struct BatchOpsVTable {
-    check_batch: fn(&Erased, &[usize]) -> bool,
-    reshape_batch: fn(Erased, &[usize], &[usize]) -> Erased,
-    cat_batch: fn(&[Vec<usize>], isize, Vec<Erased>) -> Erased,
-    unbind_batch: fn(Erased, &[usize], isize) -> Vec<Erased>,
-    slice_batch: fn(Erased, &[usize], isize, std::ops::Range<usize>) -> Erased,
-    select_batch: fn(Erased, &[usize], isize, idx: burn::Tensor<1, burn::prelude::Int>) -> Erased,
-    assign_inplace_batch: fn(&mut Erased, &[usize], isize, usize, Erased, &[usize]),
-    zeros_like_batch: fn(&[usize], isize, usize, &Erased) -> Erased,
-    autodiff: fn(Erased) -> Erased,
-    clone: fn(&Erased) -> Erased,
+    check_batch: fn(&ErasedBatchOps, &[usize]) -> bool,
+    reshape_batch: fn(ErasedBatchOps, &[usize], &[usize]) -> ErasedBatchOps,
+    cat_batch: fn(&[Vec<usize>], isize, Vec<ErasedBatchOps>) -> ErasedBatchOps,
+    unbind_batch: fn(ErasedBatchOps, &[usize], isize) -> Vec<ErasedBatchOps>,
+    slice_batch: fn(ErasedBatchOps, &[usize], isize, std::ops::Range<usize>) -> ErasedBatchOps,
+    select_batch: fn(ErasedBatchOps, &[usize], isize, idx: burn::Tensor<1, burn::prelude::Int>) -> ErasedBatchOps,
+    assign_inplace_batch: fn(&mut ErasedBatchOps, &[usize], isize, usize, ErasedBatchOps, &[usize]),
+    zeros_like_batch: fn(&[usize], isize, usize, &ErasedBatchOps) -> ErasedBatchOps,
+    autodiff: fn(ErasedBatchOps) -> ErasedBatchOps,
+    clone: fn(&ErasedBatchOps) -> ErasedBatchOps,
     type_name: &'static str,
 }
 
 /// dictionary leaf
 #[derive(Debug)]
 pub struct DictLeaf {
-    value: Erased,
+    value: ErasedBatchOps,
     vtable: BatchOpsVTable,
 }
 
@@ -129,23 +130,24 @@ impl Batch<Dict> {
     }
 
     /// insert new item, with given string key
+    /// # Panics
+    /// - when the batch shape does not matchs
     /// # Returns
     /// - the previously saved value if it existed
     pub fn insert_str<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Result<Option<DictLeaf>, String> {
-        if !value.check_batch(&self.bs) {
-            Err("batch shape does not matches".into())
-        } else {
-            Ok(self.leaf.insert(key, value))
-        }
+        assert!(value.check_batch(&self.bs), "batch shape does not matches"); 
+        
+        Ok(self.leaf.insert(key, value))
     }
 
     /// insert new item, with given key struct
+    /// # Panics
+    /// - when the batch shape does not matchs
     /// # Returns
     /// - the previously saved value if it existed
     pub fn insert<T: BatchOps>(&mut self, key: Key<T>, value: T) -> Result<Option<T>, String> {
-        if !value.check_batch(&self.bs) {
-            return Err("batch shape does not matches".into())   
-        }
+        assert!(value.check_batch(&self.bs), "batch shape does not matches"); 
+        
         Ok(self.leaf.insert(key.name, value).map(|v| *v.value.downcast::<T>().unwrap()))
     }
 
@@ -214,7 +216,7 @@ impl BatchOps for Dict {
         // used for checking the total number of values for each keys
         let n = dat.len();
         let mut map = BTreeMap::new();
-        let mut split: BTreeMap<Cow<'static, str>, (Vec<Erased>, BatchOpsVTable)> = BTreeMap::new();
+        let mut split: BTreeMap<Cow<'static, str>, (Vec<ErasedBatchOps>, BatchOpsVTable)> = BTreeMap::new();
 
         // collect all item in keys
         for d in dat {
@@ -274,7 +276,7 @@ impl BatchOps for Dict {
     fn unbind_batch(self, bs: &[usize], dim: isize) -> Vec<Self> {
         let (_, d) = bs_after_unbind(bs, dim).unwrap();
         let n = bs[d];
-        let mut split: BTreeMap<Cow<'static, str>, (Vec<Erased>, BatchOpsVTable)> = BTreeMap::new();
+        let mut split: BTreeMap<Cow<'static, str>, (Vec<ErasedBatchOps>, BatchOpsVTable)> = BTreeMap::new();
         for (s, leaf) in self.map {
             let v = (leaf.vtable.unbind_batch)(leaf.value, bs, dim);
             split.insert(s, (v, leaf.vtable));

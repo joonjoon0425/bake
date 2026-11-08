@@ -16,14 +16,19 @@ pub mod prelude {
     pub use crate::deep::contract::*;
     pub use crate::deep::loss::{LossFn, Loss, ActorCriticLoss};
     pub use crate::deep::network::Network;
-    pub use crate::deep::buffer::sampler::{Sampler, SamplerConfig};
+    pub use crate::deep::buffer::sampler::{
+        ReplayBufferSampler,
+        RolloutBufferSampler,
+        uniform::UniformSampler,
+        slice::SliceSampler,
+    };
     pub use crate::deep::buffer::{
-        replay::ReplayBufferConfig,
+        replay::ReplayBuffer,
         rollout::RolloutBuffer,
     };
     pub use crate::deep::distribution::{Distribution, Categorical};
     
-    pub use crate::core::action_selector::{BurnDiscreteActionSelector, EpsGreedy, Boltzmann, Greedy};
+    pub use crate::core::action_selector::{BurnDiscreteActionSelector, EpsilonGreedy, Boltzmann, Greedy};
     pub use crate::core::constraint::BurnDiscreteConstraint;
     pub use crate::core::env::{Tape, VectorTape};
     pub use crate::core::env::{Environment, VectorEnvironment, EnvironmentConfig, VectorEnvironmentConfig};

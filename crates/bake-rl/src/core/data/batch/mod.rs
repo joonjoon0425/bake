@@ -34,7 +34,7 @@ impl<T: BatchOps> Batch<T> {
         (self.leaf, self.bs)
     }
     /// returns the batch shape
-    pub fn bs(&self) -> &[usize] { &self.bs }
+    pub fn batch_shape(&self) -> &[usize] { &self.bs }
     /// reshape batch shape
     pub fn reshape(self, bs: Vec<usize>) -> Self {
         assert!(check_reshape(&self.bs, &bs), "invalid reshape shape given");
@@ -83,7 +83,7 @@ impl<T: BatchOps> Batch<T> {
     
     /// stack the elements, creating a new batch axis;
     pub fn stack(dat: Vec<Self>) -> Self {
-        assert!(!dat.is_empty(), "tried to cat empty data");
+        assert!(!dat.is_empty(), "tried to stack empty data");
         let dat: Vec<Batch<T>> = dat.into_iter().map(|d| d.unsqueeze(0)).collect();
         let bs: Vec<Vec<usize>> = dat.iter().map(
             |d| {
@@ -163,7 +163,7 @@ impl<T: BatchOps> BatchOps for Batch<T> {
 
     fn cat_batch(bs: &[Vec<usize>], dim: isize, dat: Vec<Self>) -> Self {
         let check = bs.into_iter().zip(dat.iter()).all(|(b, d)| {
-            if b != d.bs() {
+            if b != d.batch_shape() {
                 false
             } else {
                 true
@@ -202,7 +202,7 @@ impl<T: BatchOps> BatchOps for Batch<T> {
     }
 
     fn zeros_like_batch(bs: &[usize], dim: isize, capacity: usize, src: &Self) -> Self {
-        assert!(bs == src.bs(), "given batch shape does not equals the batch shape of src");
+        assert!(bs == src.batch_shape(), "given batch shape does not equals the batch shape of src");
         let ret = Self::zeros_like(dim, capacity, src);
         ret
     }
@@ -258,7 +258,7 @@ mod tests {
     #[test]
     fn new_with_empty_batch_shape() {
         let b = Batch::new(Tensor::<2>::zeros([1, 4], &dev()), vec![]);
-        assert!(b.bs().is_empty());
+        assert!(b.batch_shape().is_empty());
     }
 
     // ---------------- shape-only ops ----------------
@@ -266,7 +266,7 @@ mod tests {
     #[test]
     fn reshape_valid() {
         let b = b23().reshape(vec![3, 2]);
-        assert_eq!(b.bs(), &[3, 2]);
+        assert_eq!(b.batch_shape(), &[3, 2]);
         assert_eq!(leaf_firsts(b), firsts(seq()));   // data untouched
     }
 
@@ -279,11 +279,11 @@ mod tests {
     #[test]
     fn squeeze_unsqueeze() {
         let b = b23().unsqueeze(1);
-        assert_eq!(b.bs(), &[2, 1, 3]);
+        assert_eq!(b.batch_shape(), &[2, 1, 3]);
         let b = b.squeeze(1);
-        assert_eq!(b.bs(), &[2, 3]);
+        assert_eq!(b.batch_shape(), &[2, 3]);
         let b = b.unsqueeze(-1);
-        assert_eq!(b.bs(), &[2, 3, 1]);
+        assert_eq!(b.batch_shape(), &[2, 3, 1]);
     }
 
     #[test]
@@ -297,14 +297,14 @@ mod tests {
     #[test]
     fn slice_updates_shape() {
         let b = b23().slice(1, 0..2);
-        assert_eq!(b.bs(), &[2, 2]);
+        assert_eq!(b.batch_shape(), &[2, 2]);
         assert_eq!(leaf_firsts(b), vec![0.0, 4.0, 12.0, 16.0]);
     }
 
     #[test]
     fn select_updates_shape() {
         let b = b23().select(1, Tensor::from_ints([2, 0], &dev()));
-        assert_eq!(b.bs(), &[2, 2]);
+        assert_eq!(b.batch_shape(), &[2, 2]);
         assert_eq!(leaf_firsts(b), vec![8.0, 0.0, 20.0, 12.0]);
     }
 
@@ -313,7 +313,7 @@ mod tests {
         let a = b23();
         let c = Batch::new(seq().slice([0..3, 0..4]) + 100.0, vec![1, 3]);
         let b = Batch::cat(0, vec![a, c]);
-        assert_eq!(b.bs(), &[3, 3]);
+        assert_eq!(b.batch_shape(), &[3, 3]);
         assert_eq!(leaf_firsts(b), vec![0.0, 4.0, 8.0, 12.0, 16.0, 20.0, 100.0, 104.0, 108.0]);
     }
 
@@ -327,7 +327,7 @@ mod tests {
     fn unbind_removes_axis() {
         let parts = b23().unbind(0);
         assert_eq!(parts.len(), 2);
-        assert_eq!(parts[0].bs(), &[3]);
+        assert_eq!(parts[0].batch_shape(), &[3]);
         assert_eq!(leaf_firsts(parts[1].clone()), vec![12.0, 16.0, 20.0]);
     }
 
@@ -336,14 +336,14 @@ mod tests {
         // [n_envs] -> n_envs x []
         let parts = Batch::new(seq(), vec![6]).unbind(0);
         assert_eq!(parts.len(), 6);
-        assert!(parts.iter().all(|p| p.bs().is_empty()));
+        assert!(parts.iter().all(|p| p.batch_shape().is_empty()));
     }
 
     #[test]
     fn stack_unbind_roundtrip() {
         let parts = b23().unbind(0);
         let b = Batch::stack(parts);
-        assert_eq!(b.bs(), &[2, 3]);
+        assert_eq!(b.batch_shape(), &[2, 3]);
         assert_eq!(leaf_firsts(b), firsts(seq()));
     }
 
@@ -354,14 +354,14 @@ mod tests {
             .map(|i| Batch::new(Tensor::<2>::zeros([1, 4], &dev()) + i as f32, vec![]))
             .collect();
         let b = Batch::stack(envs);
-        assert_eq!(b.bs(), &[4]);
+        assert_eq!(b.batch_shape(), &[4]);
         assert_eq!(leaf_firsts(b), vec![0.0, 1.0, 2.0, 3.0]);
     }
 
     #[test]
     fn zeros_like_capacity() {
         let z = Batch::zeros_like(0, 5, &b23());
-        assert_eq!(z.bs(), &[5, 3]);
+        assert_eq!(z.batch_shape(), &[5, 3]);
         assert_eq!(z.destruct().0.dims(), [15, 4]);
     }
 
@@ -372,7 +372,7 @@ mod tests {
         // replay-buffer style: capacity 4 along the first axis, each slot is [3]
         let mut buf = Batch::zeros_like(0, 4, &b23());              // bs [4, 3]
         buf.assign_inplace(0, 2, b23().slice(0, 1..2));             // write (1, *) at slot 2
-        assert_eq!(buf.bs(), &[4, 3]);
+        assert_eq!(buf.batch_shape(), &[4, 3]);
         let f = leaf_firsts(buf);
         // slot 2 = rows 6..9
         assert_eq!(&f[6..9], &[12.0, 16.0, 20.0]);
@@ -398,7 +398,7 @@ mod tests {
     #[test]
     fn nested_new_requires_equal_shape() {
         let outer = Batch::new(b23(), vec![2, 3]);
-        assert_eq!(outer.bs(), &[2, 3]);
+        assert_eq!(outer.batch_shape(), &[2, 3]);
     }
 
     #[test]
@@ -410,9 +410,9 @@ mod tests {
     #[test]
     fn nested_slice_updates_inner_shape() {
         let s = Batch::new(b23(), vec![2, 3]).slice(1, 1..3);
-        assert_eq!(s.bs(), &[2, 2]);
+        assert_eq!(s.batch_shape(), &[2, 2]);
         let (inner, _) = s.destruct();
-        assert_eq!(inner.bs(), &[2, 2]);
+        assert_eq!(inner.batch_shape(), &[2, 2]);
         assert_eq!(leaf_firsts(inner), vec![4.0, 8.0, 16.0, 20.0]);
     }
 
@@ -420,11 +420,11 @@ mod tests {
     fn nested_unbind_and_stack() {
         let parts = Batch::new(b23(), vec![2, 3]).unbind(0);
         assert_eq!(parts.len(), 2);
-        assert_eq!(parts[0].bs(), &[3]);
+        assert_eq!(parts[0].batch_shape(), &[3]);
         let b = Batch::stack(parts);
         let (inner, bs) = b.destruct();
         assert_eq!(bs, vec![2, 3]);
-        assert_eq!(inner.bs(), &[2, 3]);
+        assert_eq!(inner.batch_shape(), &[2, 3]);
     }
 
     #[test]

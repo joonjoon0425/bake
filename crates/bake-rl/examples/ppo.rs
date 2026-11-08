@@ -8,12 +8,9 @@ use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
 use burn::optim::*;
-use rand::SeedableRng;
-use rand::rngs::SmallRng;
 
 pub fn main() {
     let seed: u64 = 120;
-    let mut rng = SmallRng::seed_from_u64(seed);
     let device = Device::default();
     device.seed(seed);
 
@@ -37,7 +34,8 @@ pub fn main() {
     let mut opt_a = AdamConfig::new().init();
     let mut opt_c = AdamConfig::new().init();
 
-    let mut buffer = RolloutBuffer::new();
+    let mut buffer = RolloutBuffer::new(1024);
+    let sampler = SliceSampler;
     let mut tape = VectorTape::new(env, true);
 
     let total_steps = 100000;
@@ -57,7 +55,7 @@ pub fn main() {
             batch.insert(key::adv, adv).unwrap(); batch.insert(key::ret, ret).unwrap();
             let batch = batch.flatten();
             for _ in 0..4 {
-                for minibatch in batch.minibatch(0, 128, &mut rng, &device) {
+                for minibatch in sampler.iter(128, &batch, &device) {
                     let (net, loss) = ppo_loss(&state, ac, minibatch);
                     ac = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);
                 }

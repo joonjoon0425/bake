@@ -22,6 +22,8 @@ pub enum AdvantageEstimator {
 
 impl AdvantageEstimator {
     /// compute the advantage
+    /// # Warning
+    /// - expects batch shape of [T, N]
     /// # Returns
     /// - (advantage, return) with shape [T * N]
     pub fn advantage<Ac: ActorCritic>(

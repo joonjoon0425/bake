@@ -1,8 +1,8 @@
 //! Deep Q-Network
 use burn::prelude::*;
-use crate::deep::buffer::sampler::SampleInfo;
 use crate::core::constraint::BurnDiscreteConstraint;
-use crate::core::data::{Batch, BatchDict, BatchOps, Transition};
+use crate::core::data::{Batch, BatchOps, BurnTransition};
+use crate::core::data::key;
 use crate::deep::{
     contract::DiscreteActionValue,
     loss::{Loss, LossFn}
@@ -38,14 +38,14 @@ pub fn dqn_loss<Q, Constraint>(
     state: &DQNState,
     online: Q,
     target: &Q,
-    batch: Batch<Transition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>, Tensor<1, Bool>, BatchDict>>, batch_info: SampleInfo
+    batch: Batch<BurnTransition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>
 ) -> (Q, DQNLoss)
 where
     Q: DiscreteActionValue,
     Constraint: BurnDiscreteConstraint
 {
     let online = online.train();
-    let batch = batch.autodiff().destruct().0;
+    let mut batch = batch.autodiff().destruct().0;
 
     let qvalues = online.action_values(batch.obs, batch.constraint);
     let qvalues = qvalues.gather(1, batch.action.unsqueeze_dim(1)).squeeze_dim::<1>(1);
@@ -57,7 +57,8 @@ where
     let td_error = (targets.clone() - qvalues.clone()).detach();
     let q_mean = qvalues.clone().detach().mean();
 
-    match batch_info.is_weights {
+    let is_weights = batch.extra.remove(&key::is_weight).ok();
+    match is_weights {
         Some(is_weights) => {
             let is_weights = is_weights.autodiff();
             let loss = (state.loss_fn.forward_no_reduction(qvalues, targets) * is_weights).mean();

@@ -17,8 +17,8 @@ pub fn main() {
     let mut tape = Tape::new(env);
 
     let total_steps = 100000;
-    let mut eg = EpsGreedy::native(1.0, seed);
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.75);
+    let mut eg = EpsilonGreedy::native(1.0, seed);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.5);
 
     for count in 0..total_steps {
         let action = q.action(&mut eg, tape.obs.clone(), tape.constraint.clone());
@@ -26,12 +26,14 @@ pub fn main() {
 
         qlearning_update(&state, &mut q, t);
 
-        if count % 100 == 0 && tape.done() && let Some(stat) = stat {
-            println!("count: {count}, reward: {}, step: {}", stat.r, stat.s);
+        if tape.done() && let Some(stat) = stat {
+            if count % 50 == 0 {
+                println!("count: {count}, reward: {}, step: {}", stat.r, stat.s);
+            }
             tape.reset();
         }
         
-        *eg.eps_mut() = eps_sch.step() as f32;
+        *eg.epsilon_mut() = eps_sch.step() as f32;
     }
 
     let env = GymnasiumEnvironmentConfig::taxi().kwarg("render_mode", "human").init();

@@ -12,8 +12,8 @@ impl<T: BatchOps> Batch<T> {
     /// # Returns
     /// - minibatch iterator
     pub fn minibatch<'a>(&'a self, dim: isize, size: usize, rng: &mut SmallRng, device: &Device) -> impl Iterator<Item = Batch<T>> + 'a {
-        let d = resolve_dim(self.bs().len(), dim).unwrap();
-        let n = self.bs()[d];
+        let d = resolve_dim(self.batch_shape().len(), dim).unwrap();
+        let n = self.batch_shape()[d];
         let mut perm: Vec<i64> = (0..n as i64).collect();
         perm.shuffle(rng);
         let end = n;

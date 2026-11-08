@@ -27,8 +27,8 @@ pub fn main() {
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
         
-    let mut exploration = EpsGreedy::burn(1.0f32);
-    let mut buffer = ReplayBufferConfig::prioritized(seed, 100000, 0.6, 0.4).with_priority_clip(1.0).init();
+    let mut exploration = EpsilonGreedy::burn(1.0f32);
+    let mut buffer = ReplayBuffer::new(UniformSampler, 100000, &device);
 
     let total_steps = 800000;
     let warmup = 10000;
@@ -37,7 +37,6 @@ pub fn main() {
     let batch_size = 128;
 
     let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
-    let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
         let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
@@ -45,9 +44,8 @@ pub fn main() {
 
         buffer.push(batch);
 
-        if count >= warmup && count % update_freq == 0 && let Some((batch, batch_info)) = buffer.sample(batch_size) {
-            let (net, loss) = dqn_loss(&state, online, &target, batch, batch_info.clone());
-            buffer.update_priority(&batch_info.indices, loss.td_error.clone());
+        if count >= warmup && count % update_freq == 0 && let Some(batch) = buffer.sample(batch_size) {
+            let (net, loss) = dqn_loss(&state, online, &target, batch);
             online = net.update(loss, lr, &mut opt);
         }
 
@@ -63,8 +61,7 @@ pub fn main() {
             }
         }
 
-        *exploration.eps_mut() = eps_sch.step() as f32;
-        *buffer.beta_mut() = beta_sch.step();
+        *exploration.epsilon_mut() = eps_sch.step() as f32;
     }
 
     // evaluation
