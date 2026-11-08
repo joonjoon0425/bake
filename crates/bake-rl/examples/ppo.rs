@@ -9,7 +9,11 @@ use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
 use burn::optim::*;
 
+use std::time::Instant;
+
 pub fn main() {
+    let s = Instant::now();
+
     let seed: u64 = 120;
     let device = Device::default();
     device.seed(seed);
@@ -24,21 +28,21 @@ pub fn main() {
             loss_fn: LossFn::MseLoss,
         };
     let mut env = vec![];
-    for i in 0..16 { env.push(GymnasiumEnvironmentConfig::lunar_lander().seed(i).init()) }
+    for i in 0..1 { env.push(GymnasiumEnvironmentConfig::cart_pole().seed(i).init()) }
     let env = SynchronizedVectorEnvironment::new(env, &device);
     let env = RecordEpisodeStatistics::new(env);
 
-    let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
+    let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;
     let mut opt_a = AdamConfig::new().init();
     let mut opt_c = AdamConfig::new().init();
 
-    let mut buffer = RolloutBuffer::new(1024);
+    let mut buffer = RolloutBuffer::new(256);
     let sampler = ShuffleSampler;
     let mut tape = VectorTape::new(env, true);
 
-    let total_steps = 100000;
+    let total_steps = 500000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
@@ -72,7 +76,12 @@ pub fn main() {
 
         state.c_e = c_e_sch.step() as f32;
     }
-    let env = GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human").init();
+
+    let d = s.elapsed();
+
+    println!("It took {}s", d.as_secs());
+
+    let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").init();
     let env = SynchronizedVectorEnvironment::new(vec![env], &device);
 
     let mut tape = VectorTape::new(env, false);

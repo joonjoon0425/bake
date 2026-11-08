@@ -45,7 +45,7 @@ impl<S: Sampler, T: BatchOps> ReplayBuffer<S, T> {
             },
             None => {
                 // round up capacity
-                self.capacity = (self.capacity as f32 / n_envs as f32).ceil() as usize * n_envs;
+                self.capacity = self.capacity.div_ceil(n_envs);
                 let mut storage = Batch::zeros_like(0, self.capacity, &data);
                 let head = self.writer.index(self.capacity, self.head, 1).unwrap();
                 storage.assign_inplace(0, self.head, data);
@@ -64,7 +64,7 @@ impl<S: Sampler, T: BatchOps> ReplayBuffer<S, T> {
         if size > self.len {
             None
         } else {
-            Some(self.sampler.sample(size, self.len, &self.storage.as_ref().unwrap(), &self.device))
+            Some(self.sampler.sample(size, self.len, &self.storage.clone().unwrap().flatten(), &self.device))
         }
     }
 

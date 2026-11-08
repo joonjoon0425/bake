@@ -34,7 +34,7 @@ pub fn main() {
     let mut exploration = EpsilonGreedy::burn(1.0f32);
     let mut buffer = ReplayBuffer::new(UniformSampler, 100000, &device);
 
-    let total_steps = 800000;
+    let total_steps = 500000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
