@@ -12,7 +12,7 @@ pub struct RolloutBuffer<T: BatchOps> {
 }
 
 impl<T: BatchOps> RolloutBuffer<T> {
-    /// create new rollout buffer of given capacity, with given sampler
+    /// create new rollout buffer of given capacity
     pub fn new(rollout_size: usize) -> Self {
         Self {
             rollout_size,
@@ -25,7 +25,7 @@ impl<T: BatchOps> RolloutBuffer<T> {
     /// push given data into buffer
     pub fn push(&mut self, data: Batch<T>) {
         let data = data.unsqueeze(0);
-        let (head, _) = self.writer.index(self.rollout_size, self.head, 1).unwrap();
+        let head = self.writer.index(self.rollout_size, self.head, 1).unwrap();
         match &mut self.storage {
             Some(storage) => {
                 storage.assign_inplace(0, self.head, data);

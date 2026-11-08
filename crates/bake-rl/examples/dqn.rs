@@ -15,8 +15,12 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
 
-    let env = GymnasiumEnvironmentConfig::cart_pole().seed(seed).init();
-    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
+    let env = vec![
+        GymnasiumEnvironmentConfig::cart_pole().seed(seed).init(),
+        GymnasiumEnvironmentConfig::cart_pole().seed(seed + 1).init(),
+        GymnasiumEnvironmentConfig::cart_pole().seed(seed + 2).init(),
+    ];
+    let env = SynchronizedVectorEnvironment::new(env, &device);
     let env = RecordEpisodeStatistics::new(env);
     
     let mut tape = VectorTape::new(env, true);

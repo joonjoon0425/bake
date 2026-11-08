@@ -11,6 +11,6 @@ pub trait Writer {
     /// - head: the position where the data is written to
     /// - data_len: the length of the data which will be written onto buffer
     /// # Returns
-    /// - returns (next head, written indices)
-    fn index(&self, capacity: usize, head: usize, data_len: usize) -> Result<(usize, Vec<usize>), String>;
+    /// - returns next head
+    fn index(&self, capacity: usize, head: usize, data_len: usize) -> Result<usize, String>;
 }

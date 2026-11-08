@@ -13,3 +13,9 @@ pub trait LossWeight: Sized {
 impl LossWeight for () {
     fn apply(self, loss_before_reduction: Tensor<1>) -> Tensor<1> { loss_before_reduction }
 }
+
+impl LossWeight for Tensor<1> {
+    fn apply(self, loss_before_reduction: Tensor<1>) -> Tensor<1> {
+        loss_before_reduction * self
+    }
+}

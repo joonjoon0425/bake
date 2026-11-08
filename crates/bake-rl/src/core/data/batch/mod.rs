@@ -35,6 +35,12 @@ impl<T: BatchOps> Batch<T> {
     }
     /// returns the batch shape
     pub fn batch_shape(&self) -> &[usize] { &self.bs }
+    /// return the size of batch shape of given dimension
+    /// - supports negative index
+    pub fn batch_dim(&self, dim: isize) -> usize {
+        let dim = resolve_dim(self.batch_shape().len(), dim).unwrap();
+        self.bs[dim]
+    }
     /// reshape batch shape
     pub fn reshape(self, bs: Vec<usize>) -> Self {
         assert!(check_reshape(&self.bs, &bs), "invalid reshape shape given");
