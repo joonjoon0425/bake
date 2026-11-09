@@ -1,7 +1,7 @@
 //! Proximal Policy Optimization
 
 use burn::prelude::*;
-use crate::core::data::{Batch, BatchDict, BatchOps, Transition, key};
+use crate::core::data::{Shaped, BatchOps, BatchedTransition, key};
 use crate::deep::distribution::{Distribution, PossibleConstraint};
 use crate::deep::algorithms::advantage_estimator::AdvantageEstimator;
 use crate::deep::loss::{Loss, LossFn, ActorCriticLoss};
@@ -67,17 +67,17 @@ impl ActorCriticLoss for PPOLoss {
 /// - The ActorCritic will be move to inner device when `update` is called
 pub fn ppo_loss<Ac: ActorCritic>(
     state: &PPOState, ac: Ac,
-    minibatch: Batch<Transition<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>, Tensor<1, Bool>, BatchDict>>
+    minibatch: Shaped<BatchedTransition<Ac::Obs, impl PossibleConstraint<Ac::Dist>, <Ac::Dist as Distribution>::Sample, Tensor<1>>>
 ) -> (Ac, PPOLoss) {
     let ac = ac.train();
     let (mut mb, _) = minibatch.autodiff().destruct();
 
     // compute log ratio, adv, ret
     let (dist, values) = ac.dist_and_state_value(mb.obs, mb.constraint);
-    let log_ratio = dist.log_probs(mb.action) - mb.extra.remove(&key::log_prob).expect("ppo_loss expects key `log_prob`");
+    let log_ratio = dist.log_probs(mb.action) - mb.dict.remove(&key::log_prob).expect("ppo_loss expects key `log_prob`");
     let ratio = log_ratio.clone().exp();
-    let adv = mb.extra.remove(&key::adv).expect("ppo_loss expects key `adv`");
-    let ret = mb.extra.remove(&key::ret).expect("ppo_loss expects key `ret");
+    let adv = mb.dict.remove(&key::adv).expect("ppo_loss expects key `adv`");
+    let ret = mb.dict.remove(&key::ret).expect("ppo_loss expects key `ret");
 
     // compute losses
     let stacked =

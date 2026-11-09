@@ -1,5 +1,5 @@
 //! shuffle sampler
-use crate::core::data::{Batch, BatchOps};
+use crate::core::data::{Shaped, BatchOps};
 use burn::prelude::*;
 use super::{EpochSampler, Sample};
 
@@ -11,7 +11,7 @@ pub struct ShuffleSampler;
 impl EpochSampler for ShuffleSampler {
     type SampleInfo = ();
 
-    fn iter<'a, T: BatchOps>(&self, chunk_size: usize, batch: &'a Batch<T>, device: &Device) -> impl Iterator<Item = Sample<T, ()>> + 'a {
+    fn iter<'a, T: BatchOps>(&self, chunk_size: usize, batch: &'a Shaped<T>, device: &Device) -> impl Iterator<Item = Sample<T, ()>> + 'a {
         let len = batch.batch_shape()[0];
         let rand_float = Tensor::<1>::random([len], burn::tensor::Distribution::Uniform(0.0, 1.0), device);
         let perm = rand_float.argsort(0);
@@ -30,7 +30,7 @@ pub struct SliceSamplerIterator<'a, T: BatchOps> {
     end: usize,
     size: usize,
     perm: Tensor<1, Int>,
-    batch: &'a Batch<T>,
+    batch: &'a Shaped<T>,
 }
 
 impl<'a, T: BatchOps> Iterator for SliceSamplerIterator<'a, T> {

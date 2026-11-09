@@ -1,5 +1,22 @@
-use crate::core::data::{BatchOps, batch::dict::ErasedBatchOps};
-use super::BatchOpsVTable;
+use crate::core::data::BatchOps;
+use super::dict::ErasedBatchOps;
+
+/// BatchOps vtable
+#[derive(Debug, Clone)]
+pub struct BatchOpsVTable {
+    pub(crate) check_batch: fn(&ErasedBatchOps, &[usize]) -> bool,
+    pub(crate) reshape_batch: fn(ErasedBatchOps, &[usize], &[usize]) -> ErasedBatchOps,
+    pub(crate) cat_batch: fn(&[Vec<usize>], isize, Vec<ErasedBatchOps>) -> ErasedBatchOps,
+    pub(crate) unbind_batch: fn(ErasedBatchOps, &[usize], isize) -> Vec<ErasedBatchOps>,
+    pub(crate) slice_batch: fn(ErasedBatchOps, &[usize], isize, std::ops::Range<usize>) -> ErasedBatchOps,
+    pub(crate) select_batch: fn(ErasedBatchOps, &[usize], isize, idx: burn::Tensor<1, burn::prelude::Int>) -> ErasedBatchOps,
+    pub(crate) assign_inplace_batch: fn(&mut ErasedBatchOps, &[usize], isize, usize, ErasedBatchOps, &[usize]),
+    pub(crate) zeros_like_batch: fn(&[usize], isize, usize, &ErasedBatchOps) -> ErasedBatchOps,
+    pub(crate) autodiff: fn(ErasedBatchOps) -> ErasedBatchOps,
+    pub(crate) clone: fn(&ErasedBatchOps) -> ErasedBatchOps,
+    pub(crate) type_name: &'static str,
+}
+
 
 impl BatchOpsVTable {
     /// create a new `BatchOpsVTable` of given type

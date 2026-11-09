@@ -1,11 +1,10 @@
 use crate::core::{data::BatchOps, env::space::BatchedSpace};
 use burn::prelude::*;
 
-/// `VectorEnvironment` trait which all vectorized environments must implement
-/// - For custom non-vetorized environment, implement `Environment` trait
-///     - You can easily make vectorized environment using the non-vectorized environment, whose space implements `ToBatchedSpace` trait, via the `SynchronizedVectorEnvironment` wrapper.
-///     - But note that it can be slower than the environment which was implemented using `VectorEnvironment` trait, since `SynchronizedVectorEnvironment` moves the data across host and device.
-pub trait VectorEnvironment {
+/// `BatchedEnvironment` trait which produces batched data
+/// - Note that the `BatchedEnvironment` has APIs like Farama Foundation's `Gymnasium` vector environment
+/// - But basically, this environment is for algorithms which consumes batch data types, so it can be used as single, non-vector environment
+pub trait BatchedEnvironment {
     /// type of observation space
     type ObsSpace: BatchedSpace;
     /// type of action space
@@ -34,10 +33,10 @@ pub trait VectorEnvironment {
     fn device(&self) -> Device;
 }
 
-/// configuration trait for `VectorizedEnvironment`
-pub trait VectorEnvironmentConfig {
+/// configuration trait for `BatchedEnvironment`
+pub trait BatchedEnvironmentConfig {
     /// the environment which configuration is about
-    type Environment: VectorEnvironment;
+    type Environment: BatchedEnvironment;
     /// create a new environment
     fn init(self) -> Self::Environment;
 }

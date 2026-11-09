@@ -1,8 +1,9 @@
-use crate::core::data::{Batch, BatchDict, Transition};
-use crate::core::env::{VectorEnvironment, space::BatchedSpace};
+use crate::core::data::{Shaped, BatchedDict, BatchedTransition};
+use crate::core::env::{BatchedEnvironment, space::BatchedSpace};
 use burn::prelude::*;
-/// The `VecTape` struct, which helps making transition tuple (s, a, r, s') and manage vector environment steps and resets.
-pub struct VectorTape<E: VectorEnvironment> {
+
+/// The `BatchedTape` struct, which helps making transition tuple (s, a, r, s') and manage batched single and vector environment steps and resets.
+pub struct BatchedTape<E: BatchedEnvironment> {
     env: E,
     /// current observation
     pub obs: <E::ObsSpace as BatchedSpace>::Element,
@@ -15,7 +16,7 @@ pub struct VectorTape<E: VectorEnvironment> {
     autoreset: bool,
 }
 
-impl<E: VectorEnvironment> VectorTape<E> {
+impl<E: BatchedEnvironment> BatchedTape<E> {
     /// create a new tape, calling `reset` on all environments
     /// # Arguments
     /// - `env: E`
@@ -52,7 +53,7 @@ impl<E: VectorEnvironment> VectorTape<E> {
     /// - if `autoreset = true`
     ///     - during the `step`, terminated or truncated environments are automatically reset
     ///     - the returned `info` is the information before being automatically reset; if you read `info` from directly like `tape.info`, you will get the reset-info
-    pub fn step(&mut self, action: <E::ActionSpace as BatchedSpace>::Element) -> (Batch<Transition<<E::ObsSpace as BatchedSpace>::Element, <E::ActionSpace as BatchedSpace>::Element, E::Constraint, E::Reward, Tensor<1, Bool>, BatchDict>>, E::Info) {
+    pub fn step(&mut self, action: <E::ActionSpace as BatchedSpace>::Element) -> (Shaped<BatchedTransition<<E::ObsSpace as BatchedSpace>::Element, E::Constraint, <E::ActionSpace as BatchedSpace>::Element, E::Reward>>, E::Info) {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);
@@ -62,7 +63,7 @@ impl<E: VectorEnvironment> VectorTape<E> {
 
         self.done = done.clone();
         self.info = info.clone();
-        let batch = Transition {
+        let batch = BatchedTransition {
             obs,
             action,
             reward,
@@ -73,7 +74,7 @@ impl<E: VectorEnvironment> VectorTape<E> {
 
             terminated,
             truncated,
-            extra: crate::core::data::BatchDict::batch_dict(bs.clone())
+            dict: BatchedDict::new()
         };
         
         if self.autoreset {
@@ -83,8 +84,9 @@ impl<E: VectorEnvironment> VectorTape<E> {
             }
         };
 
-        (Batch::new(batch, bs), info)
+        (Shaped::new(batch, bs), info)
     }
+    
     /// returns the mask, which is true if the environment has terminated or truncated
     pub fn done(&self) -> &Tensor<1, Bool> {
         &self.done

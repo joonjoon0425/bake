@@ -1,15 +1,15 @@
 //! one-hot encoder wrapper for discrete observation
 use burn::prelude::*;
-use crate::core::env::VectorEnvironment;
+use crate::core::env::BatchedEnvironment;
 use crate::core::env::space::{BatchedContinuousSpace, BatchedDiscreteSpace, BatchedSpace};
 
 /// one-hot encoding wrapper for discrete observation
-pub struct OneHotObservation<E: VectorEnvironment<ObsSpace = BatchedDiscreteSpace>> {
+pub struct OneHotObservation<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> {
     env: E,
     obs_space: BatchedContinuousSpace<2>
 }
 
-impl<E: VectorEnvironment<ObsSpace = BatchedDiscreteSpace>> OneHotObservation<E> {
+impl<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> OneHotObservation<E> {
     /// create new `OneHotObservation` wrapper
     pub fn new(env: E) -> Self {
         let n_obs = env.obs_space().n();
@@ -26,7 +26,7 @@ impl<E: VectorEnvironment<ObsSpace = BatchedDiscreteSpace>> OneHotObservation<E>
     }
 }
 
-impl<E: VectorEnvironment<ObsSpace = BatchedDiscreteSpace>> VectorEnvironment for OneHotObservation<E> {
+impl<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> BatchedEnvironment for OneHotObservation<E> {
     type ObsSpace = BatchedContinuousSpace<2>;
     type ActionSpace = E::ActionSpace;
     type Constraint = E::Constraint;

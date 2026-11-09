@@ -1,6 +1,6 @@
 //! Advantage Actor-Critic
 use burn::prelude::*;
-use crate::core::data::{Batch, BatchDict, BatchOps, Transition};
+use crate::core::data::{Shaped, BatchOps, BatchedTransition};
 use crate::deep::distribution::{Distribution, PossibleConstraint};
 use crate::deep::algorithms::advantage_estimator::AdvantageEstimator;
 use crate::deep::loss::{ActorCriticLoss, Loss, LossFn};
@@ -61,7 +61,7 @@ impl ActorCriticLoss for A2CLoss {
 pub fn a2c_loss<Ac: ActorCritic>(
     state: &A2CState,
     ac: Ac,
-    batch: Batch<Transition<Ac::Obs, <Ac::Dist as Distribution>::Sample, impl PossibleConstraint<Ac::Dist>, Tensor<1>, Tensor<1, Bool>, BatchDict>>
+    batch: Shaped<BatchedTransition<Ac::Obs, impl PossibleConstraint<Ac::Dist>, <Ac::Dist as Distribution>::Sample, Tensor<1>>>
 ) -> (Ac, A2CLoss) {
     let ac = ac.train();
     let batch = batch.autodiff();

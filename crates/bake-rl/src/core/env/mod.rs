@@ -3,8 +3,8 @@
 pub mod space;
 pub mod wrapper;
 
-mod vec_tape;
-pub use vec_tape::VectorTape;
+mod batched_tape;
+pub use batched_tape::BatchedTape;
 
 mod tape;
 pub use tape::Tape;
@@ -12,5 +12,5 @@ pub use tape::Tape;
 mod env;
 pub use env::*;
 
-mod vec_env;
-pub use vec_env::*;
+mod batched_env;
+pub use batched_env::*;

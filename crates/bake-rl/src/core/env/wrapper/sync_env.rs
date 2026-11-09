@@ -1,7 +1,8 @@
 //! Synchronized vector environment wrapper
 use crate::core::env::wrapper::into_batched::IntoBatched;
-use crate::core::env::{Environment, VectorEnvironment, space::Space, space::BatchedSpace, space::IntoBatchedSpace};
+use crate::core::env::{Environment, BatchedEnvironment, space::Space, space::BatchedSpace, space::IntoBatchedSpace};
 use burn::prelude::*;
+
 /// vectorize non-vector environment in a synchronized way 
 pub struct SynchronizedVectorEnvironment<E>
 where
@@ -39,7 +40,7 @@ where
     }
 }
 
-impl<E> VectorEnvironment for SynchronizedVectorEnvironment<E>
+impl<E> BatchedEnvironment for SynchronizedVectorEnvironment<E>
 where
     E: Environment<ObsSpace: IntoBatchedSpace, ActionSpace: IntoBatchedSpace, Constraint: IntoBatched, Reward: IntoBatched>
 {

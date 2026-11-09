@@ -30,9 +30,9 @@ pub mod prelude {
     
     pub use crate::core::action_selector::{BatchedDiscreteActionSelector, BatchedEpsilonGreedy, BatchedBoltzmann, BatchedGreedy};
     pub use crate::core::constraint::BatchedDiscreteConstraint;
-    pub use crate::core::env::{Tape, VectorTape};
-    pub use crate::core::env::{Environment, VectorEnvironment, EnvironmentConfig, VectorEnvironmentConfig};
-    pub use crate::core::data::{Batch, BatchDict, BurnTransition, key};
+    pub use crate::core::env::{Tape, BatchedTape};
+    pub use crate::core::env::{Environment, BatchedEnvironment, EnvironmentConfig, BatchedEnvironmentConfig};
+    pub use crate::core::data::{Shaped, BatchedTransition, key};
 
     pub use bake_rl_macros::{actor_critic, policy, qnet};
 }

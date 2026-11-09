@@ -1,11 +1,11 @@
 //! Episode statistics recording wrapper
 use burn::prelude::*;
-use crate::core::env::VectorEnvironment;
+use crate::core::env::BatchedEnvironment;
 use crate::core::env::space::BatchedSpace;
 /// records the episode-related statistics of vector environments, for scalar rewards
 /// # What it records?
 /// - Just as Gymnasium's `RecordEpisodeStatistics`, it records reward, step, wall-clock time and done masks, through the `Info`
-pub struct RecordEpisodeStatistics<E: VectorEnvironment<Reward = Tensor<1>>> {
+pub struct RecordEpisodeStatistics<E: BatchedEnvironment<Reward = Tensor<1>>> {
     env: E,
     record_reward: Tensor<1>,
     record_step: Tensor<1, Int>,
@@ -25,7 +25,7 @@ pub struct EpisodeStatistics {
     pub s: i64,
 }
 
-impl<E: VectorEnvironment<Reward = Tensor<1>>> RecordEpisodeStatistics<E> {
+impl<E: BatchedEnvironment<Reward = Tensor<1>>> RecordEpisodeStatistics<E> {
     /// create new `RecordEpisodeStatistics` wrapper, wrapping the given vector environment
     pub fn new(env: E) -> Self {
         let n = env.n_envs();
@@ -38,7 +38,7 @@ impl<E: VectorEnvironment<Reward = Tensor<1>>> RecordEpisodeStatistics<E> {
     }
 }
 
-impl<E: VectorEnvironment<Reward = Tensor<1>>> VectorEnvironment for RecordEpisodeStatistics<E> {
+impl<E: BatchedEnvironment<Reward = Tensor<1>>> BatchedEnvironment for RecordEpisodeStatistics<E> {
     type ObsSpace = E::ObsSpace;
     type ActionSpace = E::ActionSpace;
     type Constraint = E::Constraint;

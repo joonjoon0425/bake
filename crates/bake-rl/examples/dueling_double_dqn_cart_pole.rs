@@ -19,7 +19,7 @@ pub fn main() {
     let env = SynchronizedVectorEnvironment::new(vec![env], &device);
     let env = RecordEpisodeStatistics::new(env);
     
-    let mut tape = VectorTape::new(env, true);
+    let mut tape = BatchedTape::new(env, true);
 
     let state = DoubleDQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = DuelingTestNet::new(vec![tape.obs_space().shape()[1], 64, 64, tape.action_space().n()], ActivationConfig::Relu, &device);
@@ -68,7 +68,7 @@ pub fn main() {
     let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10).init();
     let env = SynchronizedVectorEnvironment::new(vec![env], &device);
 
-    let mut tape = VectorTape::new(env, false);
+    let mut tape = BatchedTape::new(env, false);
     let mut eval = BatchedGreedy;
     for _ in 0..5 {
         loop {

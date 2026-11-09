@@ -16,7 +16,7 @@ pub struct Boltzmann {
 impl Boltzmann {
     /// create a new `Boltzmann` policy. The higher the temperature, more uniform-like the policy.
     pub fn new(temp: f32) -> Self {
-        if temp < 0.0 { panic!("the temperature must be bigger than 0.0. Current temperature is {}", temp) } 
+        if temp <= 0.0 { panic!("the temperature must be greater than 0.0. Current temperature is {}", temp) } 
         Self {
             temp,
         }
@@ -49,7 +49,7 @@ pub struct BatchedBoltzmann {
 impl BatchedBoltzmann {
     /// create a new `Boltzmann` policy. The higher the temperature, more uniform-like the policy.
     pub fn burn(temp: f32) -> Self {
-        if temp < 0.0 { panic!("the temperature must be bigger than 0.0. Current temperature is {}", temp) } 
+        if temp <= 0.0 { panic!("the temperature must be greater than 0.0. Current temperature is {}", temp) } 
         Self {
             temp,
         }

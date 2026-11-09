@@ -1,5 +1,5 @@
 
-use crate::core::data::NativeTransition;
+use crate::core::data::Transition;
 use crate::core::env::{Environment, space::Space};
 /// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage vector environment steps and resets.
 pub struct Tape<E: Environment> {
@@ -40,7 +40,7 @@ impl<E: Environment> Tape<E> {
     }
     
     /// take one step and returns the transition and info
-    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> (NativeTransition<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward>, E::Info) {
+    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> (Transition<<E::ObsSpace as Space>::Element, E::Constraint, <E::ActionSpace as Space>::Element, E::Reward>, E::Info) {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);
@@ -48,7 +48,7 @@ impl<E: Environment> Tape<E> {
 
         self.done = done;
         self.info = info.clone();
-        let transition = NativeTransition {
+        let transition = Transition {
             obs,
             action,
             reward,
@@ -59,7 +59,7 @@ impl<E: Environment> Tape<E> {
 
             terminated,
             truncated,
-            extra: (),
+            dict: (),
         };
 
         (transition, info)

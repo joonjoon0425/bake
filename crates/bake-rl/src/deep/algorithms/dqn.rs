@@ -1,7 +1,7 @@
 //! Deep Q-Network
 use burn::prelude::*;
 use crate::core::constraint::BatchedDiscreteConstraint;
-use crate::core::data::{Batch, BatchOps, BurnTransition};
+use crate::core::data::{Shaped, BatchOps, BatchedTransition};
 use crate::deep::{
     contract::DiscreteActionValue,
     loss::{Loss, LossFn},
@@ -38,7 +38,7 @@ pub fn dqn_loss<Q, Constraint, SampleInfo>(
     state: &DQNState,
     online: Q,
     target: &Q,
-    batch: Batch<BurnTransition<Q::Obs, Tensor<1, Int>, Constraint, Tensor<1>>>,
+    batch: Shaped<BatchedTransition<Q::Obs, Constraint, Tensor<1, Int>, Tensor<1>>>,
     info: SampleInfo,
 ) -> (Q, DQNLoss)
 where

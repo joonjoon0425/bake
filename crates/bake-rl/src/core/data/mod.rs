@@ -8,9 +8,15 @@ pub mod transition;
 pub mod shaped;
 
 pub use shaped::{
-    Batch,
-    transition::{Transition, NativeTransition, BurnTransition},
-    dict::BatchDict,
-    dict::key,
+    Shaped,
 };
+
+pub use dict::{
+    BatchedDict, DictLeaf, key,
+};
+
 pub use batch_ops::BatchOps;
+
+pub use transition::{
+    BatchedTransition, Transition
+};

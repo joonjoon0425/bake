@@ -2,6 +2,7 @@
 use burn::prelude::*;
 use rand::prelude::*;
 use crate::core::constraint::{BatchedDiscreteConstraint, DiscreteConstraint};
+
 /// A trait which all 'non-batch' exploration strategies must implement
 pub trait DiscreteActionSelector {
     /// sample an action using given discrete action values, with given constraint

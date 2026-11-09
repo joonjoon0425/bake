@@ -1,9 +1,15 @@
-//! predefined dictionary struct keys
+//! typed dictionary struct keys
 
 use std::marker::PhantomData;
 use std::borrow::Cow;
 use burn::prelude::*;
-use crate::core::data::batch::dict::Key;
+
+/// typed key struct
+#[derive(Debug, Clone)]
+pub struct Key<T> {
+    pub(crate) name: Cow<'static, str>,
+    _p: PhantomData<T>
+}
 
 impl<T> Key<T> {
     /// create a new const key with given name

@@ -38,7 +38,7 @@ pub fn main() {
     let mut opt_c = AdamConfig::new().init();
 
     let mut buffer = RolloutBuffer::new(128);
-    let mut tape = VectorTape::new(env, true);
+    let mut tape = BatchedTape::new(env, true);
 
     let total_steps = 500000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);

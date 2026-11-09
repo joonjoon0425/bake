@@ -1,13 +1,13 @@
 //! rollout buffer
 
 use crate::deep::buffer::writer::{Writer, linear::LinearWriter};
-use crate::core::data::{Batch, BatchOps};
+use crate::core::data::{Shaped, BatchOps};
 
 /// rollout buffer
 pub struct RolloutBuffer<T: BatchOps> {
     rollout_size: usize,
     head: usize,
-    storage: Option<Batch<T>>,
+    storage: Option<Shaped<T>>,
     writer: LinearWriter,
 }
 
@@ -23,7 +23,7 @@ impl<T: BatchOps> RolloutBuffer<T> {
     }
 
     /// push given data into buffer
-    pub fn push(&mut self, data: Batch<T>) {
+    pub fn push(&mut self, data: Shaped<T>) {
         let data = data.unsqueeze(0);
         let head = self.writer.index(self.rollout_size, self.head, 1).unwrap();
         match &mut self.storage {
@@ -31,7 +31,7 @@ impl<T: BatchOps> RolloutBuffer<T> {
                 storage.assign_inplace(0, self.head, data);
             },
             None => {
-                let mut storage = Batch::zeros_like(0, self.rollout_size, &data);
+                let mut storage = Shaped::zeros_like(0, self.rollout_size, &data);
                 storage.assign_inplace(0, self.head, data);
                 self.storage = Some(storage);
             }
@@ -48,7 +48,7 @@ impl<T: BatchOps> RolloutBuffer<T> {
     /// pop the buffer
     /// # Panics
     /// - when the internal storage empty
-    pub fn pop(&mut self) -> Batch<T> {
+    pub fn pop(&mut self) -> Shaped<T> {
         self.head = 0;
         self.storage.take().unwrap()
     }

@@ -40,7 +40,7 @@ pub fn main() {
 
     let mut buffer = RolloutBuffer::new(256);
     let sampler = ShuffleSampler;
-    let mut tape = VectorTape::new(env, true);
+    let mut tape = BatchedTape::new(env, true);
 
     let total_steps = 100000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
@@ -84,7 +84,7 @@ pub fn main() {
     let env = GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human").init();
     let env = SynchronizedVectorEnvironment::new(vec![env], &device);
 
-    let mut tape = VectorTape::new(env, false);
+    let mut tape = BatchedTape::new(env, false);
     for _ in 0..5 {
         loop {
             let action = ac.dist(tape.obs.clone(), tape.constraint.clone()).mode();

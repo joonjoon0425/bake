@@ -14,5 +14,5 @@ pub mod prelude {
     pub use crate::core::constraint::DiscreteConstraint;
     pub use crate::core::env::Tape;
     pub use crate::core::env::{Environment, EnvironmentConfig};
-    pub use crate::core::data::NativeTransition;
+    pub use crate::core::data::Transition;
 }

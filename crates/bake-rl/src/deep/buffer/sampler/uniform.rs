@@ -1,5 +1,5 @@
 //! uniform sampler
-use crate::core::data::{Batch, BatchOps};
+use crate::core::data::{Shaped, BatchOps};
 use burn::prelude::*;
 use super::{Sampler, Sample};
 
@@ -10,7 +10,7 @@ pub struct UniformSampler;
 impl Sampler for UniformSampler {
     type SampleInfo = ();
 
-    fn sample<T: BatchOps>(&self, size: usize, len: usize, storage: &Batch<T>, device: &Device) -> Sample<T, ()> {
+    fn sample<T: BatchOps>(&self, size: usize, len: usize, storage: &Shaped<T>, device: &Device) -> Sample<T, ()> {
         let indices = Tensor::random([size], burn::tensor::Distribution::Uniform(0., len as f64), device);
 
         Sample {
