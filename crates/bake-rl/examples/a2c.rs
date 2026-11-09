@@ -1,5 +1,5 @@
-use bake_rl::core::env::wrapper::vec::RecordEpisodeStatistics;
-use bake_rl::core::env::wrapper::SynchronizedVectorEnvironment;
+use bake_rl::env::wrapper::BatchedRecordEpisodeStatistics;
+use bake_rl::env::wrapper::SynchronizedBatchedEnvironment;
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
@@ -29,8 +29,8 @@ pub fn main() {
         };
 
     let env = CartPoleConfig::new(seed).init();
-    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
-    let env = RecordEpisodeStatistics::new(env);
+    let env = SynchronizedBatchedEnvironment::new(vec![env], &device);
+    let env = BatchedRecordEpisodeStatistics::new(env);
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
     let lr_c = 2.5e-3;

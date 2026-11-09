@@ -1,15 +1,16 @@
 //! one-hot encoder wrapper for discrete observation
 use burn::prelude::*;
-use crate::core::env::BatchedEnvironment;
-use crate::core::env::space::{BatchedContinuousSpace, BatchedDiscreteSpace, BatchedSpace};
+use crate::env::BatchedEnvironment;
+use crate::env::space::{BatchedContinuousSpace, BatchedDiscreteSpace, BatchedSpace};
 
 /// one-hot encoding wrapper for discrete observation
-pub struct OneHotObservation<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> {
+pub struct BatchedOneHotObservation<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> {
     env: E,
+    n_obs: usize,
     obs_space: BatchedContinuousSpace<2>
 }
 
-impl<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> OneHotObservation<E> {
+impl<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> BatchedOneHotObservation<E> {
     /// create new `OneHotObservation` wrapper
     pub fn new(env: E) -> Self {
         let n_obs = env.obs_space().n();
@@ -18,15 +19,15 @@ impl<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> OneHotObservation<E
         let high = Tensor::from_data(TensorData::new(vec![1; n_obs], [1, n_obs]), &device);
         let obs_space = BatchedContinuousSpace::new(&[1, n_obs], low, high, &device);
         
-        Self { env, obs_space }
+        Self { env, obs_space, n_obs }
     }
 
     fn one_hot(&self, obs: Tensor<1, Int>) -> Tensor<2> {
-        obs.one_hot(self.env.obs_space().n()).float()
+        obs.one_hot(self.n_obs).float()
     }
 }
 
-impl<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> BatchedEnvironment for OneHotObservation<E> {
+impl<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> BatchedEnvironment for BatchedOneHotObservation<E> {
     type ObsSpace = BatchedContinuousSpace<2>;
     type ActionSpace = E::ActionSpace;
     type Constraint = E::Constraint;

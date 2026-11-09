@@ -1,6 +1,7 @@
 //! Cliff Walking with masks at the boundaries
-use crate::core::env::space::{DiscreteSpace, Space};
-use crate::core::env::{Environment, EnvironmentConfig};
+use crate::env::space::{DiscreteSpace, Space};
+use crate::env::{Environment, EnvironmentConfig};
+
 /// CliffWalking with mask implementation
 /// - All feature are same but on the boundary, the agent receives an mask.
 /// - The agent won't be able to go left from the left boundary, right at right boundary, and so on.

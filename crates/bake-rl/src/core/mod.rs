@@ -3,7 +3,6 @@
 
 pub mod constraint;
 pub mod data;
-pub mod env;
 pub mod action_selector;
 
 pub mod scheduler;

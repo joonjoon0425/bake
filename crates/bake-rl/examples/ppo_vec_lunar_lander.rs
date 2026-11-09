@@ -1,5 +1,4 @@
-use bake_rl::core::env::wrapper::SynchronizedVectorEnvironment;
-use bake_rl::core::env::wrapper::vec::RecordEpisodeStatistics;
+use bake_rl::env::wrapper::{BatchedRecordEpisodeStatistics, SynchronizedBatchedEnvironment};
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
@@ -29,8 +28,8 @@ pub fn main() {
         };
     let mut env = vec![];
     for i in 0..16 { env.push(GymnasiumEnvironmentConfig::lunar_lander().seed(i).init()) }
-    let env = SynchronizedVectorEnvironment::new(env, &device);
-    let env = RecordEpisodeStatistics::new(env);
+    let env = SynchronizedBatchedEnvironment::new(env, &device);
+    let env = BatchedRecordEpisodeStatistics::new(env);
 
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
@@ -82,7 +81,7 @@ pub fn main() {
     println!("It took {}s", d.as_secs());
 
     let env = GymnasiumEnvironmentConfig::lunar_lander().kwarg("render_mode", "human").init();
-    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
+    let env = SynchronizedBatchedEnvironment::new(vec![env], &device);
 
     let mut tape = BatchedTape::new(env, false);
     for _ in 0..5 {

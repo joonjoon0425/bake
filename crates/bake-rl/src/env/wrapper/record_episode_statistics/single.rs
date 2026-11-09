@@ -1,28 +1,19 @@
 //! Episode statistics recording wrapper
-use crate::core::env::Environment;
-use crate::core::env::space::Space;
-/// records the episode-related statistics of vector environments, for scalar rewards
+use crate::env::Environment;
+use crate::env::space::Space;
+use super::EpisodeStatistics;
+
+/// records the episode-related statistics of environments (for scalar rewards)
 /// # What it records?
 /// - Just as Gymnasium's `RecordEpisodeStatistics`, it records reward, step, wall-clock time and done masks, through the `Info`
 pub struct RecordEpisodeStatistics<E: Environment<Reward = f32>> {
     env: E,
     record_reward: f32,
-    record_step: usize,
-}
-
-/// episode statistics
-/// - r: accumulated rewards
-/// - s: accumulated steps
-#[derive(Debug, Clone)]
-pub struct EpisodeStatistics {
-    /// accumulated rewards
-    pub r: f32,
-    /// accumulated steps
-    pub s: usize,
+    record_step: i64,
 }
 
 impl<E: Environment<Reward = f32>> RecordEpisodeStatistics<E> {
-    /// create new `RecordEpisodeStatistics` wrapper, wrapping the given vector environment
+    /// create new `RecordEpisodeStatistics` wrapper, wrapping the given environment
     pub fn new(env: E) -> Self {
         Self {
             env,
@@ -64,8 +55,9 @@ impl<E: Environment<Reward = f32>> Environment for RecordEpisodeStatistics<E> {
 
         if done {
             episode_stat = Some(EpisodeStatistics {
+                id: 0,
                 r: self.record_reward,
-                s: self.record_step
+                s: self.record_step,
             })
         }
 

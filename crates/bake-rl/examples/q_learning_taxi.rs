@@ -1,5 +1,5 @@
 use bake_rl::core::scheduler::{LinearScheduler, Scheduler};
-use bake_rl::core::env::wrapper::RecordEpisodeStatistics;
+use bake_rl::env::wrapper::RecordEpisodeStatistics;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::tabular::prelude::*;
 

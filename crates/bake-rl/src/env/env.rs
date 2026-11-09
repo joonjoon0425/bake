@@ -1,6 +1,6 @@
 //! Trait for environment
 
-use crate::core::env::space::Space;
+use crate::env::space::Space;
 /// `Environment` trait which all environments producing non-batch data types must implement
 /// - For custom environment which produces non-batch data types (used for non-batch update algorithms), implement this trait
 /// - For custom environment which produces batch data types (used for batch-update algorithms), implement `BatchedEnvironment` trait

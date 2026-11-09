@@ -1,5 +1,5 @@
 //! space trait for Gymnasium environments
-use bake_rl::core::env::space::{Space, DiscreteSpace, ContinuousSpace, ByteSpace};
+use crate::env::space::{Space, DiscreteSpace, ContinuousSpace, ByteSpace};
 use numpy::{IntoPyArray, PyArrayMethods, PyReadonlyArrayDyn, PyUntypedArrayMethods};
 use ndarray::*;
 use pyo3::{exceptions::PyValueError, prelude::*};

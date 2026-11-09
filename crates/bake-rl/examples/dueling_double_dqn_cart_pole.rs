@@ -1,9 +1,9 @@
-use bake_rl::core::env::wrapper::vec::RecordEpisodeStatistics;
+use bake_rl::env::wrapper::{BatchedRecordEpisodeStatistics, SynchronizedBatchedEnvironment};
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::deep::prelude::*;
-use bake_rl::core::env::wrapper::SynchronizedVectorEnvironment;
+
 use burn::nn::activation::ActivationConfig;
 use burn::prelude::*;
 use burn::nn::*;
@@ -16,8 +16,8 @@ pub fn main() {
     device.seed(seed);
 
     let env = GymnasiumEnvironmentConfig::cart_pole().seed(seed).init();
-    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
-    let env = RecordEpisodeStatistics::new(env);
+    let env = SynchronizedBatchedEnvironment::new(vec![env], &device);
+    let env = BatchedRecordEpisodeStatistics::new(env);
     
     let mut tape = BatchedTape::new(env, true);
 
@@ -66,7 +66,7 @@ pub fn main() {
 
     // evaluation
     let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10).init();
-    let env = SynchronizedVectorEnvironment::new(vec![env], &device);
+    let env = SynchronizedBatchedEnvironment::new(vec![env], &device);
 
     let mut tape = BatchedTape::new(env, false);
     let mut eval = BatchedGreedy;

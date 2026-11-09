@@ -15,7 +15,7 @@ impl EpochSampler for ShuffleSampler {
         let len = batch.batch_shape()[0];
         let rand_float = Tensor::<1>::random([len], burn::tensor::Distribution::Uniform(0.0, 1.0), device);
         let perm = rand_float.argsort(0);
-        SliceSamplerIterator {
+        ShuffleSamplerIterator {
             counter: 0,
             end: len,
             size: chunk_size,
@@ -24,8 +24,8 @@ impl EpochSampler for ShuffleSampler {
         }
     }
 }
-/// slice sample iterator
-pub struct SliceSamplerIterator<'a, T: BatchOps> {
+/// shuffle sample iterator
+pub struct ShuffleSamplerIterator<'a, T: BatchOps> {
     counter: usize,
     end: usize,
     size: usize,
@@ -33,7 +33,7 @@ pub struct SliceSamplerIterator<'a, T: BatchOps> {
     batch: &'a Shaped<T>,
 }
 
-impl<'a, T: BatchOps> Iterator for SliceSamplerIterator<'a, T> {
+impl<'a, T: BatchOps> Iterator for ShuffleSamplerIterator<'a, T> {
     type Item = Sample<T, ()>;
 
     fn next(&mut self) -> Option<Self::Item> {

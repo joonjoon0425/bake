@@ -2,7 +2,7 @@
 use std::marker::PhantomData;
 
 use pyo3::{prelude::*, types::PyDict};
-use crate::{core::{env::{Environment, EnvironmentConfig}}, env::gym::GymSpace};
+use crate::env::{Environment, EnvironmentConfig, gym::GymSpace, space::Space};
 /// A struct for all non-vector gymnasium environments
 pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
     env: Py<PyAny>,
@@ -26,7 +26,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
         &self.action_space
     }
 
-    fn reset(&mut self) -> ((<Self::ObsSpace as crate::core::env::space::Space>::Element, Self::Constraint), Self::Info) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info) {
         return Python::attach(|py| {
             let env = self.env.bind(py);
             let tuple = env.call_method1("reset", ()).unwrap();
@@ -37,7 +37,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> Environment for GymnasiumEnviron
         });
     }
 
-    fn step(&mut self, action: <Self::ActionSpace as crate::core::env::space::Space>::Element) -> ((<Self::ObsSpace as crate::core::env::space::Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
+    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
         return Python::attach(|py| {
             let env = self.env.bind(py);
             let action = self.action_space.to_py(py, action).unwrap();

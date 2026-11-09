@@ -1,10 +1,12 @@
-//! Synchronized vector environment wrapper
-use crate::core::env::wrapper::into_batched::IntoBatched;
-use crate::core::env::{Environment, BatchedEnvironment, space::Space, space::BatchedSpace, space::IntoBatchedSpace};
+//! Synchronized batch environment wrapper
+use crate::env::wrapper::into_batched::IntoBatched;
+use crate::env::{Environment, BatchedEnvironment, space::Space, space::BatchedSpace, space::IntoBatchedSpace};
 use burn::prelude::*;
 
-/// vectorize non-vector environment in a synchronized way 
-pub struct SynchronizedVectorEnvironment<E>
+/// batch non-batch environment in a synchronized way
+/// # Note
+/// - Equals that of `Gymnasium`'s `SyncVectorEnv`
+pub struct SynchronizedBatchedEnvironment<E>
 where
     E: Environment<ObsSpace: IntoBatchedSpace, ActionSpace: IntoBatchedSpace, Constraint: IntoBatched, Reward: IntoBatched>
 {
@@ -17,11 +19,11 @@ where
     device: Device
 }
 
-impl<E> SynchronizedVectorEnvironment<E>
+impl<E> SynchronizedBatchedEnvironment<E>
 where
     E: Environment<ObsSpace: IntoBatchedSpace, ActionSpace: IntoBatchedSpace, Constraint: IntoBatched, Reward: IntoBatched>
 {
-    /// create new `SynchronizedVectorEnvironment` from given envs 
+    /// create new `SynchronizedBatchedEnvironment` from given envs 
     pub fn new(envs: Vec<E>, device: &Device) -> Self {
         assert!(!envs.is_empty(), "Given environment vector is empty");
         let fst_env = &envs[0];
@@ -40,7 +42,7 @@ where
     }
 }
 
-impl<E> BatchedEnvironment for SynchronizedVectorEnvironment<E>
+impl<E> BatchedEnvironment for SynchronizedBatchedEnvironment<E>
 where
     E: Environment<ObsSpace: IntoBatchedSpace, ActionSpace: IntoBatchedSpace, Constraint: IntoBatched, Reward: IntoBatched>
 {
