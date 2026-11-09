@@ -4,16 +4,16 @@ use crate::core::data::BatchOps;
 use burn::prelude::*;
 use rand::Rng;
 
-/// `NativeSpace` trait for specifying the properties of observation space and action space, with `Native` representation
-pub trait NativeSpace: Clone {
+/// `Space` trait for specifying the properties of observation space and action space
+pub trait Space: Clone {
     /// the type of element
     type Element: Clone + 'static;
     /// sample an random element
     fn sample<R: Rng>(&self, rng: &mut R) -> Self::Element;
 }
 
-/// `BurnSpace` trait for specifying the properties of observation space and action space, with `Burn` representation
-pub trait BurnSpace: Clone {
+/// `BatchedSpace` trait for specifying the properties of observation space and action space, with `Burn` representation
+pub trait BatchedSpace: Clone {
     /// the type of element
     type Element: BatchOps;
     /// sample `n` random elements
@@ -22,23 +22,23 @@ pub trait BurnSpace: Clone {
     fn device(&self) -> burn::prelude::Device;
 }
 
-/// conversion from `NativeSpace` to `BurnSpace`
-pub trait ToBurnSpace: NativeSpace {
-    /// Burn Space
-    type BurnSpace: BurnSpace;
-    /// convert from `NativeSpace` to `BurnSpace`
-    fn into_burn(self, device: &Device) -> Self::BurnSpace;
-    /// convert elements to `Burn`
-    fn bind(elems: Vec<Self::Element>, device: &Device) -> <Self::BurnSpace as BurnSpace>::Element;
-    /// convert elements to `Native`
-    fn unbind(elem: <Self::BurnSpace as BurnSpace>::Element) -> Vec<Self::Element>;
+/// conversion from `Space` to `BatchedSpace`
+pub trait IntoBatchedSpace: Space {
+    /// Batched Space
+    type Batched: BatchedSpace;
+    /// convert from `Space` to `BatchedSpace`
+    fn into_batched(self, device: &Device) -> Self::Batched;
+    /// convert elements to batched elements
+    fn bind(elems: Vec<Self::Element>, device: &Device) -> <Self::Batched as BatchedSpace>::Element;
+    /// convert elements to single elements
+    fn unbind(elem: <Self::Batched as BatchedSpace>::Element) -> Vec<Self::Element>;
 }
 
 pub mod discrete;
-pub use discrete::DiscreteSpace;
+pub use discrete::{DiscreteSpace, BatchedDiscreteSpace};
 
 pub mod continuous;
-pub use continuous::ContinuousSpace;
+pub use continuous::{ContinuousSpace, BatchedContinuousSpace};
 
 pub mod byte;
-pub use byte::ByteSpace;
+pub use byte::{ByteSpace, BatchedByteSpace};

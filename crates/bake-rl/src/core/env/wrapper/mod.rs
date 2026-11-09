@@ -3,7 +3,7 @@
 pub mod vec;
 
 pub mod sync_env;
-mod into_burn;
+mod into_batched;
 
 pub mod record_episode_statistics;
 pub use record_episode_statistics::RecordEpisodeStatistics;

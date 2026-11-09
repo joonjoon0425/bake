@@ -3,13 +3,11 @@ use bake_rl::core::env::wrapper::RecordEpisodeStatistics;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::tabular::prelude::*;
 
-use burn::prelude::*;
-use bake_rl::tabular::qtable::QTable;
+use rand::prelude::*;
 
 pub fn main() {
     let seed = 129;
-    let device = Device::default();
-    device.seed(seed);
+    let mut rng = SmallRng::seed_from_u64(seed);    
     let env = GymnasiumEnvironmentConfig::taxi().seed(seed).init();
     let env = RecordEpisodeStatistics::new(env);
     let state = QLearningState { gamma: 0.99, alpha: 0.4 };
@@ -17,11 +15,11 @@ pub fn main() {
     let mut tape = Tape::new(env);
 
     let total_steps = 100000;
-    let mut eg = EpsilonGreedy::native(1.0, seed);
+    let mut eg = EpsilonGreedy::new(1.0);
     let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.5);
 
     for count in 0..total_steps {
-        let action = q.action(&mut eg, tape.obs.clone(), tape.constraint.clone());
+        let action = q.action(&mut rng, &mut eg, tape.obs.clone(), tape.constraint.clone());
         let (t, (_, stat)) = tape.step(action);
 
         qlearning_update(&state, &mut q, t);
@@ -41,7 +39,7 @@ pub fn main() {
     let mut g = Greedy;
     for _ in 0..5 {
         loop {
-            let action = q.action(&mut g, tape.obs.clone(), tape.constraint);
+            let action = q.action(&mut rng, &mut g, tape.obs.clone(), tape.constraint);
             tape.step(action);
             if tape.done() {
                 tape.reset();

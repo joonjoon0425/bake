@@ -14,7 +14,7 @@ pub(crate) fn dueling(func_name: &Ident, generics: &Generics, self_ty: &Type, ou
     };
     quote! {
         impl #impl_generics ::bake_rl::deep::contract::DiscreteActionValue for #self_ty #where_clause {
-            fn action_values<C: ::bake_rl::core::constraint::discrete::BurnDiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_rl::burn::prelude::Tensor<2> {
+            fn action_values<C: ::bake_rl::core::constraint::discrete::BatchedDiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_rl::burn::prelude::Tensor<2> {
                 #dueling_out
                 let (value, advantage) = __out;
                 let mean = constraint.clone().mean_dim(advantage.clone());
@@ -34,7 +34,7 @@ pub(crate) fn plain(func_name: &Ident, generics: &Generics, self_ty: &Type, out_
     };
     quote! {
         impl #impl_generics ::bake_rl::deep::contract::DiscreteActionValue for #self_ty #where_clause {
-            fn action_values<C: ::bake_rl::core::constraint::discrete::BurnDiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_rl::burn::prelude::Tensor<2> {
+            fn action_values<C: ::bake_rl::core::constraint::discrete::BatchedDiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> ::bake_rl::burn::prelude::Tensor<2> {
                 #plain_out
                 let action_values = __out;
                 constraint.apply(action_values, -1e9)

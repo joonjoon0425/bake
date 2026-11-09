@@ -3,7 +3,7 @@
 use burn::tensor::activation::log_softmax;
 use burn::prelude::*;
 use crate::deep::distribution::{Distribution, PossibleConstraint};
-use crate::core::constraint::BurnDiscreteConstraint;
+use crate::core::constraint::BatchedDiscreteConstraint;
 
 #[derive(Debug, Clone)]
 /// A Categorical probability distribution
@@ -13,7 +13,7 @@ pub struct Categorical {
 
 impl Categorical {
     /// create a new `Categorical` distribution
-    pub fn new(params: <Self as Distribution>::Params, constraint: impl BurnDiscreteConstraint) -> Self {
+    pub fn new(params: <Self as Distribution>::Params, constraint: impl BatchedDiscreteConstraint) -> Self {
         let logits = constraint.apply(params, -1e9);
         let log_probs = log_softmax(logits, 1);
         Self {
@@ -47,7 +47,7 @@ impl Distribution for Categorical {
 }
 
 /// blanket impl for Categorical distribution
-impl<T: BurnDiscreteConstraint> PossibleConstraint<Categorical> for T {
+impl<T: BatchedDiscreteConstraint> PossibleConstraint<Categorical> for T {
     fn create_distribution(params: <Categorical as Distribution>::Params, constraint: Self) -> Categorical {
         Categorical::new(params, constraint)
     }

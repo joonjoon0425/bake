@@ -1,36 +1,27 @@
 //! exploration traits and implementations
 use burn::prelude::*;
 use rand::prelude::*;
-use crate::core::constraint::{BurnDiscreteConstraint, NativeDiscreteConstraint};
-/// A trait which all native representation exploration strategies must implement
-pub trait NativeDiscreteActionSelector {
+use crate::core::constraint::{BatchedDiscreteConstraint, DiscreteConstraint};
+/// A trait which all 'non-batch' exploration strategies must implement
+pub trait DiscreteActionSelector {
     /// sample an action using given discrete action values, with given constraint
-    fn sample<C: NativeDiscreteConstraint>(&mut self, qvalues: &[f32], constraint: C) -> usize;
+    fn sample<C: DiscreteConstraint, R: Rng>(&self, rng: &mut R, qvalues: &[f32], constraint: C) -> usize;
 }
 
-/// A trait which all native representation exploration strategies must implement
-pub trait BurnDiscreteActionSelector {
+/// A trait which all 'batch' exploration strategies must implement
+pub trait BatchedDiscreteActionSelector {
     /// sample an action using given discrete action values, with given constraint
-    fn sample<C: BurnDiscreteConstraint>(&self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int>;
+    fn sample<C: BatchedDiscreteConstraint>(&self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int>;
 }
-
-/// Action selector representation
-pub trait ActionSelectorRepr {
-    /// inner types which each representation requires
-    type Inner;
-}
-
-impl ActionSelectorRepr for crate::core::Native { type Inner = SmallRng; }
-impl ActionSelectorRepr for crate::core::Burn { type Inner = (); }
 
 pub mod greedy;
-pub use greedy::Greedy;
+pub use greedy::{Greedy, BatchedGreedy};
 
 pub mod epsilon_greedy;
-pub use epsilon_greedy::EpsilonGreedy;
+pub use epsilon_greedy::{EpsilonGreedy, BatchedEpsilonGreedy};
 
 pub mod boltzmann;
-pub use boltzmann::Boltzmann;
+pub use boltzmann::{Boltzmann, BatchedBoltzmann};
 
 /// utility max function with index
 fn argmax_max(values: &[f32]) -> (usize, f32) {

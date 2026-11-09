@@ -27,16 +27,16 @@ pub fn main() {
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
         
-    let mut exploration = EpsilonGreedy::burn(1.0f32);
+    let mut exploration = BatchedEpsilonGreedy::new(1.0f32);
     let mut buffer = ReplayBuffer::new(UniformSampler, 100000, &device);
 
-    let total_steps = 800000;
+    let total_steps = 300000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
     let batch_size = 128;
 
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 2.0 / 3.0);
 
     for count in 0..total_steps {
         let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
@@ -69,7 +69,7 @@ pub fn main() {
     let env = SynchronizedVectorEnvironment::new(vec![env], &device);
 
     let mut tape = VectorTape::new(env, false);
-    let mut eval = Greedy;
+    let mut eval = BatchedGreedy;
     for _ in 0..5 {
         loop {
             let action = online.action(&mut eval, tape.obs.clone(), tape.constraint.clone());

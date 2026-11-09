@@ -1,14 +1,14 @@
 //! Trait for environment
 
-use crate::core::env::space::NativeSpace;
+use crate::core::env::space::Space;
 /// `Environment` trait which all non-vectorized environments must implement
 /// - For custom non-vetorized environment, implement this trait
 /// - For custom vetorized environment, implement `VectorEnvironment` trait
 pub trait Environment {
     /// type of observation space
-    type ObsSpace: NativeSpace;
+    type ObsSpace: Space;
     /// type of action space
-    type ActionSpace: NativeSpace;
+    type ActionSpace: Space;
     /// type of constraint
     type Constraint: Clone;
     /// type of reward
@@ -22,9 +22,9 @@ pub trait Environment {
     fn action_space(&self) -> &Self::ActionSpace;
 
     /// reset the environment and return the tuple ((obs, constraint), information)
-    fn reset(&mut self) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), Self::Info);
+    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info);
     /// take one step and returns the tuple ((obs, constraint), reward, terminated, truncated, information)
-    fn step(&mut self, action: <Self::ActionSpace as NativeSpace>::Element) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info);
+    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info);
 }
 
 /// the configuration trait for environments

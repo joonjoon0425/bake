@@ -1,4 +1,4 @@
 //! constraint traits and implementations
 
 pub mod discrete;
-pub use discrete::{BurnDiscreteConstraint, NativeDiscreteConstraint};
+pub use discrete::{BatchedDiscreteConstraint, DiscreteConstraint};

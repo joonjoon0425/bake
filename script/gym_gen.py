@@ -8,14 +8,14 @@ import importlib
 
 def rust_space_strs(space):
     if isinstance(space, gym.spaces.Discrete):
-        return "DiscreteSpace<crate::core::Native>"
+        return "DiscreteSpace"
     elif isinstance(space, gym.spaces.Box):
         if isinstance(space.dtype, (np.dtypes.Float32DType, np.dtypes.Float64DType)):
             n = len(space.shape)
-            return f"ContinuousSpace<crate::core::Native, {n + 1}>"
+            return f"ContinuousSpace<{n}>"
         elif isinstance(space.dtype, np.dtypes.UByteDType):
             n = len(space.shape)
-            return f"ByteSpace<crate::core::Native, {n + 1}>"
+            return f"ByteSpace<{n}>"
         else:
             raise NotImplementedError(f"The given space is Box, but dtype {type(space.dtype)} is not supported currently")
     else:

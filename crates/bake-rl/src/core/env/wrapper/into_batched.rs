@@ -5,51 +5,51 @@
 use burn::prelude::*;
 use crate::core::data::BatchOps;
 
-pub trait ToBurn: Sized {
-    type BurnElem: BatchOps;
-    /// convert vector of elements to `Burn` representation
-    fn bind(elems: Vec<Self>, device: &Device) -> Self::BurnElem;
+pub trait IntoBatched: Sized {
+    type Batched: BatchOps;
+    /// convert vector of elements to batched representation
+    fn into_batched(elems: Vec<Self>, device: &Device) -> Self::Batched;
 }
 
-impl ToBurn for () {
-    type BurnElem = ();
+impl IntoBatched for () {
+    type Batched = ();
 
-    fn bind(_elems: Vec<Self>, _device: &Device) -> Self::BurnElem {
+    fn into_batched(_elems: Vec<Self>, _device: &Device) -> Self::Batched {
         ()
     }
 }
 
-impl ToBurn for bool {
-    type BurnElem = Tensor<1, Bool>;
+impl IntoBatched for bool {
+    type Batched = Tensor<1, Bool>;
 
-    fn bind(elems: Vec<Self>, device: &Device) -> Self::BurnElem {
+    fn into_batched(elems: Vec<Self>, device: &Device) -> Self::Batched {
         assert!(!elems.is_empty(), "ToBurn::bind: given Vec<{}> is empty", std::any::type_name::<Self>());
         Tensor::from_bool(&elems[..], device)
     }
 }
 
-impl ToBurn for f32 {
-    type BurnElem = Tensor<1>;
+impl IntoBatched for f32 {
+    type Batched = Tensor<1>;
 
-    fn bind(elems: Vec<Self>, device: &Device) -> Self::BurnElem {
+    fn into_batched(elems: Vec<Self>, device: &Device) -> Self::Batched {
         assert!(!elems.is_empty(), "ToBurn::bind: given Vec<{}> is empty", std::any::type_name::<Self>());
         Tensor::from_floats(&elems[..], device)
     }
 }
 
-impl ToBurn for usize {
-    type BurnElem = Tensor<1, Int>;
+impl IntoBatched for usize {
+    type Batched = Tensor<1, Int>;
 
-    fn bind(elems: Vec<Self>, device: &Device) -> Self::BurnElem {
+    fn into_batched(elems: Vec<Self>, device: &Device) -> Self::Batched {
         assert!(!elems.is_empty(), "ToBurn::bind: given Vec<{}> is empty", std::any::type_name::<Self>());
         Tensor::from_ints(&elems[..], device)
     }
 }
 
-impl<const N: usize> ToBurn for [bool; N] {
-    type BurnElem = Tensor<2, Bool>;
+impl<const N: usize> IntoBatched for [bool; N] {
+    type Batched = Tensor<2, Bool>;
 
-    fn bind(elems: Vec<Self>, device: &Device) -> Self::BurnElem {
+    fn into_batched(elems: Vec<Self>, device: &Device) -> Self::Batched {
         assert!(!elems.is_empty(), "ToBurn::bind: given Vec<{}> is empty", std::any::type_name::<Self>());
         let n = elems.len();
         let flattened: Vec<bool> = elems.into_iter().flatten().collect();
@@ -58,10 +58,10 @@ impl<const N: usize> ToBurn for [bool; N] {
 }
 
 
-impl ToBurn for Vec<bool> {
-    type BurnElem = Tensor<2, Bool>;
+impl IntoBatched for Vec<bool> {
+    type Batched = Tensor<2, Bool>;
 
-    fn bind(elems: Vec<Self>, device: &Device) -> Self::BurnElem {
+    fn into_batched(elems: Vec<Self>, device: &Device) -> Self::Batched {
         assert!(!elems.is_empty(), "ToBurn::bind: given Vec<{}> is empty", std::any::type_name::<Self>());
         // check if all elements has same length
         let n = elems.len();

@@ -1,5 +1,5 @@
-/// discrete constraint for discrete action spaces, with `Native` representation
-pub trait NativeDiscreteConstraint: Clone {
+/// discrete constraint for discrete action spaces
+pub trait DiscreteConstraint: Clone {
     /// Fill the given `values` with `fill_value` where mask is false
     fn apply(&self, values: &[f32], fill_value: f32) -> Vec<f32>;
     /// return the possible number of actions
@@ -9,9 +9,9 @@ pub trait NativeDiscreteConstraint: Clone {
     fn is_possible(&self, action: usize) -> bool;
 }
 
-impl NativeDiscreteConstraint for Vec<bool> {
+impl DiscreteConstraint for Vec<bool> {
     fn apply(&self, values: &[f32], fill_value: f32) -> Vec<f32> {
-        assert!(self.len() == values.len(), "NativeDiscreteConstraint::apply: action number mismatch, constraint: {}, value: {}", self.len(), values.len());
+        assert!(self.len() == values.len(), "DiscreteConstraint::apply: action number mismatch, constraint: {}, value: {}", self.len(), values.len());
         let mut masked = vec![0f32; values.len()];
         for (idx, (&b, &value)) in self.iter().zip(values.iter()).enumerate() {
             if !b {
@@ -32,9 +32,9 @@ impl NativeDiscreteConstraint for Vec<bool> {
     }
 }
 
-impl<const N: usize> NativeDiscreteConstraint for [bool; N] {
+impl<const N: usize> DiscreteConstraint for [bool; N] {
     fn apply(&self, values: &[f32], fill_value: f32) -> Vec<f32> {
-        assert!(self.len() == values.len(), "NativeDiscreteConstraint::apply: action number mismatch, constraint: {}, value: {}", self.len(), values.len());
+        assert!(self.len() == values.len(), "DiscreteConstraint::apply: action number mismatch, constraint: {}, value: {}", self.len(), values.len());
         let mut masked = vec![0f32; values.len()];
         for (idx, (&b, &value)) in self.iter().zip(values.iter()).enumerate() {
             if !b {
@@ -55,7 +55,7 @@ impl<const N: usize> NativeDiscreteConstraint for [bool; N] {
     }
 }
 
-impl NativeDiscreteConstraint for () {
+impl DiscreteConstraint for () {
     fn apply(&self, values: &[f32], _fill_value: f32) -> Vec<f32> {
         values.iter().copied().collect()
     }

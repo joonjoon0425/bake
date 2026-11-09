@@ -1,4 +1,4 @@
 //! space traits for Gymnasium environments
 
-mod native;
-pub use native::NativeGymSpace;
+mod single;
+pub use single::GymSpace;

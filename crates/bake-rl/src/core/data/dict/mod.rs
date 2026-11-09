@@ -6,7 +6,7 @@ use crate::core::data::{Batch, BatchOps, batch_ops::helper::*};
 /// - It can use two types of keys; string key and struct key
 /// - when using the struct key, user do not have to specify type for `insert` `get`, `remove` and `modify`.
 /// - when using the string key, user has to specify type for `insert_str`, `get_str`, `remove_str` and `modify_str`.
-pub type BatchDict = Batch<Dict>;
+pub type BatchDict = Batch<BatchedDict>;
 /// erased `BatchOps` type
 pub type ErasedBatchOps = Box<dyn Any>;
 
@@ -51,11 +51,11 @@ impl Clone for DictLeaf {
 
 /// dictionary BatchOps type
 #[derive(Debug, Clone)]
-pub struct Dict {
+pub struct BatchedDict {
     map: BTreeMap<Cow<'static, str>, DictLeaf>,
 }
 
-impl Dict {
+impl BatchedDict {
     /// create empty Dict
     pub fn new() -> Self {
         Self {
@@ -115,12 +115,12 @@ impl Dict {
     }
 }
 
-impl Batch<Dict> {
+impl Batch<BatchedDict> {
     /// create new empty `BatchDict`, with given batch shape
     pub fn batch_dict(bs: Vec<usize>) -> Self {
         Self {
             bs,
-            leaf: Dict::new()
+            leaf: BatchedDict::new()
         }
     }
 
@@ -190,7 +190,7 @@ impl Batch<Dict> {
     }
 }
 
-impl BatchOps for Dict {
+impl BatchOps for BatchedDict {
     fn assign_inplace_batch(&mut self, bs: &[usize], dim: isize, idx: usize, src: Self, src_bs: &[usize]) {
         assert!(self.map.iter().len() == src.map.iter().len(), "Dict::assign_inplace_batch: The number of key differs in self and src");
         for ((dst_str, dst_leaf), (src_str, src_leaf)) in self.map.iter_mut().zip(src.map.into_iter()) {
@@ -207,7 +207,7 @@ impl BatchOps for Dict {
                 vtable: leaf.vtable
             });
         }
-        Dict {
+        BatchedDict {
             map,
         }
     }
@@ -282,7 +282,7 @@ impl BatchOps for Dict {
             split.insert(s, (v, leaf.vtable));
         }
 
-        let mut maps = vec![Dict { map: BTreeMap::new() }; n];
+        let mut maps = vec![BatchedDict { map: BTreeMap::new() }; n];
         for (s, (vec, vtable)) in split {
             for (map, value) in maps.iter_mut().zip(vec.into_iter()) {
                 map.map.insert(s.clone(), DictLeaf {
@@ -302,7 +302,7 @@ impl BatchOps for Dict {
                 vtable: leaf.vtable.clone()
             });
         }
-        Dict { map }
+        BatchedDict { map }
     }
 
     fn reshape_batch(self, bs: &[usize], new_bs: &[usize]) -> Self {
@@ -313,7 +313,7 @@ impl BatchOps for Dict {
                 vtable: leaf.vtable
             });
         }
-        Dict { map }
+        BatchedDict { map }
     }
 }
 

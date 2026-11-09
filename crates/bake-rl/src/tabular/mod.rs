@@ -10,8 +10,8 @@ pub mod prelude {
     };
     pub use crate::tabular::qtable::QTable;
 
-    pub use crate::core::action_selector::{NativeDiscreteActionSelector, EpsilonGreedy, Boltzmann, Greedy};
-    pub use crate::core::constraint::NativeDiscreteConstraint;
+    pub use crate::core::action_selector::{DiscreteActionSelector, EpsilonGreedy, Boltzmann, Greedy};
+    pub use crate::core::constraint::DiscreteConstraint;
     pub use crate::core::env::Tape;
     pub use crate::core::env::{Environment, EnvironmentConfig};
     pub use crate::core::data::NativeTransition;

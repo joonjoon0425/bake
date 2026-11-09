@@ -1,11 +1,11 @@
 use crate::core::data::{Batch, BatchDict, Transition};
-use crate::core::env::{VectorEnvironment, space::BurnSpace};
+use crate::core::env::{VectorEnvironment, space::BatchedSpace};
 use burn::prelude::*;
 /// The `VecTape` struct, which helps making transition tuple (s, a, r, s') and manage vector environment steps and resets.
 pub struct VectorTape<E: VectorEnvironment> {
     env: E,
     /// current observation
-    pub obs: <E::ObsSpace as BurnSpace>::Element,
+    pub obs: <E::ObsSpace as BatchedSpace>::Element,
     /// current constraint
     pub constraint: E::Constraint,
     /// current information of the environment
@@ -52,7 +52,7 @@ impl<E: VectorEnvironment> VectorTape<E> {
     /// - if `autoreset = true`
     ///     - during the `step`, terminated or truncated environments are automatically reset
     ///     - the returned `info` is the information before being automatically reset; if you read `info` from directly like `tape.info`, you will get the reset-info
-    pub fn step(&mut self, action: <E::ActionSpace as BurnSpace>::Element) -> (Batch<Transition<<E::ObsSpace as BurnSpace>::Element, <E::ActionSpace as BurnSpace>::Element, E::Constraint, E::Reward, Tensor<1, Bool>, BatchDict>>, E::Info) {
+    pub fn step(&mut self, action: <E::ActionSpace as BatchedSpace>::Element) -> (Batch<Transition<<E::ObsSpace as BatchedSpace>::Element, <E::ActionSpace as BatchedSpace>::Element, E::Constraint, E::Reward, Tensor<1, Bool>, BatchDict>>, E::Info) {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);

@@ -1,6 +1,6 @@
 //! Deep Q-Network
 use burn::prelude::*;
-use crate::core::constraint::BurnDiscreteConstraint;
+use crate::core::constraint::BatchedDiscreteConstraint;
 use crate::core::data::{Batch, BatchOps, BurnTransition};
 use crate::deep::{
     contract::DiscreteActionValue,
@@ -43,7 +43,7 @@ pub fn dqn_loss<Q, Constraint, SampleInfo>(
 ) -> (Q, DQNLoss)
 where
     Q: DiscreteActionValue,
-    Constraint: BurnDiscreteConstraint,
+    Constraint: BatchedDiscreteConstraint,
     SampleInfo: LossWeight,
 {
     let online = online.train();

@@ -1,7 +1,7 @@
 //! discrete constraint
 
-mod burn;
-mod native;
+mod batched;
+mod single;
 
-pub use burn::BurnDiscreteConstraint;
-pub use native::NativeDiscreteConstraint;
+pub use batched::BatchedDiscreteConstraint;
+pub use single::DiscreteConstraint;

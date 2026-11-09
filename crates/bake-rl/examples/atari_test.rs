@@ -1,4 +1,4 @@
-use bake_rl::core::env::space::NativeSpace;
+use bake_rl::core::env::space::Space;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::core::env::{Environment, EnvironmentConfig};
 use rand::prelude::*;

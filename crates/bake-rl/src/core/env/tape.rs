@@ -1,11 +1,11 @@
 
 use crate::core::data::NativeTransition;
-use crate::core::env::{Environment, space::NativeSpace};
+use crate::core::env::{Environment, space::Space};
 /// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage vector environment steps and resets.
 pub struct Tape<E: Environment> {
     env: E,
     /// current observation
-    pub obs: <E::ObsSpace as NativeSpace>::Element,
+    pub obs: <E::ObsSpace as Space>::Element,
     /// current constraint
     pub constraint: E::Constraint,
     /// current information of the environment
@@ -40,7 +40,7 @@ impl<E: Environment> Tape<E> {
     }
     
     /// take one step and returns the transition and info
-    pub fn step(&mut self, action: <E::ActionSpace as NativeSpace>::Element) -> (NativeTransition<<E::ObsSpace as NativeSpace>::Element, <E::ActionSpace as NativeSpace>::Element, E::Constraint, E::Reward>, E::Info) {
+    pub fn step(&mut self, action: <E::ActionSpace as Space>::Element) -> (NativeTransition<<E::ObsSpace as Space>::Element, <E::ActionSpace as Space>::Element, E::Constraint, E::Reward>, E::Info) {
         let ((next_obs, next_constraint), reward, terminated, truncated, info) = self.env.step(action.clone());
         let obs = std::mem::replace(&mut self.obs, next_obs);
         let constraint = std::mem::replace(&mut self.constraint, next_constraint);

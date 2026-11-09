@@ -3,9 +3,11 @@
 // pub mod batchable;
 // pub use batchable::Batchable;
 pub mod batch_ops;
-pub mod batch;
+pub mod dict;
+pub mod transition;
+pub mod shaped;
 
-pub use batch::{
+pub use shaped::{
     Batch,
     transition::{Transition, NativeTransition, BurnTransition},
     dict::BatchDict,

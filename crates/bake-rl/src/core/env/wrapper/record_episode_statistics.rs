@@ -1,6 +1,6 @@
 //! Episode statistics recording wrapper
 use crate::core::env::Environment;
-use crate::core::env::space::NativeSpace;
+use crate::core::env::space::Space;
 /// records the episode-related statistics of vector environments, for scalar rewards
 /// # What it records?
 /// - Just as Gymnasium's `RecordEpisodeStatistics`, it records reward, step, wall-clock time and done masks, through the `Info`
@@ -47,14 +47,14 @@ impl<E: Environment<Reward = f32>> Environment for RecordEpisodeStatistics<E> {
         self.env.obs_space()
     }
 
-    fn reset(&mut self) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), Self::Info) {
+    fn reset(&mut self) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Info) {
         let ((o, c), i) = self.env.reset();
         self.record_reward = 0.;
         self.record_step = 0;
         ((o, c), (i, None))
     }
 
-    fn step(&mut self, action: <Self::ActionSpace as NativeSpace>::Element) -> ((<Self::ObsSpace as NativeSpace>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
+    fn step(&mut self, action: <Self::ActionSpace as Space>::Element) -> ((<Self::ObsSpace as Space>::Element, Self::Constraint), Self::Reward, bool, bool, Self::Info) {
         let ((o, c), r, ter, tru, i) = self.env.step(action);
         self.record_reward += r;
         self.record_step += 1;

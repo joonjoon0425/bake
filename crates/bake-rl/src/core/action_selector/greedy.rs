@@ -1,23 +1,25 @@
 //! greedy action selector
 use burn::prelude::*;
+use rand::prelude::*;
+use crate::core::constraint::{BatchedDiscreteConstraint, DiscreteConstraint};
 
-use crate::core::constraint::{BurnDiscreteConstraint, NativeDiscreteConstraint};
-
-use super::NativeDiscreteActionSelector;
-use super::BurnDiscreteActionSelector;
+use super::DiscreteActionSelector;
+use super::BatchedDiscreteActionSelector;
 
 /// A greedy policy implementation
 pub struct Greedy;
+/// A greedy policy implementation
+pub struct BatchedGreedy;
 
-impl NativeDiscreteActionSelector for Greedy {
-    fn sample<C: NativeDiscreteConstraint>(&mut self, qvalues: &[f32], constraint: C) -> usize {
+impl DiscreteActionSelector for Greedy {
+    fn sample<C: DiscreteConstraint, R: Rng>(&self, _rng: &mut R, qvalues: &[f32], constraint: C) -> usize {
         let qvalues = constraint.apply(qvalues, -1e9);
         super::argmax_max(&qvalues).0
     }
 }
 
-impl BurnDiscreteActionSelector for Greedy {
-    fn sample<C: BurnDiscreteConstraint>(&self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int> {
+impl BatchedDiscreteActionSelector for BatchedGreedy {
+    fn sample<C: BatchedDiscreteConstraint>(&self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int> {
         let qvalues = constraint.apply(qvalues, -1e9);
         qvalues.argmax(1).squeeze_dim(1)
     }

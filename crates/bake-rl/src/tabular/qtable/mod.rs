@@ -1,5 +1,7 @@
 //! A action value (Q value) table for tabular algorithms
-use crate::core::{constraint::NativeDiscreteConstraint, action_selector::NativeDiscreteActionSelector};
+use crate::core::constraint::DiscreteConstraint;
+use crate::core::action_selector::DiscreteActionSelector;
+use rand::prelude::*;
 /// Q Table
 #[derive(Debug, Clone)]
 pub struct QTable {
@@ -21,7 +23,7 @@ impl QTable {
     }
 
     /// return a q values of given observation
-    pub fn qvalues(&self, obs: usize, constraint: impl NativeDiscreteConstraint) -> Vec<f32> {
+    pub fn qvalues(&self, obs: usize, constraint: impl DiscreteConstraint) -> Vec<f32> {
         let qvalues = &self.table[obs * self.n_action..(obs + 1) * self.n_action];
         constraint.apply(qvalues, -1e9)
     }
@@ -32,9 +34,9 @@ impl QTable {
     }
 
     /// sample an action using given exploration strategy
-    pub fn action<A: NativeDiscreteActionSelector>(&self, action_selector: &mut A, obs: usize, constraint: impl NativeDiscreteConstraint) -> usize {
+    pub fn action<A: DiscreteActionSelector, R: Rng>(&self, rng: &mut R, action_selector: &mut A, obs: usize, constraint: impl DiscreteConstraint) -> usize {
         let qvalues = self.qvalues(obs, constraint.clone());
-        action_selector.sample(&qvalues, constraint)
+        action_selector.sample(rng, &qvalues, constraint)
     }
 
     /// update the inner table
