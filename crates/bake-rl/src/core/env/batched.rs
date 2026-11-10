@@ -1,5 +1,5 @@
 use crate::core::data::BatchOps;
-use crate::env::space::BatchedSpace;
+use crate::core::env::space::BatchedSpace;
 use burn::prelude::*;
 
 /// `BatchedEnvironment` trait which produces batched data

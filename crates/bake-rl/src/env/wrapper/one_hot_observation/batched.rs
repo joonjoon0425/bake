@@ -1,7 +1,7 @@
 //! one-hot encoder wrapper for discrete observation
 use burn::prelude::*;
-use crate::env::BatchedEnvironment;
-use crate::env::space::{BatchedContinuousSpace, BatchedDiscreteSpace, BatchedSpace};
+use crate::core::env::BatchedEnvironment;
+use crate::core::env::space::{BatchedContinuousSpace, BatchedDiscreteSpace, BatchedSpace};
 
 /// one-hot encoding wrapper for discrete observation
 pub struct BatchedOneHotObservation<E: BatchedEnvironment<ObsSpace = BatchedDiscreteSpace>> {

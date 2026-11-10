@@ -1,6 +1,6 @@
 //! Cliff Walking
-use crate::env::space::{Space, DiscreteSpace};
-use crate::env::{Environment, EnvironmentConfig};
+use crate::core::env::space::{DiscreteSpace, Space};
+use crate::core::env::{Environment, EnvironmentConfig};
 
 /// A 4 * 12 cliff walking environment implementation
 /// - The algorithm has to find an efficient way to reach the goal.

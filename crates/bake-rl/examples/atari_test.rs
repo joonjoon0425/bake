@@ -1,6 +1,6 @@
-use bake_rl::env::space::Space;
+use bake_rl::core::env::space::Space;
+use bake_rl::core::env::{Environment, EnvironmentConfig};
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
-use bake_rl::env::{Environment, EnvironmentConfig};
 use rand::prelude::*;
 
 pub fn main() {

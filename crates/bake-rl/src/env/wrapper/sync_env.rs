@@ -1,6 +1,7 @@
 //! Synchronized batch environment wrapper
 use crate::env::wrapper::into_batched::IntoBatched;
-use crate::env::{Environment, BatchedEnvironment, space::Space, space::BatchedSpace, space::IntoBatchedSpace};
+use crate::core::env::{Environment, BatchedEnvironment};
+use crate::core::env::space::{Space, BatchedSpace, IntoBatchedSpace};
 use burn::prelude::*;
 
 /// batch non-batch environment in a synchronized way

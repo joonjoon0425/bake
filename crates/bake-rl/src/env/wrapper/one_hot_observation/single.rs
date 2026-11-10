@@ -1,5 +1,5 @@
-use crate::env::Environment;
-use crate::env::space::{Space, DiscreteSpace, ContinuousSpace};
+use crate::core::env::Environment;
+use crate::core::env::space::{Space, DiscreteSpace, ContinuousSpace};
 use ndarray::prelude::*;
 
 /// one-hot encoding wrapper for discrete observation

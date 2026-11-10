@@ -5,8 +5,8 @@ use rand::distr::weighted::WeightedIndex;
 use rand::prelude::*;
 use crate::core::constraint::{BatchedDiscreteConstraint, DiscreteConstraint};
 
-use super::DiscreteActionSelector;
-use super::BatchedDiscreteActionSelector;
+use super::DiscreteActionExploration;
+use super::BatchedDiscreteActionExploration;
 
 /// Boltzmann (softmax) policy implementation
 pub struct Boltzmann {
@@ -29,7 +29,7 @@ impl Boltzmann {
     pub fn temperature_mut(&mut self) -> &mut f32 { &mut self.temp }
 }
 
-impl DiscreteActionSelector for Boltzmann {
+impl DiscreteActionExploration for Boltzmann {
     fn sample<C: DiscreteConstraint, R: Rng>(&self, rng: &mut R, qvalues: &[f32], constraint: C) -> usize {
         let mut qvalues = constraint.apply(qvalues, -1e9);
         let vmax = super::argmax_max(&qvalues).1;
@@ -62,7 +62,7 @@ impl BatchedBoltzmann {
     pub fn temperature_mut(&mut self) -> &mut f32 { &mut self.temp }
 }
 
-impl BatchedDiscreteActionSelector for BatchedBoltzmann {
+impl BatchedDiscreteActionExploration for BatchedBoltzmann {
     fn sample<C: BatchedDiscreteConstraint>(&self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int> {
         let qvalues = constraint.apply(qvalues, -1e9);
         let probs = softmax(qvalues / self.temp, 1);

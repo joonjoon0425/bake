@@ -1,5 +1,5 @@
 use crate::core::data::{Shaped, BatchedDict, BatchedTransition};
-use crate::env::{BatchedEnvironment, space::BatchedSpace};
+use crate::core::env::{BatchedEnvironment, space::BatchedSpace};
 use burn::prelude::*;
 
 /// The `BatchedTape` struct, which helps making transition tuple (s, a, r, s') and manage batched single and vector environment steps and resets.

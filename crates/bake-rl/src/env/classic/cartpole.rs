@@ -6,12 +6,8 @@
 //! (e.g. dueling) can be exercised on an unmasked task.
 use ndarray::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
-use crate::env::space::ContinuousSpace;
-use crate::env::space::DiscreteSpace;
-use crate::env::space::Space;
-
-use crate::env::Environment;
-use crate::env::EnvironmentConfig;
+use crate::core::env::space::{ContinuousSpace, DiscreteSpace, Space};
+use crate::core::env::{Environment, EnvironmentConfig};
  
 const GRAVITY: f32 = 9.8;
 const MASS_CART: f32 = 1.0;

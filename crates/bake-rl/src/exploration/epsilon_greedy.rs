@@ -4,8 +4,8 @@ use burn::prelude::*;
 use rand::prelude::*;
 use crate::core::constraint::{BatchedDiscreteConstraint, DiscreteConstraint};
 
-use super::DiscreteActionSelector;
-use super::BatchedDiscreteActionSelector;
+use super::DiscreteActionExploration;
+use super::BatchedDiscreteActionExploration;
 
 /// An epsilon-greedy policy implementation
 pub struct EpsilonGreedy {
@@ -28,7 +28,7 @@ impl EpsilonGreedy {
 }
 
 
-impl DiscreteActionSelector for EpsilonGreedy {
+impl DiscreteActionExploration for EpsilonGreedy {
     fn sample<C: DiscreteConstraint, R: Rng>(&self, rng: &mut R, qvalues: &[f32], constraint: C) -> usize {
         let qvalues = constraint.apply(qvalues, -1e9);
         let r: f32 = rng.random_range(0.0..1.0);
@@ -63,7 +63,7 @@ impl BatchedEpsilonGreedy {
     pub fn epsilon_mut(&mut self) -> &mut f32 { &mut self.eps }
 }
 
-impl BatchedDiscreteActionSelector for BatchedEpsilonGreedy {
+impl BatchedDiscreteActionExploration for BatchedEpsilonGreedy {
     fn sample<C: BatchedDiscreteConstraint>(&self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int> {
         let n = qvalues.dims()[0];
         let r = Tensor::<1>::random([n], burn::tensor::Distribution::Uniform(0., 1.), &qvalues.device()).lower_elem(self.eps);

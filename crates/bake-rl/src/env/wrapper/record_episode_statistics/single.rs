@@ -1,6 +1,6 @@
 //! Episode statistics recording wrapper
-use crate::env::Environment;
-use crate::env::space::Space;
+use crate::core::env::Environment;
+use crate::core::env::space::Space;
 use super::EpisodeStatistics;
 
 /// records the episode-related statistics of environments (for scalar rewards)

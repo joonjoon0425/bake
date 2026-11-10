@@ -1,7 +1,7 @@
 //! Episode statistics recording wrapper
 use burn::prelude::*;
-use crate::env::BatchedEnvironment;
-use crate::env::space::BatchedSpace;
+use crate::core::env::BatchedEnvironment;
+use crate::core::env::space::BatchedSpace;
 use super::EpisodeStatistics;
 
 /// records the episode-related statistics of batched environments, for scalar rewards

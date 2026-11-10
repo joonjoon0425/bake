@@ -28,11 +28,13 @@ pub mod prelude {
     };
     pub use crate::deep::distribution::{Distribution, Categorical};
     
-    pub use crate::core::action_selector::{BatchedDiscreteActionSelector, BatchedEpsilonGreedy, BatchedBoltzmann, BatchedGreedy};
-    pub use crate::core::constraint::BatchedDiscreteConstraint;
-    pub use crate::env::BatchedTape;
-    pub use crate::env::{Environment, BatchedEnvironment, EnvironmentConfig, BatchedEnvironmentConfig};
+    
+    pub use crate::core::constraint::BatchedDiscreteConstraint;    
+    pub use crate::core::env::{Environment, BatchedEnvironment, EnvironmentConfig, BatchedEnvironmentConfig};
     pub use crate::core::data::{Shaped, BatchedTransition, key};
 
+    pub use crate::env::BatchedTape;
+    pub use crate::exploration::{BatchedDiscreteActionExploration, BatchedEpsilonGreedy, BatchedBoltzmann, BatchedGreedy};
+    
     pub use bake_rl_macros::{actor_critic, policy, qnet};
 }

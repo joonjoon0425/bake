@@ -4,13 +4,13 @@ use rand::prelude::*;
 use crate::core::constraint::{BatchedDiscreteConstraint, DiscreteConstraint};
 
 /// A trait which all 'non-batch' exploration strategies must implement
-pub trait DiscreteActionSelector {
+pub trait DiscreteActionExploration {
     /// sample an action using given discrete action values, with given constraint
     fn sample<C: DiscreteConstraint, R: Rng>(&self, rng: &mut R, qvalues: &[f32], constraint: C) -> usize;
 }
 
 /// A trait which all 'batch' exploration strategies must implement
-pub trait BatchedDiscreteActionSelector {
+pub trait BatchedDiscreteActionExploration {
     /// sample an action using given discrete action values, with given constraint
     fn sample<C: BatchedDiscreteConstraint>(&self, qvalues: Tensor<2>, constraint: C) -> Tensor<1, Int>;
 }

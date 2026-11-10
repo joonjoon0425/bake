@@ -9,10 +9,11 @@ pub mod prelude {
         q_learning::*,
     };
     pub use crate::tabular::qtable::QTable;
-
-    pub use crate::core::action_selector::{DiscreteActionSelector, EpsilonGreedy, Boltzmann, Greedy};
+    
     pub use crate::core::constraint::DiscreteConstraint;
-    pub use crate::env::Tape;
-    pub use crate::env::{Environment, EnvironmentConfig};
+    pub use crate::core::env::{Environment, EnvironmentConfig};
     pub use crate::core::data::Transition;
+
+    pub use crate::exploration::{DiscreteActionExploration, EpsilonGreedy, Boltzmann, Greedy};
+    pub use crate::env::Tape;
 }

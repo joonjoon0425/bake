@@ -1,6 +1,6 @@
 //! A action value (Q value) table for tabular algorithms
 use crate::core::constraint::DiscreteConstraint;
-use crate::core::action_selector::DiscreteActionSelector;
+use crate::exploration::DiscreteActionExploration;
 use rand::prelude::*;
 /// Q Table
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ impl QTable {
     }
 
     /// sample an action using given exploration strategy
-    pub fn action<A: DiscreteActionSelector, R: Rng>(&self, rng: &mut R, action_selector: &mut A, obs: usize, constraint: impl DiscreteConstraint) -> usize {
+    pub fn action<A: DiscreteActionExploration, R: Rng>(&self, rng: &mut R, action_selector: &mut A, obs: usize, constraint: impl DiscreteConstraint) -> usize {
         let qvalues = self.qvalues(obs, constraint.clone());
         action_selector.sample(rng, &qvalues, constraint)
     }

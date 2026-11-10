@@ -2,8 +2,10 @@
 use std::marker::PhantomData;
 
 use pyo3::{prelude::*, types::PyDict};
-use crate::env::{Environment, EnvironmentConfig, gym::GymSpace, space::Space};
-/// A struct for all non-vector gymnasium environments
+use crate::core::env::{Environment, EnvironmentConfig};
+use crate::core::env::space::Space;
+use crate::env::gym::space::GymSpace;
+/// A struct for all non-batch gymnasium environments
 pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
     env: Py<PyAny>,
 

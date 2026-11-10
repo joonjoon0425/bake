@@ -1,6 +1,6 @@
 
 use crate::core::data::Transition;
-use crate::env::{Environment, space::Space};
+use crate::core::env::{Environment, space::Space};
 /// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage vector environment steps and resets.
 pub struct Tape<E: Environment> {
     env: E,
