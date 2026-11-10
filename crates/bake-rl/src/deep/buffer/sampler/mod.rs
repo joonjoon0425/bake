@@ -22,7 +22,11 @@ pub trait Sampler {
     /// information about samples
     type SampleInfo;
     /// returns the sample with given batch size
-    fn sample<T: BatchOps>(&self, size: usize, len: usize, storage: &Shaped<T>, device: &Device) -> Sample<T, Self::SampleInfo>;
+    fn sample<T: BatchOps>(&self, size: usize, len: usize, storage: &Shaped<T>) -> Sample<T, Self::SampleInfo>;
+    /// hook which is called after data are pushed into replay buffer
+    /// # Warning
+    /// - no-op basically
+    fn after_push(&mut self, _indices: Tensor<1, Int>) {}
 }
 
 /// sampler trait for rollout buffers

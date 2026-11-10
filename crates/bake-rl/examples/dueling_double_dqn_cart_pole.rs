@@ -28,7 +28,7 @@ pub fn main() {
     let mut opt = AdamConfig::new().init();
         
     let mut exploration = BatchedEpsilonGreedy::new(1.0f32);
-    let mut buffer = ReplayBuffer::new(UniformSampler, 100000, &device);
+    let mut buffer = ReplayBuffer::with_uniform_sampler(100000, 1, &device);
 
     let total_steps = 300000;
     let warmup = 10000;

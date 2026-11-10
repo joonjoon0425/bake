@@ -15,11 +15,13 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
 
-    let env = vec![
-        GymnasiumEnvironmentConfig::cart_pole().seed(seed).init(),
-        GymnasiumEnvironmentConfig::cart_pole().seed(seed + 1).init(),
-        GymnasiumEnvironmentConfig::cart_pole().seed(seed + 2).init(),
-    ];
+    let n_envs = 3;
+    
+    let env = {
+        let mut vec = vec![];
+        for i in 0..n_envs { vec.push(GymnasiumEnvironmentConfig::cart_pole().seed(seed + i as u64).init()); }
+        vec
+    };
     let env = SynchronizedBatchedEnvironment::new(env, &device);
     let env = BatchedRecordEpisodeStatistics::new(env);
     
@@ -32,7 +34,7 @@ pub fn main() {
     let mut opt = AdamConfig::new().init();
         
     let mut exploration = BatchedEpsilonGreedy::new(1.0f32);
-    let mut buffer = ReplayBuffer::new(UniformSampler, 100000, &device);
+    let mut buffer = ReplayBuffer::with_uniform_sampler(100000, n_envs, &device);
 
     let total_steps = 500000;
     let warmup = 10000;
