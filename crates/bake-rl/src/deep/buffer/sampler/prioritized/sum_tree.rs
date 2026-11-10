@@ -60,10 +60,19 @@ impl SumTree {
         }
     }
 
+    /// get values of given indices
+    pub fn values(&self, indices: Tensor<1, Int>) -> Tensor<1> {
+        let indices = indices + self.bound;
+        self.values.clone().select(0, indices)
+    }
+
     /// sample with distribution p_i/(sum p_i).
     /// # Returns
-    /// - returns (sample, idx)
-    pub fn sample_stratified(&self, n_samples: i64) -> (Tensor<1>, Tensor<1, Int>) {
+    /// - returns sampled indices
+    /// # Warning
+    /// - since we are using f32 precision, the `update` may have some round up during the summation of children nodes' value
+    /// - then the sample may return indices out of bounds
+    pub fn sample_stratified(&self, n_samples: i64) -> Tensor<1, Int> {
         let interval = Tensor::<1, Int>::arange(0..n_samples, &self.device).float();
         let random = Tensor::random([n_samples], burn::tensor::Distribution::Uniform(0., 1.), &self.device);
         let mut query = (interval + random) * self.total_sum() / n_samples as f32;
@@ -86,6 +95,6 @@ impl SumTree {
             query.inplace(|q| q - left_node * right.float())
         }
 
-        (self.values.clone().select(0, descend.clone()), descend - self.bound)
+        descend - self.bound
     }
 }

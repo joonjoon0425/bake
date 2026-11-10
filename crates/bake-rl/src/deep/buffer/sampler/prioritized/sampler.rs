@@ -60,8 +60,10 @@ impl Sampler for PrioritizedSampler {
     /// importance sampling weights
     type SampleInfo = Tensor<1>;
 
-    fn sample<T: BatchOps>(&self, size: usize, _len: usize, storage: &Shaped<T>) -> Sample<T, Self::SampleInfo> {
-        let (priorities, indices) = self.sum_tree.sample_stratified(size as i64);
+    fn sample<T: BatchOps>(&self, size: usize, len: usize, storage: &Shaped<T>) -> Sample<T, Self::SampleInfo> {
+        // clamp
+        let indices = self.sum_tree.sample_stratified(size as i64).clamp_max((len - 1) as i64);
+        let priorities = self.sum_tree.values(indices.clone());
         let total = self.sum_tree.total_sum();
         let p_min = self.min_tree.min() / total.clone();
         let max_w = p_min.powf_scalar(-self.beta);

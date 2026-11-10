@@ -53,6 +53,7 @@ pub fn main() {
 
         if count >= warmup && count % update_freq == 0 && let Some(sample) = buffer.sample(batch_size) {
             let (net, loss) = dqn_loss(&state, online, &target, sample.sample, sample.info);
+            buffer.update_priorities(sample.indices, loss.td_error.clone());
             online = net.update(loss, lr, &mut opt);
         }
 
