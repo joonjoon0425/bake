@@ -20,7 +20,7 @@ impl MinTree {
         let mut depth = 1;
         while bound < size { bound *= 2; depth += 1; }
         
-        let values = Tensor::zeros([2 * bound], device);
+        let values = Tensor::full([2 * bound], f32::INFINITY, device);
 
         Self {
             size,
@@ -40,7 +40,7 @@ impl MinTree {
     /// - indices: index of update values (index should be given as if the data structure was a normal list)
     /// - values: values which will be switched with original values corresponfing to the indices
     pub fn update(&mut self, indices: Tensor<1, Int>, values: Tensor<1>) {
-        assert!(
+        debug_assert!(
             indices.clone().greater_equal_elem(0).all().into_scalar()
             && 
             indices.clone().lower_elem(self.size as u64).all().into_scalar(),
@@ -55,8 +55,8 @@ impl MinTree {
                 |v| {
                 let left = v.clone().select(0, 2 * indices.clone());
                 let right = v.clone().select(0, 2 * indices.clone() + 1);
-                let mask = left.clone().lower(right.clone());
-                let min = left.mask_where(mask, right);
+                
+                let min = left.min_pair(right);
                 v.select_assign(0, indices.clone(), min, burn::tensor::IndexingUpdateOp::Assign)
             });
         }

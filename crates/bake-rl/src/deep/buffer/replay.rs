@@ -34,7 +34,7 @@ impl<S: Sampler, T: BatchOps> ReplayBuffer<S, T> {
     pub fn push(&mut self, data: Shaped<T>) {
         let n_envs = data.batch_dim(-1);
         let head = self.writer.index(self.capacity, self.head, n_envs).unwrap();
-        let indices = Tensor::arange(self.head as i64..head as i64, &self.device);
+        let indices = Tensor::arange(self.head as i64..(self.head + n_envs) as i64, &self.device);
         match &mut self.storage {
             Some(storage) => {
                 storage.assign_inplace(0, self.head, data);
@@ -91,8 +91,14 @@ impl<T: BatchOps> ReplayBuffer<PrioritizedSampler, T> {
         Self::new(PrioritizedSampler::new(alpha, beta, capacity, priority_clip, device), capacity, device)
     }
 
-    /// update priorites
-    pub fn update_priorites(&mut self, indices: Tensor<1, Int>, priorities: Tensor<1>) {
+    /// update priorities
+    pub fn update_priorities(&mut self, indices: Tensor<1, Int>, priorities: Tensor<1>) {
         self.sampler.update(indices, priorities);
     }
+
+    /// return `beta`
+    pub fn beta(&self) -> f32 { self.sampler.beta() }
+
+    /// return mutable reference of `beta`
+    pub fn beta_mut(&mut self) -> &mut f32 { self.sampler.beta_mut() }
 }

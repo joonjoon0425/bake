@@ -34,7 +34,7 @@ pub fn main() {
     let mut opt = AdamConfig::new().init();
         
     let mut exploration = BatchedEpsilonGreedy::new(1.0f32);
-    let mut buffer = ReplayBuffer::with_uniform_sampler(100000, n_envs, &device);
+    let mut buffer = ReplayBuffer::with_prioritized_sampler(0.6, 0.4, Some(1.0), 100000, n_envs, &device);
 
     let total_steps = 500000;
     let warmup = 10000;
@@ -43,6 +43,7 @@ pub fn main() {
     let batch_size = 128;
 
     let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
         let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
@@ -68,6 +69,7 @@ pub fn main() {
         }
 
         *exploration.epsilon_mut() = eps_sch.step() as f32;
+        *buffer.beta_mut() = beta_sch.step() as f32;
     }
 
     // evaluation

@@ -17,7 +17,7 @@ pub struct PrioritizedSampler {
 
     priority_clip: Option<f32>,
 
-    max_priority: f32,
+    max_priority: Tensor<1>,
 
     eps: f32,
 }
@@ -29,7 +29,7 @@ impl PrioritizedSampler {
             alpha,
             beta,
             priority_clip,
-            max_priority: 1.,
+            max_priority: Tensor::ones([1], device),
             eps: 1e-6,
             sum_tree: SumTree::new(capacity as u64, device),
             min_tree: MinTree::new(capacity as u64, device)
@@ -51,7 +51,8 @@ impl PrioritizedSampler {
         let p = (e + self.eps).powf_scalar(self.alpha);
 
         self.sum_tree.update(indices.clone(), p.clone());
-        self.min_tree.update(indices, p);
+        self.min_tree.update(indices, p.clone());
+        self.max_priority.inplace(|m| m.max_pair(p.max()))
     }
 }
 
@@ -75,7 +76,7 @@ impl Sampler for PrioritizedSampler {
     }
 
     fn after_push(&mut self, indices: Tensor<1, Int>) {
-        let values = Tensor::full_like(&indices, self.max_priority).float();
+        let values = self.max_priority.clone().expand([indices.dims()[0]]);
         self.sum_tree.update(indices.clone(), values.clone());
         self.min_tree.update(indices, values);
     }

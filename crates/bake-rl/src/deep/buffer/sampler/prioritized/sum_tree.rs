@@ -40,7 +40,7 @@ impl SumTree {
     /// - indices: index of update values (index should be given as if the data structure was a normal list)
     /// - values: values which will be switched with original values corresponfing to the indices
     pub fn update(&mut self, indices: Tensor<1, Int>, values: Tensor<1>) {
-        assert!(
+        debug_assert!(
             indices.clone().greater_equal_elem(0).all().into_scalar()
             && 
             indices.clone().lower_elem(self.size as u64).all().into_scalar(),
@@ -73,7 +73,7 @@ impl SumTree {
         for _ in 0..self.depth - 1 {
             let left_idx = descend.clone().mul_scalar(2).clone();
             let left_node = self.values.clone().select(0, left_idx.clone());
-            let mask = left_node.clone().greater(query.clone());
+            let mask = left_node.clone().lower_equal(query.clone());
             // naive way
             // let query_cloned = query.clone();
             // descend.inplace(|d| d.mask_where(mask.clone(), left_idx));
