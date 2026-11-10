@@ -32,7 +32,7 @@ impl Loss for DoubleDQNLoss { fn loss(&self) -> Tensor<1> { self.loss.clone() } 
 
 /// compute the loss for double dqn algorithm. If `is_weight` is not `None` in `batch_info`, the weighted loss (eg. PER loss) is returned.
 /// # Warning
-/// - Here, the given `online` and `target` is moved to autodiff device
+/// - Here, the given `online` is moved to autodiff device
 /// - The `online` will be moved to inner device when `update` is called
 pub fn double_dqn_loss<Q, Constraint, SampleInfo>(
     state: &DoubleDQNState,

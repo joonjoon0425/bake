@@ -57,7 +57,7 @@ impl ActorCriticLoss for A2CLoss {
 /// compute the loss of A2C
 /// # Warning
 /// - Here, the given ActorCritic is moved to autodiff device
-/// - The ActorCritic will be move to inner device when `update` is called
+/// - Then ActorCritic will be moved to inner device when `update` is called
 pub fn a2c_loss<Ac: ActorCritic>(
     state: &A2CState,
     ac: Ac,

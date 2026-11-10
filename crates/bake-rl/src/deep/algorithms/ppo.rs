@@ -64,7 +64,7 @@ impl ActorCriticLoss for PPOLoss {
 /// compute the loss of PPO
 /// # Warning
 /// - Here, the given ActorCritic is moved to autodiff device
-/// - The ActorCritic will be move to inner device when `update` is called
+/// - Then ActorCritic will be moved to inner device when `update` is called
 pub fn ppo_loss<Ac: ActorCritic>(
     state: &PPOState, ac: Ac,
     minibatch: Shaped<BatchedTransition<Ac::Obs, impl PossibleConstraint<Ac::Dist>, <Ac::Dist as Distribution>::Sample, Tensor<1>>>

@@ -11,7 +11,7 @@ pub mod network;
 /// prelude module
 pub mod prelude {
     pub use crate::deep::algorithms::{
-        dqn::*, ppo::*, advantage_estimator::*, double_dqn::*, a2c::*,
+        dqn::*, ppo::*, advantage_estimator::*, double_dqn::*, a2c::*, reinforce::*,
     };
     pub use crate::deep::contract::*;
     pub use crate::deep::loss::{LossFn, Loss, ActorCriticLoss};
@@ -25,6 +25,7 @@ pub mod prelude {
     pub use crate::deep::buffer::{
         replay::ReplayBuffer,
         rollout::RolloutBuffer,
+        episode::EpisodeBuffer,
     };
     pub use crate::deep::distribution::{Distribution, Categorical};
     

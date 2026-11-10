@@ -5,3 +5,4 @@ pub mod writer;
 
 pub mod replay;
 pub mod rollout;
+pub mod episode;

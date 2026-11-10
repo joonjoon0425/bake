@@ -6,3 +6,4 @@ pub mod dqn;
 pub mod double_dqn;
 pub mod a2c;
 pub mod ppo;
+pub mod reinforce;

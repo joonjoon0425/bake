@@ -79,17 +79,15 @@ impl<E: BatchedEnvironment> BatchedTape<E> {
         
         if self.autoreset {
             // later, change this so that the synchronized vector environment holds an already-batched observation and constraints
-            if done.clone().any().into_scalar::<bool>() {
-                self.reset(Some(done))
-            }
+            self.reset(Some(done))
         };
 
         (Shaped::new(batch, bs), info)
     }
     
     /// returns the mask, which is true if the environment has terminated or truncated
-    pub fn done(&self) -> &Tensor<1, Bool> {
-        &self.done
+    pub fn done(&self) -> Tensor<1, Bool> {
+        self.done.clone()
     }
     /// returns the observation space
     pub fn obs_space(&self) -> &E::ObsSpace {
