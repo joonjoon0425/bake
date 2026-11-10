@@ -3,6 +3,7 @@ use bake_rl::deep::prelude::*;
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
+use bake_rl::env::classic::cartpole::CartPoleConfig;
 
 use burn::nn::activation::ActivationConfig;
 use burn::prelude::*;
@@ -19,7 +20,7 @@ pub fn main() {
     
     let env = {
         let mut vec = vec![];
-        for i in 0..n_envs { vec.push(GymnasiumEnvironmentConfig::cart_pole().seed(seed + i as u64).init()); }
+        for i in 0..n_envs as u64 { vec.push(CartPoleConfig::new(seed + i).init()); }
         vec
     };
     let env = SynchronizedBatchedEnvironment::new(env, &device);
@@ -74,6 +75,7 @@ pub fn main() {
     }
 
     // evaluation
+    // training in native cartpole, evaluation in gymnasium environment... it's like sim2sim
     let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10).init();
     let env = SynchronizedBatchedEnvironment::new(vec![env], &device);
 

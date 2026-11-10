@@ -22,9 +22,9 @@ pub struct DQNState {
 pub struct DQNLoss {
     /// loss value for autodiff
     pub loss: Tensor<1>,
-    /// td error
+    /// td error (no autodiff)
     pub td_error: Tensor<1>,
-    /// action value mean
+    /// action value mean (no autodiff)
     pub q_mean: Tensor<1>,
 }
 
@@ -56,8 +56,8 @@ where
     let targets = (batch.reward + state.gamma * next_qvalues.max_dim(1).squeeze_dim(1) * (1f32 - batch.terminated.float())).detach();
 
     // compute logging metrics
-    let td_error = (targets.clone() - qvalues.clone()).detach();
-    let q_mean = qvalues.clone().detach().mean();
+    let td_error = (targets.clone() - qvalues.clone()).inner();
+    let q_mean = qvalues.clone().inner().mean();
 
     let is_weights = info;
     let is_weights = is_weights.autodiff();

@@ -34,7 +34,7 @@ pub struct A2CLoss {
     pub policy_loss: Tensor<1>,
     /// value loss
     pub value_loss: Tensor<1>,
-    /// entropy
+    /// entropy (no autodiff)
     pub entropy: Tensor<1>,
 }
 
@@ -80,5 +80,5 @@ pub fn a2c_loss<Ac: ActorCritic>(
     let policy_loss_with_entropy = policy_loss.clone() - state.c_e * entropy.clone();
     let loss = policy_loss_with_entropy.clone() + state.c_c * value_loss.clone();
 
-    (ac, A2CLoss { loss, policy_loss_with_entropy, policy_loss, value_loss, entropy })
+    (ac, A2CLoss { loss, policy_loss_with_entropy, policy_loss, value_loss, entropy: entropy.inner() })
 }

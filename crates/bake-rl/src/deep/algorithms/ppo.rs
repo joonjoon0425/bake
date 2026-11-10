@@ -37,11 +37,11 @@ pub struct PPOLoss {
     pub policy_loss: Tensor<1>,
     /// value loss
     pub value_loss: Tensor<1>,
-    /// entropy
+    /// entropy (no autodiff)
     pub entropy: Tensor<1>,
-    /// approximate KL divergence
+    /// approximate KL divergence (no autodiff)
     pub approx_kl: Tensor<1>,
-    /// clipped amount
+    /// clipped amount (no autodiff)
     pub clip_fraction: Tensor<1>,
 }
 
@@ -95,8 +95,8 @@ pub fn ppo_loss<Ac: ActorCritic>(
     let loss = policy_loss_with_entropy.clone() + state.c_c * value_loss.clone();
     
     // compute logging metrics
-    let approx_kl = ((log_ratio.clone().exp() - 1f32) - log_ratio.clone()).mean().detach();
-    let clip_fraction = (log_ratio.exp() - 1f32).abs().greater_elem(state.eps).float().mean().detach();
+    let approx_kl = ((log_ratio.clone().exp() - 1f32) - log_ratio.clone()).mean().detach().inner();
+    let clip_fraction = (log_ratio.exp() - 1f32).abs().greater_elem(state.eps).float().mean().detach().inner();
 
-    (ac, PPOLoss { loss, policy_loss, policy_loss_with_entropy, value_loss, entropy, approx_kl, clip_fraction })
+    (ac, PPOLoss { loss, policy_loss, policy_loss_with_entropy, value_loss, entropy: entropy.inner(), approx_kl, clip_fraction })
 }
