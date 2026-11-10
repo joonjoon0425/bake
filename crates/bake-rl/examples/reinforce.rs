@@ -26,7 +26,7 @@ pub fn main() {
             baseline: REINFORCEBaseline::LeaveOneOut,
         };
 
-    let n_envs = 6;
+    let n_envs = 4;
     let env = {
         let mut vec = vec![];
         for i in 0..n_envs as u64 { vec.push(CartPoleConfig::new(seed + i).init()); }
@@ -52,16 +52,8 @@ pub fn main() {
         let action = policy.action(tape.obs.clone(), tape.constraint.clone());
         let (t, info) = tape.step(action);
 
-        done.inplace(|d| d.bool_or(tape.done()));
+        done.inplace(|d| d.bool_or(t.terminated.clone().bool_or(t.truncated.clone())));
         buffer.push(t);
-        
-        if count % 1 == 0 {
-            let (_, stats) = info;
-            // just show naively
-            for stat in stats {
-                println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
-            }
-        }
         
         if done.clone().all().into_scalar() {
             tape.reset(None);
@@ -69,6 +61,14 @@ pub fn main() {
             done = Tensor::zeros([n_envs], &device);
             let (p, loss) = reinforce_loss(&state, policy, batch);
             policy = p.update(loss, lr, &mut opt);
+        }
+        
+        if count % 1 == 0 {
+            let (_, stats) = info;
+            // just show naively
+            for stat in stats {
+                println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
+            }
         }
 
         state.c_e = c_e_sch.step() as f32;

@@ -109,8 +109,8 @@ pub fn reinforce_loss<P: Policy>(
     let returns = state.baseline.baseline(returns, valid);
     let discounts = Tensor::<1>::from_floats([state.gamma], &device).powf(Tensor::arange(0..bs[0] as i64, &device).float());
     let log_probs = dist.log_probs(batch.action);
-    let entropy = dist.entropy().sum() / env_mask.clone().float().sum();
-    let policy_loss = -((returns * discounts.unsqueeze_dim(1)).flatten(0, -1) * log_probs ).sum() / env_mask.float().sum();
+    let entropy = dist.entropy().sum() / env_mask.clone().float().sum().clamp_min(1);
+    let policy_loss = -((returns * discounts.unsqueeze_dim(1)).flatten(0, -1) * log_probs ).sum() / env_mask.float().sum().clamp_min(1);
 
     let loss = policy_loss.clone() - state.c_e * entropy.clone();
     (policy, REINFORCELoss { loss, policy_loss: policy_loss.inner(), entropy: entropy.inner() })
