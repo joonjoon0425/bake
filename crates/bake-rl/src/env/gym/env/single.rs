@@ -1,10 +1,10 @@
-//! Implementation of Gymnasium environments
 use std::marker::PhantomData;
 
 use pyo3::{prelude::*, types::PyDict};
 use crate::core::env::{Environment, EnvironmentConfig};
 use crate::core::env::space::Space;
 use crate::env::gym::space::GymSpace;
+
 /// A struct for all non-batch gymnasium environments
 pub struct GymnasiumEnvironment<ObsSpace: GymSpace, ActionSpace: GymSpace> {
     env: Py<PyAny>,
@@ -99,7 +99,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfig for GymnasiumE
             let spec = py.import("gymnasium.envs.registration").expect("gymnasium.envs.registration module not found");
             let env_spec = spec.getattr("EnvSpec").expect("cannot import gymnasium.envs.registration.EnvSpec.");
             let kwargs = self.kwargs.bind(py);
-            let spec = env_spec.call_method1("from_json", (self.spec, )).expect("Failed to call from_json of EnvSpec");
+            let spec = env_spec.call_method1("from_json", (self.spec, )).expect("failed to call from_json of EnvSpec");
             let env = gym.call_method("make", (spec, ), Some(&kwargs)).unwrap();
             let kwargs = PyDict::new(py);
             kwargs.set_item("seed", self.seed).unwrap();
@@ -110,6 +110,7 @@ impl<ObsSpace: GymSpace, ActionSpace: GymSpace> EnvironmentConfig for GymnasiumE
 
             let action_space = env.getattr("action_space").unwrap();
             let action_space = ActionSpace::from_gym(&action_space).unwrap();
+            
             GymnasiumEnvironment {
                 env: env.unbind(),
                 obs_space,

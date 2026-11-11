@@ -39,5 +39,5 @@ pub trait BatchedEnvironmentConfig {
     /// the environment which configuration is about
     type Environment: BatchedEnvironment;
     /// create a new environment
-    fn init(self) -> Self::Environment;
+    fn init(self, n_envs: usize, device: &Device) -> Self::Environment;
 }

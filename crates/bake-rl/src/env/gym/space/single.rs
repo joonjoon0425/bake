@@ -1,11 +1,9 @@
 //! space trait for Gymnasium environments
 use crate::core::env::space::{Space, DiscreteSpace, ContinuousSpace, ByteSpace};
-use numpy::{IntoPyArray, PyArrayMethods, PyReadonlyArrayDyn, PyUntypedArrayMethods};
-use ndarray::*;
+use super::super::convert::*;
 use pyo3::{exceptions::PyValueError, prelude::*};
-use burn::prelude::*;
 
-/// `GymSpace` trait which can be build from Gymnasium spaces
+/// `GymSpace` trait which can be built from Gymnasium spaces
 pub trait GymSpace: Space + Sized {
     /// build the rust space from a python `gymnasium.spaces.*` object
     fn from_gym(space: &Bound<'_, PyAny>) -> PyResult<Self>;
@@ -41,23 +39,17 @@ impl<const D: usize> GymSpace for ContinuousSpace<D> {
             return Err(PyValueError::new_err(format!("rank mismatch: python shape {shape:?}, rust rank {D}")))
         }
         
-        let low = to_f32_ndarray::<D>(&space.getattr("low")?)?;
-        let high = to_f32_ndarray::<D>(&space.getattr("high")?)?;
+        let low = numpy_to_f32_ndarray(&space.getattr("low")?)?;
+        let high = numpy_to_f32_ndarray(&space.getattr("high")?)?;
         Ok(ContinuousSpace::new(&shape, low, high))
     }
 
     fn to_py<'py>(&self, py: Python<'py>, data: Self::Element) -> PyResult<Bound<'py, PyAny>> {
-        let vec: Vec<f32> = data.into_iter().collect();
-        let py_array = vec.into_pyarray(py);
-        let mut shape = self.shape().to_vec();
-        shape.remove(0);
-        let py_array = py_array.reshape(shape)?;
-        Ok(py_array.into_any())
+        f32_ndarray_to_numpy(py, data)
     }
 
     fn from_py(&self, py_data: &Bound<'_, PyAny>) -> PyResult<Self::Element> {
-        let arr = to_f32_ndarray::<D>(py_data)?;
-        Ok(arr)
+        numpy_to_f32_ndarray(py_data)
     }
 }
 
@@ -71,60 +63,10 @@ impl<const D: usize> GymSpace for ByteSpace<D> {
     }
 
     fn from_py(&self, py_data: &Bound<'_, PyAny>) -> PyResult<Self::Element> {
-        let arr = to_u8_ndarray::<D>(py_data)?;
-        Ok(arr)
+        numpy_to_u8_ndarray(py_data)
     }
 
     fn to_py<'py>(&self, py: Python<'py>, data: Self::Element) -> PyResult<Bound<'py, PyAny>> {
-        let vec: Vec<u8> = data.into_iter().collect();
-        let py_array = vec.into_pyarray(py);
-        let mut shape = self.shape().to_vec();
-        shape.remove(0);
-        let py_array = py_array.reshape(shape)?;
-        Ok(py_array.into_any())
+        u8_ndarray_to_numpy(py, data)
     }
-}
-
-/// any array-like (list, np.ndarray of any float dtype) -> owned Tensor<D>
-#[allow(unused)]
-fn to_f32_tensor<const D: usize>(obj: &Bound<'_, PyAny>, device: &Device) -> PyResult<Tensor<D>> {
-    let np = obj.py().import("numpy")?;
-    let arr = np.call_method1("ascontiguousarray", (obj, "float32"))?;   // already float32 -> no copy
-    let arr: PyReadonlyArrayDyn<f32> = arr.extract()?;
-    let mut shape = vec![1];
-    shape.extend_from_slice(arr.shape());
-    let arr = arr.as_slice()?.to_vec();
-    let t = Tensor::from_data(TensorData::new(arr, shape), device);
-    Ok(t)                               // owned, standard layout
-}
-
-/// any array-like (list, np.ndarray of any float dtype) -> owned ArrayD<f32>
-fn to_f32_ndarray<const D: usize>(obj: &Bound<'_, PyAny>) -> PyResult<ArrayD<f32>> {
-    let np = obj.py().import("numpy")?;
-    let arr = np.call_method1("ascontiguousarray", (obj, "float32"))?;   // already float32 -> no copy
-    
-    let arr: PyReadonlyArrayDyn<f32> = arr.extract()?;
-    Ok(arr.as_array().into_owned())
-}
-
-/// any array-like (list, np.ndarray of u8 dtype) -> owned Tensor<D, Int>
-#[allow(unused)]
-fn to_u8_tensor<const D: usize>(obj: &Bound<'_, PyAny>, device: &Device) -> PyResult<Tensor<D, Int>> {
-    let np = obj.py().import("numpy")?;
-    let arr = np.call_method1("ascontiguousarray", (obj, "uint8"))?;
-    let arr: PyReadonlyArrayDyn<u8> = arr.extract()?;
-    let mut shape = vec![1];
-    shape.extend_from_slice(arr.shape());
-    let arr = arr.as_slice()?.to_vec();
-    let t = Tensor::from_data(TensorData::new(arr, shape), (device, burn::tensor::DType::U8));
-    Ok(t)                               // owned, standard layout
-}
-
-/// any array-like (list, np.ndarray of any float dtype) -> owned ArrayD<u8>
-fn to_u8_ndarray<const D: usize>(obj: &Bound<'_, PyAny>) -> PyResult<ArrayD<u8>> {
-    let np = obj.py().import("numpy")?;
-    let arr = np.call_method1("ascontiguousarray", (obj, "uint8"))?;   // already uint8 -> no copy
-    
-    let arr: PyReadonlyArrayDyn<u8> = arr.extract()?;
-    Ok(arr.as_array().into_owned())
 }

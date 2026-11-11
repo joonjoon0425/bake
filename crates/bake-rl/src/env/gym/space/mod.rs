@@ -2,3 +2,6 @@
 
 mod single;
 pub use single::GymSpace;
+
+mod batched;
+pub use batched::BatchedGymSpace;

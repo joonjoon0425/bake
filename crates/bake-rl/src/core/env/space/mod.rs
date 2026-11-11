@@ -8,7 +8,7 @@ use rand::Rng;
 pub trait Space: Clone {
     /// the type of element
     type Element: Clone + 'static;
-    /// sample an random element
+    /// sample a random element
     fn sample<R: Rng>(&self, rng: &mut R) -> Self::Element;
 }
 
@@ -16,8 +16,8 @@ pub trait Space: Clone {
 pub trait BatchedSpace: Clone {
     /// the type of element
     type Element: BatchOps;
-    /// sample `n` random elements
-    fn sample(&self, n: usize) -> Self::Element;
+    /// sample random elements
+    fn sample(&self) -> Self::Element;
     /// return the device
     fn device(&self) -> burn::prelude::Device;
 }
@@ -27,7 +27,7 @@ pub trait IntoBatchedSpace: Space {
     /// Batched Space
     type Batched: BatchedSpace;
     /// convert from `Space` to `BatchedSpace`
-    fn into_batched(self, device: &Device) -> Self::Batched;
+    fn into_batched(spaces: &[Self], device: &Device) -> Self::Batched;
     /// convert elements to batched elements
     fn bind(elems: Vec<Self::Element>, device: &Device) -> <Self::Batched as BatchedSpace>::Element;
     /// convert elements to single elements

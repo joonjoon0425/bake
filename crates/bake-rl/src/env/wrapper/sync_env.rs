@@ -27,9 +27,9 @@ where
     /// create new `SynchronizedBatchedEnvironment` from given envs 
     pub fn new(envs: Vec<E>, device: &Device) -> Self {
         assert!(!envs.is_empty(), "Given environment vector is empty");
-        let fst_env = &envs[0];
-        let obs_space = fst_env.obs_space().clone().into_batched(device);
-        let action_space = fst_env.action_space().clone().into_batched(device);
+        let (obs_spaces, action_spaces) : (Vec<E::ObsSpace>, Vec<E::ActionSpace>)= envs.iter().map(|env| (env.obs_space().clone(), env.action_space().clone())).collect();
+        let obs_space = E::ObsSpace::into_batched(&obs_spaces, device);
+        let action_space = E::ActionSpace::into_batched(&action_spaces, device);
         let device = device.clone();
         Self {
             envs,

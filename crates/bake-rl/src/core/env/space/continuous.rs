@@ -82,9 +82,8 @@ impl<const D: usize> BatchedContinuousSpace<D> {
 impl<const D: usize> BatchedSpace for BatchedContinuousSpace<D> {
     type Element = Tensor<D>;
 
-    fn sample(&self, n: usize) -> Self::Element {
-        let mut shape = self.shape.clone();
-        shape[0] = n;
+    fn sample(&self) -> Self::Element {
+        let shape = self.shape.clone();
         let s = Tensor::random(shape, Uniform(0., 1.), &self.device);
         (self.high.clone() - self.low.clone()) * s + self.low.clone()
     }
@@ -99,13 +98,17 @@ macro_rules! impl_to_batched_continuous {
         impl IntoBatchedSpace for ContinuousSpace<$d> {
             type Batched = BatchedContinuousSpace<{$d + 1}>;
 
-            fn into_batched(self, device: &Device) -> Self::Batched {
-                let mut shape = vec![1];
-                shape.extend_from_slice(&self.shape);
-                let low = self.low.into_iter().collect();
+            fn into_batched(spaces: &[Self], device: &Device) -> Self::Batched {
+                assert!(spaces.is_empty(), "IntoBatchedSpace::into_batched: got empty space vector");
+                let single_shape = spaces[0].shape();
+                assert!(spaces.iter().all(|s| s.shape() == single_shape), "IntoBatchedSpace::into_batched: the shape of each `ContinuousSpace` is not same");
+                let mut shape = vec![spaces.len()];
+                shape.extend_from_slice(single_shape);
+
+                let low = spaces.iter().map(|s| s.low.iter()).flatten().copied().collect();
                 let low = Tensor::from_data(TensorData::new(low, &shape), device);
 
-                let high = self.high.into_iter().collect();
+                let high = spaces.iter().map(|s| s.low.iter()).flatten().copied().collect();
                 let high = Tensor::from_data(TensorData::new(high, &shape), device);
 
                 Self::Batched::new(&shape, low, high, device)

@@ -41,7 +41,7 @@ pub struct BatchedByteSpace<const D: usize> {
 
 impl<const D: usize> BatchedByteSpace<D> {
     /// create a new byte space, with feature rank D
-    pub fn burn(shape: &[usize], device: &Device) -> Self {
+    pub fn new(shape: &[usize], device: &Device) -> Self {
         Self { shape: shape.try_into().unwrap(), device: device.clone() }
     }
     /// return the shape
@@ -55,9 +55,8 @@ impl<const D: usize> BatchedByteSpace<D> {
 impl<const D: usize> BatchedSpace for BatchedByteSpace<D> {
     type Element = Tensor<D, Int>;
 
-    fn sample(&self, n: usize) -> Self::Element {
-        let mut shape = self.shape.clone();
-        shape[0] = n;
+    fn sample(&self) -> Self::Element {
+        let shape = self.shape();
         Tensor::random(shape, burn::tensor::Distribution::Uniform(0., 255.), (&self.device, burn::tensor::DType::U8))
     }
 
@@ -72,10 +71,13 @@ macro_rules! impl_to_batched_byte {
         impl IntoBatchedSpace for ByteSpace<$d> {
             type Batched = BatchedByteSpace<{$d + 1}>;
 
-            fn into_batched(self, device: &Device) -> Self::Batched {
-                let mut shape = vec![1];
-                shape.extend_from_slice(&self.shape);
-                Self::Batched::burn(&shape, device)
+            fn into_batched(spaces: &[Self], device: &Device) -> Self::Batched {
+                assert!(spaces.is_empty(), "IntoBatchedSpace::into_batched: got empty space vector");
+                let single_shape = spaces[0].shape();
+                assert!(spaces.iter().all(|s| s.shape() == single_shape), "IntoBatchedSpace::into_batched: the shape of each `ByteSpace` is not same");
+                let mut shape = vec![spaces.len()];
+                shape.extend_from_slice(single_shape);
+                Self::Batched::new(&shape, device)
             }
 
             fn bind(elems: Vec<Self::Element>, device: &Device) -> <Self::Batched as BatchedSpace>::Element {
