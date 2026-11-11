@@ -4,7 +4,7 @@ use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
 
-use bake_rl::env::classic::cartpole::CartPoleConfig;
+use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
@@ -29,7 +29,7 @@ pub fn main() {
     let n_envs = 16;
     let env = {
         let mut vec = vec![];
-        for i in 0..n_envs as u64 { vec.push(CartPoleConfig::new(seed + i).init()); }
+        for i in 0..n_envs as u64 { vec.push(GymnasiumEnvironmentConfig::cart_pole().seed(i + seed).init()); }
         vec
     };
     let env = SynchronizedBatchedEnvironment::new(env, &device);

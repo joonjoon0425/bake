@@ -60,10 +60,10 @@ impl ActorCriticLoss for A2CLoss {
 /// - Then ActorCritic will be moved to inner device when `update` is called
 pub fn a2c_loss<Ac: ActorCritic>(
     state: &A2CState,
-    ac: Ac,
+    actor_critic: Ac,
     batch: Shaped<BatchedTransition<Ac::Obs, impl PossibleConstraint<Ac::Dist>, <Ac::Dist as Distribution>::Sample, Tensor<1>>>
 ) -> (Ac, A2CLoss) {
-    let ac = ac.train();
+    let ac = actor_critic.train();
     let batch = batch.autodiff();
     let (dist, value) = ac.dist_and_state_value(batch.obs.clone(), batch.constraint.clone());
     // 1. compute advantage and get policy loss

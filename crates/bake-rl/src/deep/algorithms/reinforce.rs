@@ -44,11 +44,13 @@ pub enum REINFORCEBaseline {
 
 impl REINFORCEBaseline {
     /// calculate the return with baseline applied, with masks
+    /// - expects `return` to have shape [T, N]
     pub fn baseline(&self, returns: Tensor<2>, valid: Tensor<2, Bool>) -> Tensor<2> {
         match self {
             Self::None => returns,
             Self::LeaveOneOut => {
-                let sum_along_env = returns.clone().mask_fill(valid.clone().bool_not(), 0).clone().sum_dim(1);
+                assert!(returns.dims()[1] != 1, "cannot use `REINFORCEBaseline::LeaveOneOut` with single environment");
+                let sum_along_env = returns.clone().mask_fill(valid.clone().bool_not(), 0).sum_dim(1);
                 let k = valid.clone().float().sum_dim(1);
                 let k_minus_1 = k - valid.clone().float();
                 let leave_one_out = (sum_along_env - returns.clone()) / k_minus_1.clone();
@@ -103,11 +105,14 @@ pub fn reinforce_loss<P: Policy>(
     returns.reverse();
 
     let returns = Tensor::stack::<2>(returns, 0);
-    let returns = state.baseline.baseline(returns, valid);
+    // apply baseline: R(\tau) - baseline
+    let returns = state.baseline.baseline(returns, valid.clone());
+    // gamma^t
     let discounts = Tensor::<1>::from_floats([state.gamma], &device).powf(Tensor::arange(0..bs[0] as i64, &device).float());
     let log_probs = dist.log_probs(batch.action);
-    let entropy = dist.entropy().mean();
-    let policy_loss = -((returns * discounts.unsqueeze_dim(1)).flatten(0, -1) * log_probs).mean();
+    // entropy (sum divided by n_envs, since the poliy is computed in that way. ppo and a2c just calls `mean`)
+    let entropy = (dist.entropy() * valid.flatten(0, -1).float()).sum() / bs[1] as i64;
+    let policy_loss = -((returns * discounts.unsqueeze_dim(1)).flatten(0, -1) * log_probs).sum() / bs[1] as i64;
 
     let loss = policy_loss.clone() - state.c_e * entropy.clone();
     (policy, REINFORCELoss { loss, policy_loss: policy_loss.inner(), entropy: entropy.inner() })
