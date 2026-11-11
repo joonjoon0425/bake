@@ -26,7 +26,7 @@ pub fn main() {
             baseline: REINFORCEBaseline::LeaveOneOut,
         };
 
-    let n_envs = 4;
+    let n_envs = 16;
     let env = {
         let mut vec = vec![];
         for i in 0..n_envs as u64 { vec.push(CartPoleConfig::new(seed + i).init()); }
@@ -35,30 +35,25 @@ pub fn main() {
     let env = SynchronizedBatchedEnvironment::new(env, &device);
     let env = BatchedRecordEpisodeStatistics::new(env);
 
-    let mut policy = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
+    let mut policy = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
     
-    let mut buffer = EpisodeBuffer::new();
+    let mut buffer = EpisodeBuffer::new(n_envs, &device);
     let mut tape = BatchedTape::new(env, true);
 
-    let total_steps = 500000;
+    let total_steps = 200000;
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
-
-    // used to ensure all environments has finished at least once
-    let mut done = Tensor::zeros([n_envs], &device);
 
     for count in 0..total_steps {
         let action = policy.action(tape.obs.clone(), tape.constraint.clone());
         let (t, info) = tape.step(action);
 
-        done.inplace(|d| d.bool_or(t.terminated.clone().bool_or(t.truncated.clone())));
         buffer.push(t);
         
-        if done.clone().all().into_scalar() {
+        if buffer.is_ready() {
             tape.reset(None);
             let batch = buffer.pop();
-            done = Tensor::zeros([n_envs], &device);
             let (p, loss) = reinforce_loss(&state, policy, batch);
             policy = p.update(loss, lr, &mut opt);
         }
