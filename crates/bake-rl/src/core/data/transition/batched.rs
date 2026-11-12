@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use crate::core::data::dict::{DictLeaf, BatchedDict, key::Key};
 use crate::core::data::{BatchOps, Shaped};
-use bake_rl_macros::BatchOps;
 use burn::prelude::*;
 
 /// transition struct

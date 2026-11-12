@@ -2,4 +2,4 @@
 /.venv
 /logs
 MUJOCO_LOG.TXT
-/script/__pycache__
+*/__pycache__

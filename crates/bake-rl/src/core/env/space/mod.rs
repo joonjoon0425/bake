@@ -42,3 +42,8 @@ pub use continuous::{ContinuousSpace, BatchedContinuousSpace};
 
 pub mod byte;
 pub use byte::{ByteSpace, BatchedByteSpace};
+
+pub use bake_rl_macros::{BatchedStructSpace, IntoBatchedStructSpace, StructSpace};
+
+mod r#struct;
+

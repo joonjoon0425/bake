@@ -16,6 +16,7 @@ pub use dict::{
 };
 
 pub use batch_ops::BatchOps;
+pub use bake_rl_macros::BatchOps;
 
 pub use transition::{
     BatchedTransition, Transition

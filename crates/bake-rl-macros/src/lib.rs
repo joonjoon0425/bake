@@ -4,6 +4,11 @@ use proc_macro::TokenStream;
 use syn::{DeriveInput, ItemImpl, parse_macro_input};
 
 mod batch_ops;
+
+mod struct_space;
+mod batched_struct_space;
+mod into_batched_struct_space;
+
 mod utils;
 mod discrete_action_value;
 
@@ -17,6 +22,35 @@ mod qnet;
 pub fn derive_batch_ops(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
     batch_ops::expand(&ast)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
+
+/// derive `StructSpace`, which corresponds to `DictSpace` of Gymnasium
+#[proc_macro_derive(StructSpace)]
+pub fn derive_struct_space(input: TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(input as DeriveInput);
+    struct_space::expand(&ast)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
+
+/// derive `BatchedStructSpace`, which corresponds to `DictSpace` of Gymnasium
+#[proc_macro_derive(BatchedStructSpace)]
+pub fn derive_batched_struct_space(input: TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(input as DeriveInput);
+    batched_struct_space::expand(&ast)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
+
+/// derive `BatchedStructSpace` and `IntoBatchedSpace` for given space
+/// # Warning
+/// - `StructSpace` must be applied first
+#[proc_macro_derive(IntoBatchedStructSpace)]
+pub fn derive_into_batched_space(input: TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(input as DeriveInput);
+    into_batched_struct_space::expand(&ast)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }

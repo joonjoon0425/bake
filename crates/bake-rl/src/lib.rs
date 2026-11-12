@@ -19,4 +19,6 @@ pub mod tabular;
 
 /// re-exportation
 extern crate self as bake_rl;
+pub extern crate bake_rl_macros;
 pub extern crate burn;
+pub extern crate rand;
