@@ -41,7 +41,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
     Ok(quote! {
         #[doc = #batched_space_doc]
         #[derive(::bake_rl::core::env::space::BatchedStructSpace, Debug, Clone)]
-        pub struct #batched_space_ident {
+        pub struct #batched_space_ident #impl_generics {
             #(
                 ///
                 pub #field_idents: <#field_tys as ::bake_rl::core::env::space::IntoBatchedSpace>::Batched,
@@ -49,7 +49,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
         }
 
         impl #impl_generics ::bake_rl::core::env::space::IntoBatchedSpace for #name #ty_generics #where_clause {
-            type Batched = #batched_space_ident;
+            type Batched = #batched_space_ident #ty_generics;
 
             fn into_batched(spaces: &[Self], device: &::bake_rl::burn::prelude::Device) -> Self::Batched {
                 assert!(!spaces.is_empty(), "IntoBatchedSpace::into_batched: given `spaces` is empty");

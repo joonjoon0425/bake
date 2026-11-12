@@ -5,17 +5,17 @@ use burn::prelude::*;
 use rand::Rng;
 
 /// `Space` trait for specifying the properties of observation space and action space
-pub trait Space: Clone {
+pub trait Space: std::fmt::Debug + Clone + 'static {
     /// the type of element
-    type Element: Clone + 'static;
+    type Element: std::fmt::Debug + Clone + 'static;
     /// sample a random element
     fn sample<R: Rng>(&self, rng: &mut R) -> Self::Element;
 }
 
 /// `BatchedSpace` trait for specifying the properties of observation space and action space, with `Burn` representation
-pub trait BatchedSpace: Clone {
+pub trait BatchedSpace: std::fmt::Debug + Clone + 'static {
     /// the type of element
-    type Element: BatchOps;
+    type Element: std::fmt::Debug + BatchOps;
     /// sample random elements
     fn sample(&self) -> Self::Element;
     /// return the device

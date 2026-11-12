@@ -1,10 +1,9 @@
-use bake_rl::env::wrapper::BatchedRecordEpisodeStatistics;
-use bake_rl::env::wrapper::SynchronizedBatchedEnvironment;
+use bake_rl::env::wrapper::{BatchedRecordEpisodeStatistics, SynchronizedBatchedEnvironment};
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
 
-use bake_rl::env::gym::GymnasiumEnvironmentConfig;
+use bake_rl::env::classic::cartpole::CartPoleConfig;
 use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
@@ -27,12 +26,9 @@ pub fn main() {
         };
 
     let n_envs = 16;
-    let env = {
-        let mut vec = vec![];
-        for i in 0..n_envs as u64 { vec.push(GymnasiumEnvironmentConfig::cart_pole().seed(i + seed).init()); }
-        vec
-    };
-    let env = SynchronizedBatchedEnvironment::new(env, &device);
+    let mut envs = vec![];
+    for i in 0..n_envs { envs.push(CartPoleConfig::new(i as u64).init()); }
+    let env = SynchronizedBatchedEnvironment::new(envs, &device);
     let env = BatchedRecordEpisodeStatistics::new(env);
 
     let mut policy = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);

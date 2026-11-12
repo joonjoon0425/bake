@@ -38,7 +38,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
     Ok(quote! {
         #[doc = #element_doc]
         #[derive(::bake_rl::core::data::BatchOps, Debug, Clone)]
-        pub struct #element_ident {
+        pub struct #element_ident #impl_generics {
             #(
                 ///
                 pub #field_idents: <#field_tys as ::bake_rl::core::env::space::BatchedSpace>::Element,
@@ -46,7 +46,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
         }
 
         impl #impl_generics ::bake_rl::core::env::space::BatchedSpace for #name #ty_generics #where_clause {
-            type Element = #element_ident;
+            type Element = #element_ident #ty_generics;
 
             fn sample(&self) -> Self::Element {
                 Self::Element {

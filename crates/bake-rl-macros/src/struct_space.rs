@@ -36,7 +36,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
     Ok(quote! {
         #[doc = #element_doc]
         #[derive(Debug, Clone)]
-        pub struct #element_ident {
+        pub struct #element_ident #impl_generics {
             #(
                 ///
                 pub #field_idents: <#field_tys as ::bake_rl::core::env::space::Space>::Element,
@@ -44,7 +44,7 @@ pub(crate) fn expand(ast: &DeriveInput) -> syn::Result<TokenStream> {
         }
 
         impl #impl_generics ::bake_rl::core::env::space::Space for #name #ty_generics #where_clause {
-            type Element = #element_ident;
+            type Element = #element_ident #ty_generics;
 
             fn sample<R: ::bake_rl::rand::Rng>(&self, rng: &mut R) -> Self::Element {
                 Self::Element {
