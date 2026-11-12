@@ -50,27 +50,27 @@ use crate::core::env::space::{BatchedDiscreteSpace, BatchedContinuousSpace, Batc
             obs_space_str = utils.single_rust_space_strs(env.observation_space)
             action_space_str = utils.single_rust_space_strs(env.action_space)
             output += \
-f"""
-/// `{ID}` environment
-/// - `ObsSpace`: `{obs_space_str}`
-/// - `ActionSpace`: `{action_space_str}`
-pub fn {env_name}_config() -> GymnasiumEnvironmentConfig<{obs_space_str}, {action_space_str}> {{
-    GymnasiumEnvironmentConfig::new({spec_name})
+f"""impl GymnasiumEnvironmentConfig<{obs_space_str}, {action_space_str}> {{
+    /// `{ID}` environment
+    /// - `ObsSpace`: `{obs_space_str}`
+    /// - `ActionSpace`: `{action_space_str}`
+    pub fn {env_name}() -> Self {{
+        Self::new({spec_name})
+    }}
 }}
-
 """
             # vec env
             vec_obs_space_str = utils.vec_rust_space_strs(env.observation_space)
             vec_action_space_str = utils.vec_rust_space_strs(env.action_space)
             output += \
-f"""
-/// Batched `{ID}` environment
-/// - `ObsSpace`: `{vec_obs_space_str}`
-/// - `ActionSpace`: `{vec_action_space_str}`
-pub fn batched_{env_name}_config() -> BatchedGymnasiumEnvironmentConfig<{vec_obs_space_str}, {vec_action_space_str}> {{
-    BatchedGymnasiumEnvironmentConfig::new({spec_name})
+f"""impl BatchedGymnasiumEnvironmentConfig<{vec_obs_space_str}, {vec_action_space_str}> {{
+    /// Batched `{ID}` environment
+    /// - `ObsSpace`: `{vec_obs_space_str}`
+    /// - `ActionSpace`: `{vec_action_space_str}`
+    pub fn {env_name}() -> Self {{
+        Self::new({spec_name})
+    }}
 }}
-
 """
             specs += \
 f"""

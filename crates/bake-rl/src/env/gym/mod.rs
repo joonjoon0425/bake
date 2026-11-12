@@ -4,10 +4,6 @@ pub mod space;
 pub use space::GymSpace;
 
 pub mod env;
-pub use env::{GymnasiumEnvironment, GymnasiumEnvironmentConfig};
-
-pub use env::{box2d, classic_control, mujoco};
-
-mod generated;
+pub use env::{GymnasiumEnvironment, GymnasiumEnvironmentConfig, BatchedGymnasiumEnvironment, BatchedGymnasiumEnvironmentConfig};
 
 pub(crate) mod convert;

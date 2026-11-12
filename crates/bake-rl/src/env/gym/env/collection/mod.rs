@@ -1,6 +1,7 @@
 //! collection of gymnasium environments
 
-pub mod box2d;
-pub mod classic_control;
-pub mod mujoco;
-pub mod toy_text;
+mod box2d;
+mod classic_control;
+mod mujoco;
+mod toy_text;
+mod atari;

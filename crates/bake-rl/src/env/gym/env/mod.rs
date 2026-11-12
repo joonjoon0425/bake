@@ -7,4 +7,3 @@ mod batched;
 pub use batched::{BatchedGymnasiumEnvironment, BatchedGymnasiumEnvironmentConfig};
 
 mod collection;
-pub use collection::*;
