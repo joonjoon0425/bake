@@ -17,6 +17,9 @@ pub struct BatchedGymnasiumEnvironment<ObsSpace: BatchedGymSpace, ActionSpace: B
     obs_space: ObsSpace,
     action_space: ActionSpace,
 
+    // since Gymnasium raises `ValueError` when mask without any `true` is given, we save latest obs and return it when there are no environments to reset
+    latest_obs: Option<ObsSpace::Element>,
+
     device: Device,
 }
 
@@ -48,8 +51,16 @@ impl<ObsSpace: BatchedGymSpace, ActionSpace: BatchedGymSpace> BatchedEnvironment
             let env = self.env.bind(py);
             let tuple = match mask {
                 Some(mask) => {
+                    // gymnasium environment raises `ValueError` when mask contains only `false`
+                    if !mask.clone().any().into_scalar::<bool>() { return ((self.latest_obs.clone().unwrap(), ()), ())}
+                    
                     let mask = bool_tensor_to_numpy(py, mask).unwrap();
-                    env.call_method1("reset", (mask, )).unwrap()
+
+                    let reset_mask = PyDict::new(py);
+                    reset_mask.set_item("reset_mask", mask).unwrap();
+                    let options = PyDict::new(py);
+                    options.set_item("options", reset_mask).unwrap();
+                    env.call_method("reset", (), Some(&options)).unwrap()
                 },
                 None => {
                     env.call_method1("reset", ()).unwrap()
@@ -59,6 +70,7 @@ impl<ObsSpace: BatchedGymSpace, ActionSpace: BatchedGymSpace> BatchedEnvironment
             let (obs, _): (Bound<'_, PyAny>, Bound<'_, PyAny>) = tuple.extract().unwrap();
 
             let obs = self.obs_space.from_py(&obs).unwrap();
+            self.latest_obs = Some(obs.clone());
             ((obs, ()), ())
         });
     }
@@ -73,6 +85,9 @@ impl<ObsSpace: BatchedGymSpace, ActionSpace: BatchedGymSpace> BatchedEnvironment
             let reward = numpy_to_f32_tensor(&reward, &self.device).unwrap();
             let terminate = numpy_to_bool_tensor(&terminate, &self.device).unwrap();
             let truncate = numpy_to_bool_tensor(&truncate, &self.device).unwrap();
+            
+            self.latest_obs = Some(obs.clone());
+            
             ((obs, ()), reward, terminate, truncate, ())
         });
     }
@@ -130,15 +145,20 @@ impl<ObsSpace: BatchedGymSpace, ActionSpace: BatchedGymSpace> BatchedEnvironment
             let kwargs = self.kwargs.bind(py);
             kwargs.set_item("num_envs", n_envs).unwrap();
             kwargs.set_item("vectorization_mode", "sync").unwrap();
-            kwargs.set_item(
-                "vector_kwargs",
-                PyDict::new(py)
+            
+            let vector_kwargs = PyDict::new(py);
+            vector_kwargs
                 .set_item(
                     "autoreset_mode",
                     gym.getattr("vector")
                     .unwrap().getattr("AutoresetMode")
                     .unwrap().getattr("DISABLED").unwrap()
-                ).unwrap()).unwrap();
+                ).unwrap();
+            kwargs.set_item(
+            "vector_kwargs",
+            vector_kwargs,    
+            ).unwrap();
+            
             let spec = env_spec.call_method1("from_json", (self.spec, )).expect("failed to call from_json of EnvSpec");
 
             let env = gym.call_method("make_vec", (spec, ), Some(&kwargs)).unwrap();
@@ -158,6 +178,7 @@ impl<ObsSpace: BatchedGymSpace, ActionSpace: BatchedGymSpace> BatchedEnvironment
                 n_envs,
                 obs_space,
                 action_space,
+                latest_obs: None,
                 device: device.clone()
             }
         });

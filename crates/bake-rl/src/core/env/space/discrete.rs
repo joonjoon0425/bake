@@ -61,7 +61,7 @@ impl IntoBatchedSpace for DiscreteSpace {
     type Batched = BatchedDiscreteSpace;
 
     fn into_batched(spaces: &[Self], device: &Device) -> Self::Batched {
-        assert!(spaces.is_empty(), "IntoBatchedSpace::into_batched: got empty space vector");
+        assert!(!spaces.is_empty(), "IntoBatchedSpace::into_batched: got empty space vector");
         let n = spaces[0].n;
         assert!(spaces.iter().all(|s|s.n == n), "IntoBatchedSpace::into_batched: the number of elements of each `DiscreteSpace` is not same");
         Self::Batched::new(n, spaces.len(), device)

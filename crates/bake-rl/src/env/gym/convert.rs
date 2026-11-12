@@ -15,11 +15,11 @@ pub fn numpy_to_f32_tensor<const D: usize>(obj: &Bound<'_, PyAny>, device: &Devi
     Ok(t)                               // owned, standard layout
 }
 
-/// any array-like (list, np.ndarray of i64 dtype) -> owned Tensor<D, Int> with Int64
-pub fn numpy_to_i64_tensor<const D: usize>(obj: &Bound<'_, PyAny>, device: &Device) -> PyResult<Tensor<D, Int>> {
+/// any array-like (list, np.ndarray of i32 dtype) -> owned Tensor<D, Int> with Int32
+pub fn numpy_to_i32_tensor<const D: usize>(obj: &Bound<'_, PyAny>, device: &Device) -> PyResult<Tensor<D, Int>> {
     let np = obj.py().import("numpy")?;
-    let arr = np.call_method1("ascontiguousarray", (obj, "int64"))?;
-    let arr: PyReadonlyArrayDyn<i64> = arr.extract()?;
+    let arr = np.call_method1("ascontiguousarray", (obj, "int32"))?;
+    let arr: PyReadonlyArrayDyn<i32> = arr.extract()?;
     let shape = arr.shape();
     let arr = arr.as_slice()?.to_vec();
     let t = Tensor::from_data(TensorData::new(arr, shape), device);
@@ -56,9 +56,9 @@ pub fn f32_tensor_to_numpy<'py, const D: usize>(py: Python<'py>, data: Tensor<D>
     Ok(py_array.into_any())
 }
 
-pub fn i64_tensor_to_numpy<'py, const D: usize>(py: Python<'py>, data: Tensor<D, Int>) -> PyResult<Bound<'py, PyAny>> {
+pub fn i32_tensor_to_numpy<'py, const D: usize>(py: Python<'py>, data: Tensor<D, Int>) -> PyResult<Bound<'py, PyAny>> {
     let shape = data.shape().to_vec();
-    let vec: Vec<i64> = data.into_data().try_into_vec::<i64>().expect("i64_tensor_to_numpy: error while converting data into Vec<i64>");
+    let vec: Vec<i32> = data.into_data().try_into_vec::<i32>().expect("i32_tensor_to_numpy: error while converting data into Vec<i32>");
     let py_array = vec.into_pyarray(py);
     let py_array = py_array.reshape(shape)?;
     Ok(py_array.into_any())

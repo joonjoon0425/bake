@@ -26,11 +26,11 @@ impl BatchedGymSpace for BatchedDiscreteSpace {
     }
 
     fn to_py<'py>(&self, py: Python<'py>, data: Self::Element) -> PyResult<Bound<'py, PyAny>> {
-        i64_tensor_to_numpy(py, data)
+        i32_tensor_to_numpy(py, data)
     }
 
     fn from_py(&self, py_data: &Bound<'_, PyAny>) -> PyResult<Self::Element> {
-        numpy_to_i64_tensor(py_data, &self.device())
+        numpy_to_i32_tensor(py_data, &self.device())
     }
 }
 

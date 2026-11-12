@@ -99,7 +99,7 @@ macro_rules! impl_to_batched_continuous {
             type Batched = BatchedContinuousSpace<{$d + 1}>;
 
             fn into_batched(spaces: &[Self], device: &Device) -> Self::Batched {
-                assert!(spaces.is_empty(), "IntoBatchedSpace::into_batched: got empty space vector");
+                assert!(!spaces.is_empty(), "IntoBatchedSpace::into_batched: got empty space vector");
                 let single_shape = spaces[0].shape();
                 assert!(spaces.iter().all(|s| s.shape() == single_shape), "IntoBatchedSpace::into_batched: the shape of each `ContinuousSpace` is not same");
                 let mut shape = vec![spaces.len()];
