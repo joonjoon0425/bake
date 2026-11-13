@@ -1,13 +1,12 @@
 //! This code was written by Claude, since I don't have enough knowledge about PROC MACRO. Only the batchable.rs and lib.rs is written by claude in this proc-macro lib.
 
 use proc_macro::TokenStream;
-use syn::{DeriveInput, ItemImpl, parse_macro_input};
+use syn::{DeriveInput, ItemImpl, ItemStruct, parse_macro_input};
 
 mod batch_ops;
 
 mod struct_space;
 mod batched_struct_space;
-mod into_batched_struct_space;
 
 mod utils;
 mod discrete_action_value;
@@ -26,31 +25,35 @@ pub fn derive_batch_ops(input: TokenStream) -> TokenStream {
         .into()
 }
 
-/// derive `StructSpace`, which corresponds to `DictSpace` of Gymnasium
-#[proc_macro_derive(StructSpace)]
-pub fn derive_struct_space(input: TokenStream) -> TokenStream {
-    let ast = parse_macro_input!(input as DeriveInput);
-    struct_space::expand(&ast)
+/// This attribute macro implements following traits and structs
+/// - The `UserStructName` is given
+/// - struct `UserStructNameGeneric` which is a struct with generalized space fields
+///     - struct `UserStructName` as an alias of `UserStructNameGeneric<original space structs>`
+///     - trait `Space` for `UserStructNameGeneric` with element struct `UserStructNameGenericElement`
+/// - struct `TransformUserStructName{field name}` which implements `SpaceTransform`. takes `Transformer` and apply it to {field name}.
+/// - inherent method for `UserStructNameGeneric`: `transform_{field name}` which takes `Transformer` and return `TransformUserStructName{field name}`
+/// - `IntoBatchedSpace` for original `UserStruct` if each spaces implement `IntoBatchedSpace`
+///     - uses `batched_struct_space` attribute macro
+///     - attaches `Batched` in front of original space and element names for batched versions
+#[proc_macro_attribute]
+pub fn struct_space(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as ItemStruct);
+    struct_space::expand(&input)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
 
-/// derive `BatchedStructSpace`, which corresponds to `DictSpace` of Gymnasium
-#[proc_macro_derive(BatchedStructSpace)]
-pub fn derive_batched_struct_space(input: TokenStream) -> TokenStream {
-    let ast = parse_macro_input!(input as DeriveInput);
-    batched_struct_space::expand(&ast)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
-
-/// derive `BatchedStructSpace` and `IntoBatchedSpace` for given space
-/// # Warning
-/// - `StructSpace` must be applied first
-#[proc_macro_derive(IntoBatchedStructSpace)]
-pub fn derive_into_batched_space(input: TokenStream) -> TokenStream {
-    let ast = parse_macro_input!(input as DeriveInput);
-    into_batched_struct_space::expand(&ast)
+/// This attribute macro implements following traits and structs
+/// - The `UserStructName` is given
+/// - struct `UserStructNameGeneric` which is a struct with generalized space fields
+///     - struct `UserStructName` as an alias of `UserStructNameGeneric<original space structs>`
+///     - trait `BatchedSpace` for `UserStructNameGeneric` with element struct `UserStructNameGenericElement`
+/// - struct `TransformUserStructName{field name}` which implements `BatchedSpaceTransform`. takes `Transformer` and apply it to {field name}.
+/// - inherent method for `UserStructNameGeneric`: `transform_{field name}` which takes `Transformer` and return `TransformUserStructName{field name}`
+#[proc_macro_attribute]
+pub fn batched_struct_space(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as ItemStruct);
+    batched_struct_space::expand(&input)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }

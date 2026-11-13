@@ -114,3 +114,21 @@ pub(crate) fn update_separated_ac_impl(generics: &Generics, self_ty: &Type) -> p
         }
     }
 }
+
+/// `desired_goal` -> `DesiredGoal`
+pub(crate) fn to_pascal_case(name: &str) -> String {
+    // raw 식별자(`r#type`)는 `r#`를 떼고 처리
+    let name = name.strip_prefix("r#").unwrap_or(name);
+    name.split('_')
+        // `_private`, `a__b`처럼 생기는 빈 조각은 건너뜀
+        .filter(|part| !part.is_empty())
+        .map(|part| {
+            let mut chars = part.chars();
+            match chars.next() {
+                // 첫 글자만 대문자로, 나머지는 그대로 이어 붙임
+                Some(first) => first.to_uppercase().chain(chars).collect::<String>(),
+                None => String::new(),
+            }
+        })
+        .collect()
+}
