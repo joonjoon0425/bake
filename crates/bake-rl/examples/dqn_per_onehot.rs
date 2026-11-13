@@ -1,9 +1,9 @@
-use bake_rl::env::wrapper::{BatchedRecordEpisodeStatistics, SynchronizedBatchedEnvironment};
+use bake_rl::env::space_transform::one_hot::BatchedOneHotTransform;
+use bake_rl::env::wrapper::{BatchedObservationTransform, BatchedRecordEpisodeStatistics, SynchronizedBatchedEnvironment};
 use bake_rl::deep::prelude::*;
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
-use bake_rl::env::gym::GymnasiumEnvironmentConfig;
-use bake_rl::env::classic::cartpole::CartPoleConfig;
+use bake_rl::env::classic::masked_cliff_walking::MaskedCliffWalkingConfig;
 
 use burn::nn::activation::ActivationConfig;
 use burn::prelude::*;
@@ -20,10 +20,11 @@ pub fn main() {
     
     let env = {
         let mut vec = vec![];
-        for i in 0..n_envs as u64 { vec.push(CartPoleConfig::new(seed + i).init()); }
+        for _ in 0..n_envs as u64 { vec.push(MaskedCliffWalkingConfig.init()); }
         vec
     };
     let env = SynchronizedBatchedEnvironment::new(env, &device);
+    let env = BatchedObservationTransform::new(env, BatchedOneHotTransform::new());
     let env = BatchedRecordEpisodeStatistics::new(env);
     
     let mut tape = BatchedTape::new(env, true);
@@ -74,23 +75,23 @@ pub fn main() {
         *buffer.beta_mut() = beta_sch.step() as f32;
     }
 
-    // evaluation
-    // training in native cartpole, evaluation in gymnasium environment... it's like sim2sim
-    let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10).init();
-    let env = SynchronizedBatchedEnvironment::new(vec![env], &device);
+    // // evaluation
+    // // training in native cartpole, evaluation in gymnasium environment... it's like sim2sim
+    // let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").seed(10).init();
+    // let env = SynchronizedBatchedEnvironment::new(vec![env], &device);
 
-    let mut tape = BatchedTape::new(env, false);
-    let mut eval = BatchedGreedy;
-    for _ in 0..5 {
-        loop {
-            let action = online.action(&mut eval, tape.obs.clone(), tape.constraint.clone());
-            tape.step(action);
-            if tape.done().clone().into_scalar() {
-                tape.reset(None);
-                break;
-            }
-        }
-    }
+    // let mut tape = BatchedTape::new(env, false);
+    // let mut eval = BatchedGreedy;
+    // for _ in 0..5 {
+    //     loop {
+    //         let action = online.action(&mut eval, tape.obs.clone(), tape.constraint.clone());
+    //         tape.step(action);
+    //         if tape.done().clone().into_scalar() {
+    //             tape.reset(None);
+    //             break;
+    //         }
+    //     }
+    // }
 }
 
 #[derive(Module, Debug)]

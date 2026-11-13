@@ -1,6 +1,7 @@
 //! environment implementations and wrappers
 
 pub mod wrapper;
+pub mod space_transform;
 
 pub mod classic;
 #[cfg(feature = "gym")]
