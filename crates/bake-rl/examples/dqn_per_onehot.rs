@@ -16,7 +16,7 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
 
-    let n_envs = 3;
+    let n_envs = 4;
     
     let env = {
         let mut vec = vec![];
@@ -38,7 +38,7 @@ pub fn main() {
     let mut exploration = BatchedEpsilonGreedy::new(1.0f32);
     let mut buffer = ReplayBuffer::with_prioritized_sampler(0.6, 0.4, Some(1.0), 100000, n_envs, &device);
 
-    let total_steps = 500000;
+    let total_steps = 100000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
@@ -48,8 +48,10 @@ pub fn main() {
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
+        // for action mask check, line 70
+        // let constraint = tape.constraint.clone();
         let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
-        let (batch, info) = tape.step(action);
+        let (batch, info) = tape.step(action.clone());
 
         buffer.push(batch);
 
@@ -65,6 +67,14 @@ pub fn main() {
 
         if count % 1 == 0 {
             let (_, stats) = info;
+            // checking if the action mask works properly
+            // if constraint.clone().bool_not().any().into_scalar() {
+            //     let check = constraint.gather(1, action.unsqueeze_dim(1));
+            //     if check.bool_not().all().into_scalar() {
+            //         panic!("PANIC!: SHOULD NOT CHOOSE THIS ACTION");
+            //     }
+            // }
+
             // just show naively
             for stat in stats {
                 println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);

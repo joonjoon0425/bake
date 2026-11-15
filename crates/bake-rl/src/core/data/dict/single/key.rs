@@ -2,7 +2,6 @@
 
 use std::marker::PhantomData;
 use std::borrow::Cow;
-use burn::prelude::*;
 
 /// typed key struct
 #[derive(Debug, Clone)]
@@ -33,15 +32,3 @@ impl<T> Key<T> {
         self.name.clone()
     }
 }
-
-/// key for advantage
-#[allow(non_upper_case_globals)]
-pub const adv: Key<Tensor<1>> = Key::const_key("adv");
-
-/// key for return
-#[allow(non_upper_case_globals)]
-pub const ret: Key<Tensor<1>> = Key::const_key("ret");
-
-/// key for log_prob
-#[allow(non_upper_case_globals)]
-pub const log_prob: Key<Tensor<1>> = Key::const_key("log_prob");

@@ -25,7 +25,7 @@ pub fn main() {
             baseline: REINFORCEBaseline::LeaveOneOut,
         };
 
-    let n_envs = 16;
+    let n_envs = 2;
     let mut envs = vec![];
     for i in 0..n_envs { envs.push(CartPoleConfig::new(i as u64).init()); }
     let env = SynchronizedBatchedEnvironment::new(envs, &device);

@@ -1,6 +1,7 @@
 //! Implementations of tabular reinforcement learning algorithms
 
 pub mod q_learning;
+pub mod sarsa;
 
 /// utility max function with index
 fn argmax_max(values: &[f32]) -> (usize, f32) {

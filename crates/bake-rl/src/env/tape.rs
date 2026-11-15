@@ -1,5 +1,5 @@
-
 use crate::core::data::Transition;
+use crate::core::data::dict::Dict;
 use crate::core::env::{Environment, space::Space};
 /// The `Tape` struct, which helps making transition tuple (s, a, r, s') and manage vector environment steps and resets.
 pub struct Tape<E: Environment> {
@@ -59,7 +59,7 @@ impl<E: Environment> Tape<E> {
 
             terminated,
             truncated,
-            dict: (),
+            dict: Dict::new(),
         };
 
         (transition, info)

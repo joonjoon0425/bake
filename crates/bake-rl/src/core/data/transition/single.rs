@@ -1,3 +1,5 @@
+use crate::core::data::dict::Dict;
+
 /// transition struct
 pub struct Transition<Obs, Constraint, Action, Reward> {
     /// observation (time step `t`)
@@ -19,5 +21,5 @@ pub struct Transition<Obs, Constraint, Action, Reward> {
     pub truncated: bool,
 
     /// dictionary for additional elements
-    pub dict: ()
+    pub dict: Dict
 }

@@ -12,8 +12,8 @@ pub trait DiscreteActionValue: Network {
     fn action_values<C: BatchedDiscreteConstraint>(&self, obs: Self::Obs, constraint: C) -> Tensor<2>;
     
     /// sample an action from given exploration strategy
-    fn action<A: BatchedDiscreteActionExploration, C: BatchedDiscreteConstraint>(&self, action_selector: &mut A, obs: Self::Obs, constraint: C) -> Tensor<1, Int> {
+    fn action<E: BatchedDiscreteActionExploration, C: BatchedDiscreteConstraint>(&self, exploration: &mut E, obs: Self::Obs, constraint: C) -> Tensor<1, Int> {
         let qvalues = self.action_values(obs, constraint.clone());
-        action_selector.sample(qvalues, constraint)
+        exploration.sample(qvalues, constraint)
     }
 }

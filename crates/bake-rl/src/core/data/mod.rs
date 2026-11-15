@@ -12,7 +12,7 @@ pub use shaped::{
 };
 
 pub use dict::{
-    BatchedDict, DictLeaf, key,
+    BatchedDict, BatchedDictLeaf, batched_key,
 };
 
 pub use batch_ops::BatchOps;

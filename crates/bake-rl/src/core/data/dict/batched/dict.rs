@@ -1,7 +1,7 @@
 //! dictionary typed BatchOps leaf
 use std::{any::Any, borrow::Cow, collections::BTreeMap};
 use crate::core::data::{Shaped, BatchOps, batch_ops::helper::*};
-use super::key::Key;
+use super::batched_key::BatchedKey;
 use super::vtable::BatchOpsVTable;
 
 /// erased `BatchOps` type
@@ -9,12 +9,12 @@ pub type ErasedBatchOps = Box<dyn Any>;
 
 /// dictionary leaf
 #[derive(Debug)]
-pub struct DictLeaf {
+pub struct BatchedDictLeaf {
     pub(crate) value: ErasedBatchOps,
     pub(crate) vtable: BatchOpsVTable,
 }
 
-impl Clone for DictLeaf {
+impl Clone for BatchedDictLeaf {
     fn clone(&self) -> Self {
         Self {
             value: (self.vtable.clone)(&self.value),
@@ -26,7 +26,7 @@ impl Clone for DictLeaf {
 /// dictionary BatchOps type
 #[derive(Debug, Clone)]
 pub struct BatchedDict {
-    pub(crate) map: BTreeMap<Cow<'static, str>, DictLeaf>,
+    pub(crate) map: BTreeMap<Cow<'static, str>, BatchedDictLeaf>,
 }
 
 impl BatchedDict {
@@ -40,8 +40,8 @@ impl BatchedDict {
     /// insert new item, with given string key
     /// # Returns
     /// - the previously saved value if it existed
-    pub fn insert<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Option<DictLeaf> {
-        self.map.insert(key.into(), DictLeaf {
+    pub fn insert<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Option<BatchedDictLeaf> {
+        self.map.insert(key.into(), BatchedDictLeaf {
             vtable: BatchOpsVTable::new::<T>(),
             value: Box::new(value)
         })
@@ -56,7 +56,7 @@ impl BatchedDict {
     }
 
     /// get an item, with given key struct
-    pub fn get<T: BatchOps>(&self, key: &Key<T>) -> Result<&T, String> {
+    pub fn get<T: BatchOps>(&self, key: &BatchedKey<T>) -> Result<&T, String> {
         let leaf = self.map.get(&key.name)
             .ok_or_else(|| format!("key: `{}` not found. Existing key and each types are: \n{}", key.name, self.describe_keys()))?;
         leaf.value.downcast_ref::<T>()
@@ -72,7 +72,7 @@ impl BatchedDict {
     }
 
     /// remove an item, with given key struct
-    pub fn remove<T: BatchOps>(&mut self, key: &Key<T>) -> Result<T, String> {
+    pub fn remove<T: BatchOps>(&mut self, key: &BatchedKey<T>) -> Result<T, String> {
         // check here
         self.get(key)?;
         let leaf = self.map.remove(&key.name).unwrap();
@@ -101,7 +101,7 @@ impl BatchOps for BatchedDict {
     fn autodiff(self) -> Self {
         let mut map = BTreeMap::new(); 
         for (key, leaf) in self.map.into_iter() {
-            map.insert(key, DictLeaf {
+            map.insert(key, BatchedDictLeaf {
                 value: (leaf.vtable.autodiff)(leaf.value),
                 vtable: leaf.vtable
             });
@@ -127,7 +127,7 @@ impl BatchOps for BatchedDict {
         for (s, (vec, vtable)) in split {
             assert!(n == vec.len(), "Dict::cat_batch: key '{}' present in {} of {} items", s, vec.len(), n);
             let value = (vtable.cat_batch)(bs, dim, vec);
-            map.insert(s, DictLeaf { value, vtable } );
+            map.insert(s, BatchedDictLeaf { value, vtable } );
         }
 
         Self {
@@ -147,7 +147,7 @@ impl BatchOps for BatchedDict {
     fn select_batch(self, bs: &[usize], dim: isize, idx: burn::prelude::Tensor<1, burn::prelude::Int>) -> Self {
         let mut map = BTreeMap::new();
         for (s, leaf) in self.map {
-            map.insert(s, DictLeaf {
+            map.insert(s, BatchedDictLeaf {
                 value: ((leaf.vtable.select_batch)(leaf.value, bs, dim, idx.clone())),
                 vtable: leaf.vtable
             });
@@ -161,7 +161,7 @@ impl BatchOps for BatchedDict {
     fn slice_batch(self, bs: &[usize], dim: isize, range: std::ops::Range<usize>) -> Self {
         let mut map = BTreeMap::new();
         for (s, leaf) in self.map {
-            map.insert(s, DictLeaf {
+            map.insert(s, BatchedDictLeaf {
                 value: ((leaf.vtable.slice_batch)(leaf.value, bs, dim, range.clone())),
                 vtable: leaf.vtable
             });
@@ -184,7 +184,7 @@ impl BatchOps for BatchedDict {
         let mut maps = vec![BatchedDict { map: BTreeMap::new() }; n];
         for (s, (vec, vtable)) in split {
             for (map, value) in maps.iter_mut().zip(vec.into_iter()) {
-                map.map.insert(s.clone(), DictLeaf {
+                map.map.insert(s.clone(), BatchedDictLeaf {
                     value,
                     vtable: vtable.clone()
                 });
@@ -196,7 +196,7 @@ impl BatchOps for BatchedDict {
     fn zeros_like_batch(bs: &[usize], dim: isize, capacity: usize, src: &Self) -> Self {
         let mut map = BTreeMap::new();
         for (s, leaf) in &src.map {
-            map.insert(s.clone(), DictLeaf {
+            map.insert(s.clone(), BatchedDictLeaf {
                 value: (leaf.vtable.zeros_like_batch)(bs, dim, capacity, &leaf.value),
                 vtable: leaf.vtable.clone()
             });
@@ -207,7 +207,7 @@ impl BatchOps for BatchedDict {
     fn reshape_batch(self, bs: &[usize], new_bs: &[usize]) -> Self {
         let mut map = BTreeMap::new();
         for (s, leaf) in self.map {
-            map.insert(s, DictLeaf {
+            map.insert(s, BatchedDictLeaf {
                 value: (leaf.vtable.reshape_batch)(leaf.value, bs, new_bs),
                 vtable: leaf.vtable
             });
@@ -235,7 +235,7 @@ impl Shaped<BatchedDict> {
     /// - when the batch shape does not matchs
     /// # Returns
     /// - the previously saved value if it existed
-    pub fn insert_str<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Result<Option<DictLeaf>, String> {
+    pub fn insert_str<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Result<Option<BatchedDictLeaf>, String> {
         assert!(value.check_batch(&self.bs), "batch shape does not matches"); 
         
         Ok(self.leaf.insert(key, value))
@@ -246,7 +246,7 @@ impl Shaped<BatchedDict> {
     /// - when the batch shape does not matchs
     /// # Returns
     /// - the previously saved value if it existed
-    pub fn insert<T: BatchOps>(&mut self, key: Key<T>, value: T) -> Result<Option<T>, String> {
+    pub fn insert<T: BatchOps>(&mut self, key: BatchedKey<T>, value: T) -> Result<Option<T>, String> {
         assert!(value.check_batch(&self.bs), "batch shape does not matches"); 
         
         Ok(self.leaf.insert(key.name, value).map(|v| *v.value.downcast::<T>().unwrap()))
@@ -272,12 +272,12 @@ impl Shaped<BatchedDict> {
     }
 
     /// remove an item, with given struct key
-    pub fn remove<T: BatchOps>(&mut self, key: &Key<T>) -> Result<T, String> {
+    pub fn remove<T: BatchOps>(&mut self, key: &BatchedKey<T>) -> Result<T, String> {
         self.leaf.remove(key)
     }
 
     /// change the value of given key struct, using a given closure
-    pub fn modify<T: BatchOps, F: FnOnce(&mut T)>(&mut self, key: &Key<T>, f: F) -> Result<(), String> {
+    pub fn modify<T: BatchOps, F: FnOnce(&mut T)>(&mut self, key: &BatchedKey<T>, f: F) -> Result<(), String> {
         if !self.leaf.map.contains_key(&key.name) {
             return Err(format!("key: `{}` not found. Existing key and each types are: \n{}", key.name, self.describe_keys()));
         }

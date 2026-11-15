@@ -32,7 +32,7 @@ pub mod prelude {
     
     pub use crate::core::constraint::BatchedDiscreteConstraint;    
     pub use crate::core::env::{Environment, BatchedEnvironment, EnvironmentConfig, BatchedEnvironmentConfig};
-    pub use crate::core::data::{Shaped, BatchedTransition, key};
+    pub use crate::core::data::{Shaped, BatchedTransition, batched_key};
 
     pub use crate::env::BatchedTape;
     pub use crate::exploration::{BatchedDiscreteActionExploration, BatchedEpsilonGreedy, BatchedBoltzmann, BatchedGreedy};

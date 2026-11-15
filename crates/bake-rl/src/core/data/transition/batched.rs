@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use crate::core::data::dict::{DictLeaf, BatchedDict, key::Key};
+use crate::core::data::dict::{BatchedDictLeaf, BatchedDict, batched_key::BatchedKey};
 use crate::core::data::{BatchOps, Shaped};
 use burn::prelude::*;
 
@@ -60,7 +60,7 @@ where
     /// - when the batch shape does not matchs
     /// # Returns
     /// - the previously saved value if it existed
-    pub fn insert_str<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Result<Option<DictLeaf>, String> {
+    pub fn insert_str<T: BatchOps>(&mut self, key: impl Into<Cow<'static, str>>, value: T) -> Result<Option<BatchedDictLeaf>, String> {
         assert!(value.check_batch(&self.batch_shape()), "batch shape does not matches"); 
         
         Ok(self.leaf.dict.insert(key, value))
@@ -71,7 +71,7 @@ where
     /// - when the batch shape does not matchs
     /// # Returns
     /// - the previously saved value if it existed
-    pub fn insert<T: BatchOps>(&mut self, key: Key<T>, value: T) -> Result<Option<T>, String> {
+    pub fn insert<T: BatchOps>(&mut self, key: BatchedKey<T>, value: T) -> Result<Option<T>, String> {
         assert!(value.check_batch(&self.bs), "batch shape does not matches"); 
         
         Ok(self.leaf.dict.insert(key.name, value).map(|v| *v.value.downcast::<T>().unwrap()))
@@ -92,7 +92,7 @@ where
     }
     
     /// change the value of given key struct, using a given closure
-    pub fn modify<T: BatchOps, F: FnOnce(&mut T)>(&mut self, key: &Key<T>, f: F) -> Result<(), String> {
+    pub fn modify<T: BatchOps, F: FnOnce(&mut T)>(&mut self, key: &BatchedKey<T>, f: F) -> Result<(), String> {
         if !self.leaf.dict.map.contains_key(&key.name) {
             return Err(format!("key: `{}` not found. Existing key and each types are: \n{}", key.name, self.dict.describe_keys()));
         }
@@ -111,7 +111,7 @@ where
     }
 
     /// remove an item, with given struct key
-    pub fn remove<T: BatchOps>(&mut self, key: &Key<T>) -> Result<T, String> {
+    pub fn remove<T: BatchOps>(&mut self, key: &BatchedKey<T>) -> Result<T, String> {
         self.leaf.dict.remove(key)
     }
 

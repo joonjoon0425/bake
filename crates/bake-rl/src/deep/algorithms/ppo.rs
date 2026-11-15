@@ -1,7 +1,7 @@
 //! Proximal Policy Optimization
 
 use burn::prelude::*;
-use crate::core::data::{Shaped, BatchOps, BatchedTransition, key};
+use crate::core::data::{Shaped, BatchOps, BatchedTransition, batched_key};
 use crate::deep::distribution::{Distribution, PossibleConstraint};
 use crate::deep::algorithms::advantage_estimator::AdvantageEstimator;
 use crate::deep::loss::{Loss, LossFn, ActorCriticLoss};
@@ -74,10 +74,10 @@ pub fn ppo_loss<Ac: ActorCritic>(
 
     // compute log ratio, adv, ret
     let (dist, values) = ac.dist_and_state_value(mb.obs, mb.constraint);
-    let log_ratio = dist.log_probs(mb.action) - mb.dict.remove(&key::log_prob).expect("`ppo_loss` expects key `log_prob`");
+    let log_ratio = dist.log_probs(mb.action) - mb.dict.remove(&batched_key::log_prob).expect("`ppo_loss` expects key `log_prob`");
     let ratio = log_ratio.clone().exp();
-    let adv = mb.dict.remove(&key::adv).expect("`ppo_loss` expects key `adv`");
-    let ret = mb.dict.remove(&key::ret).expect("`ppo_loss` expects key `ret");
+    let adv = mb.dict.remove(&batched_key::adv).expect("`ppo_loss` expects key `adv`");
+    let ret = mb.dict.remove(&batched_key::ret).expect("`ppo_loss` expects key `ret");
 
     // compute losses
     let stacked =

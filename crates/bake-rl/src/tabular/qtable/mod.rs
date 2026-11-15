@@ -34,9 +34,9 @@ impl QTable {
     }
 
     /// sample an action using given exploration strategy
-    pub fn action<A: DiscreteActionExploration, R: Rng>(&self, rng: &mut R, action_selector: &mut A, obs: usize, constraint: impl DiscreteConstraint) -> usize {
+    pub fn action<E: DiscreteActionExploration, R: Rng>(&self, rng: &mut R, exploration: &mut E, obs: usize, constraint: impl DiscreteConstraint) -> usize {
         let qvalues = self.qvalues(obs, constraint.clone());
-        action_selector.sample(rng, &qvalues, constraint)
+        exploration.sample(rng, &qvalues, constraint)
     }
 
     /// update the inner table

@@ -46,14 +46,14 @@ pub fn main() {
         let dist = ac.dist(tape.obs.clone(), tape.constraint.clone());
         let action = dist.sample();
         let (mut t, info) = tape.step(action.clone());
-        t.insert(key::log_prob, dist.log_probs(action)).unwrap();
+        t.insert(batched_key::log_prob, dist.log_probs(action)).unwrap();
 
         buffer.push(t);
 
         if buffer.is_full() {
             let mut batch = buffer.pop();
             let (adv, ret) = state.advantage.normalized_advantage(&ac, batch.clone(), state.gamma);
-            batch.insert(key::adv, adv).unwrap(); batch.insert(key::ret, ret).unwrap();
+            batch.insert(batched_key::adv, adv).unwrap(); batch.insert(batched_key::ret, ret).unwrap();
             let batch = batch.flatten();
             for _ in 0..4 {
                 for minibatch in sampler.iter(128, &batch, &device) {
