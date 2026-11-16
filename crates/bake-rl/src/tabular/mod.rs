@@ -1,6 +1,7 @@
 //! # tabular: collection of tabular reinforcement learning algorithms
 
 pub mod algorithms;
+pub mod buffer;
 pub mod qtable;
 
 /// prelude module
@@ -9,6 +10,7 @@ pub mod prelude {
         q_learning::*, sarsa::*,
     };
     pub use crate::tabular::qtable::QTable;
+    pub use crate::tabular::buffer::*;
     
     pub use crate::core::constraint::DiscreteConstraint;
     pub use crate::core::env::{Environment, EnvironmentConfig};

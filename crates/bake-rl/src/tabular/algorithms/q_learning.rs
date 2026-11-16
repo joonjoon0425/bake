@@ -2,7 +2,7 @@
 use crate::core::{constraint::DiscreteConstraint, data::Transition};
 use crate::tabular::qtable::QTable;
 
-/// state struct for QLearning
+/// state struct for Q-Learning
 #[derive(Debug, Clone)]
 pub struct QLearningState {
     /// discount rate

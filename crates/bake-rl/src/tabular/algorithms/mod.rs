@@ -1,5 +1,6 @@
 //! Implementations of tabular reinforcement learning algorithms
 
+pub mod monte_carlo;
 pub mod q_learning;
 pub mod sarsa;
 

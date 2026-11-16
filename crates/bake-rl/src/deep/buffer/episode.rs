@@ -3,7 +3,7 @@
 use burn::prelude::*;
 use crate::core::data::{Shaped, BatchedTransition, BatchOps};
 
-/// Episode buffer implementation
+/// Episode buffer
 /// - collects trajectories
 pub struct EpisodeBuffer<Obs: BatchOps, Constraint: BatchOps, Action: BatchOps, Reward: BatchOps> {
     batch: Vec<Shaped<BatchedTransition<Obs, Constraint, Action, Reward>>>,
@@ -17,7 +17,7 @@ where
     Action: BatchOps,
     Reward: BatchOps
 {
-    /// create a new `RolloutBuffer`
+    /// create a new `EpisodeBuffer`
     pub fn new(n_envs: usize, device: &Device) -> Self {
         Self { batch: vec![], finished: Tensor::zeros([n_envs], device) }
     }
