@@ -2,7 +2,7 @@
 
 pub mod uniform;
 pub mod prioritized;
-pub mod suffle;
+pub mod shuffle;
 
 use crate::core::data::{Shaped, BatchOps};
 use burn::prelude::*;

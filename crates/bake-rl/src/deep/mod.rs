@@ -20,7 +20,7 @@ pub mod prelude {
         Sampler,
         EpochSampler,
         uniform::UniformSampler,
-        suffle::ShuffleSampler,
+        shuffle::ShuffleSampler,
     };
     pub use crate::deep::buffer::{
         replay::ReplayBuffer,
