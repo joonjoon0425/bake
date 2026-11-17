@@ -42,10 +42,10 @@ pub fn main() {
 
     let env = GymnasiumEnvironmentConfig::cliff_walking().kwarg("render_mode", "human").init();
     let mut tape = Tape::new(env);
-    let mut g = Greedy;
+    
     for _ in 0..5 {
         loop {
-            let action = qtable.action(&mut rng, &mut g, tape.obs, tape.constraint);
+            let action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
             tape.step(action);
             if tape.done() {
                 tape.reset();

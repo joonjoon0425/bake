@@ -6,6 +6,7 @@ use rand::prelude::*;
 #[derive(Debug, Clone)]
 pub struct QTable {
     table: Vec<f32>,
+    n_obs: usize,
     n_action: usize,
 }
 
@@ -18,9 +19,16 @@ impl QTable {
         let table = vec![0.; n_obs * n_action];
         Self {
             table,
+            n_obs,
             n_action,
         } 
     }
+
+    /// return the number of observations
+    pub fn n_obs(&self) -> usize { self.n_obs }
+
+    /// return the number of actions
+    pub fn n_action(&self) -> usize { self.n_action }
 
     /// return a q values of given observation
     pub fn qvalues(&self, obs: usize, constraint: impl DiscreteConstraint) -> Vec<f32> {
