@@ -39,6 +39,15 @@ impl DiscreteActionExploration for Boltzmann {
         let weighted_index = WeightedIndex::new(qvalues).unwrap();
         weighted_index.sample(rng)
     }
+
+    fn prob<C: DiscreteConstraint>(&self, qvalues: &[f32], constraint: C, action: usize) -> f32 {
+        let mut qvalues = constraint.apply(qvalues, -1e9);
+        let vmax = super::argmax_max(&qvalues).1;
+        for qvalue in &mut qvalues {
+            *qvalue = ((*qvalue - vmax) / self.temp).exp();
+        }
+        qvalues[action]
+    }
 }
 
 /// Boltzmann (softmax) policy implementation

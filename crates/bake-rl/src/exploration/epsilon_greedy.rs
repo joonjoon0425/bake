@@ -41,6 +41,12 @@ impl DiscreteActionExploration for EpsilonGreedy {
             super::argmax_max(&qvalues).0
         }
     }
+
+    fn prob<C: DiscreteConstraint>(&self, qvalues: &[f32], constraint: C, action: usize) -> f32 {
+        let q_values = constraint.clone().apply(qvalues, -1e9);
+        let n_possible_actions = constraint.n_possible_actions().unwrap_or(qvalues.len());
+        if action == super::argmax_max(&q_values).0 { 1. - self.eps + self.eps / n_possible_actions as f32 } else { self.eps / n_possible_actions as f32 }
+    }
 }
 
 /// An epsilon-greedy policy implementation

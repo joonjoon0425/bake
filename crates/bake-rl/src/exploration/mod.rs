@@ -7,6 +7,8 @@ use crate::core::constraint::{BatchedDiscreteConstraint, DiscreteConstraint};
 pub trait DiscreteActionExploration {
     /// sample an action using given discrete action values, with given constraint
     fn sample<C: DiscreteConstraint, R: Rng>(&self, rng: &mut R, qvalues: &[f32], constraint: C) -> usize;
+    /// get the probability of choosing given action in given observation
+    fn prob<C: DiscreteConstraint>(&self, qvalues: &[f32], constraint: C, action: usize) -> f32;
 }
 
 /// A trait which all 'batch' exploration strategies must implement

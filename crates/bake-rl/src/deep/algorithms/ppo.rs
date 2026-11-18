@@ -62,6 +62,11 @@ impl ActorCriticLoss for PPOLoss {
 }
 
 /// compute the loss of PPO
+/// # Note
+/// - requires following `key: element type` in transitions
+///     - `adv: Tensor<1>` for advantages (use `batched_key::adv`)
+///     - `ret: Tensor<1>` for returns (use `batched_key::ret`)
+///     - `log_prob: Tensor<1>` for log probability of action choice (use `batched_key::log_prob`)
 /// # Warning
 /// - Here, the given ActorCritic is moved to autodiff device
 /// - Then ActorCritic will be moved to inner device when `update` is called

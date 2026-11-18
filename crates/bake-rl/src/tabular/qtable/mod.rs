@@ -47,6 +47,12 @@ impl QTable {
         exploration.sample(rng, &qvalues, constraint)
     }
 
+    /// get a probability of choosing given action from given observation
+    pub fn prob<E: DiscreteActionExploration>(&self, exploration: &mut E, obs: usize, constraint: impl DiscreteConstraint, action: usize) -> f32 {
+        let qvalues = self.qvalues(obs, constraint.clone());
+        exploration.prob(&qvalues, constraint, action)
+    }
+
     /// update the inner table
     pub(crate) fn update(&mut self, obs: usize, action: usize, value: f32) {
         self.table[obs * self.n_action + action] = value;

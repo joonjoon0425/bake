@@ -16,6 +16,11 @@ impl DiscreteActionExploration for Greedy {
         let qvalues = constraint.apply(qvalues, -1e9);
         super::argmax_max(&qvalues).0
     }
+
+    fn prob<C: DiscreteConstraint>(&self, qvalues: &[f32], constraint: C, action: usize) -> f32 {
+        let q_values = constraint.apply(qvalues, -1e9);
+        if action == super::argmax_max(&q_values).0 { 1. } else { 0. }
+    }
 }
 
 impl BatchedDiscreteActionExploration for BatchedGreedy {
