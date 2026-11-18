@@ -6,8 +6,7 @@ use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 pub fn main() {
     let n_envs = 6;
     let device = burn::prelude::Device::flex();
-    let mut envs = vec![];
-    for i in 0..n_envs { envs.push(GymnasiumEnvironmentConfig::pong_preprocessed().seed(i).init()) }
+    let envs = Vec::from_fn(n_envs, |i| GymnasiumEnvironmentConfig::pong_preprocessed().seed(i as u64).init());
     let mut env = SynchronizedBatchedEnvironment::new(envs, &device);
 
     println!("obs shape: {:?}", env.obs_space().shape());

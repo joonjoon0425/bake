@@ -26,9 +26,8 @@ pub fn main() {
         };
 
     let n_envs = 2;
-    let mut envs = vec![];
-    for i in 0..n_envs { envs.push(CartPoleConfig::new(i as u64).init()); }
-    let env = SynchronizedBatchedEnvironment::new(envs, &device);
+    let env = Vec::from_fn(n_envs, |i| CartPoleConfig::new(i as u64).init());
+    let env = SynchronizedBatchedEnvironment::new(env, &device);
     let env = BatchedRecordEpisodeStatistics::new(env);
 
     let mut policy = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);

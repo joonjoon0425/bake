@@ -18,11 +18,8 @@ pub fn main() {
 
     let n_envs = 4;
     
-    let env = {
-        let mut vec = vec![];
-        for _ in 0..n_envs as u64 { vec.push(MaskedCliffWalkingConfig.init()); }
-        vec
-    };
+    let env = Vec::from_fn(n_envs, |_| MaskedCliffWalkingConfig.init());
+
     let env = SynchronizedBatchedEnvironment::new(env, &device);
     let env = BatchedObservationTransform::new(env, BatchedOneHotTransform::new());
     let env = BatchedRecordEpisodeStatistics::new(env);
