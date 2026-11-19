@@ -7,7 +7,7 @@ use crate::core::env::space::BatchedSpace;
 
 /// records the episode-related statistics of batched environments, for scalar rewards
 /// # What it records?
-/// - Just as Gymnasium's `RecordEpisodeStatistics`, it records reward, step, wall-clock time (in microseconds) and done masks, through the `Info`
+/// - Just as Gymnasium's `RecordEpisodeStatistics`, it records reward, step, wall-clock time (in seconds) and done masks, through the `Info`
 pub struct BatchedRecordEpisodeStatistics<E: BatchedEnvironment<Reward = Tensor<1>>> {
     env: E,
     record_reward: Tensor<1>,
@@ -90,12 +90,12 @@ impl<E: BatchedEnvironment<Reward = Tensor<1>>> BatchedEnvironment for BatchedRe
             Some(mask) => {
                 self.record_reward.inplace(|r| r.mask_fill(mask.clone(), 0.));
                 self.record_length.inplace(|s| s.mask_fill(mask.clone(), 0));
-                self.record_clock.inplace(|t| t.mask_fill(mask.clone(), (Instant::now() - self.wrapper_start).as_micros() as f32));
+                self.record_clock.inplace(|t| t.mask_fill(mask.clone(), (Instant::now() - self.wrapper_start).as_secs_f32()));
             },
             None => {
                 self.record_reward = Tensor::zeros_like(&self.record_reward);
                 self.record_length = Tensor::zeros_like(&self.record_length);
-                self.record_clock = Tensor::full_like(&self.record_clock, (Instant::now() - self.wrapper_start).as_micros() as f32);
+                self.record_clock = Tensor::full_like(&self.record_clock, (Instant::now() - self.wrapper_start).as_secs_f32());
             }
         }
         let ((o, c), i) = self.env.reset(mask.into());
@@ -108,7 +108,7 @@ impl<E: BatchedEnvironment<Reward = Tensor<1>>> BatchedEnvironment for BatchedRe
         self.record_length.inplace(|s| s + 1);
 
         let record_done = ter.clone().bool_or(tru.clone());
-        let record_time = (Instant::now() - self.wrapper_start).as_micros() as f32 - self.record_clock.clone();
+        let record_time = (Instant::now() - self.wrapper_start).as_secs_f32() - self.record_clock.clone();
         let episode_stats = EpisodeStatistics {
             r: self.record_reward.clone(),
             l: self.record_length.clone(),
@@ -137,7 +137,7 @@ impl<E: BatchedEnvironment<Reward = Tensor<1>>> BatchedEnvironment for BatchedRe
 /// episode statistics
 /// - r: accumulated rewards
 /// - l: accumulated length
-/// - t: accumulated time in micros
+/// - t: accumulated time in secs
 /// - m: mask indicating which environment has ended (`true`: ended)
 #[derive(Debug, Clone)]
 pub struct EpisodeStatistics {
@@ -145,7 +145,7 @@ pub struct EpisodeStatistics {
     pub r: Tensor<1>,
     /// accumulated length
     pub l: Tensor<1, Int>,
-    /// accumulated time in micros
+    /// accumulated time in secs
     pub t: Tensor<1>,
     /// mask indicating which environment has ended (`true`: ended)
     pub m: Tensor<1, Bool>

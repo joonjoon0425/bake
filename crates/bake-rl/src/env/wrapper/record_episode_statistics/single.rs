@@ -6,7 +6,7 @@ use crate::core::env::space::Space;
 
 /// records the episode-related statistics of environments (for scalar rewards)
 /// # What it records?
-/// - Just as Gymnasium's `RecordEpisodeStatistics`, it records reward, step and wall-clock time (microseconds) through the `Info`
+/// - Just as Gymnasium's `RecordEpisodeStatistics`, it records reward, step and wall-clock time (seconds) through the `Info`
 pub struct RecordEpisodeStatistics<E: Environment<Reward = f32>> {
     env: E,
     record_reward: f32,
@@ -16,7 +16,7 @@ pub struct RecordEpisodeStatistics<E: Environment<Reward = f32>> {
     buffer_size: usize,
     reward_buffer: VecDeque<f32>,
     length_buffer: VecDeque<i64>,
-    time_buffer: VecDeque<u128>,
+    time_buffer: VecDeque<f32>,
 }
 
 impl<E: Environment<Reward = f32>> RecordEpisodeStatistics<E> {
@@ -48,7 +48,7 @@ impl<E: Environment<Reward = f32>> RecordEpisodeStatistics<E> {
 
     /// return the mean of latest `self.buffer_size` (less if not fulfilled) episodes' elapsed time
     pub fn time_mean(&self) -> f32 {
-        self.time_buffer.iter().sum::<u128>() as f32 / self.time_buffer.len() as f32
+        self.time_buffer.iter().sum::<f32>() / self.time_buffer.len() as f32
     }
 }
 
@@ -85,7 +85,7 @@ impl<E: Environment<Reward = f32>> Environment for RecordEpisodeStatistics<E> {
         let mut episode_stat = None;
 
         if done {
-            let elapsed = self.record_time.elapsed().as_micros();
+            let elapsed = self.record_time.elapsed().as_secs_f32();
             episode_stat = Some(EpisodeStatistics {
                 r: self.record_reward,
                 l: self.record_length,
@@ -107,13 +107,13 @@ impl<E: Environment<Reward = f32>> Environment for RecordEpisodeStatistics<E> {
 /// episode statistics
 /// - r: accumulated rewards
 /// - l: accumulated length
-/// - t: accumulated time in micros
+/// - t: accumulated time in secs
 #[derive(Debug, Clone)]
 pub struct EpisodeStatistics {
     /// accumulated rewards
     pub r: f32,
     /// accumulated length
     pub l: i64,
-    /// accumulated time in micros
-    pub t: u128,
+    /// accumulated time in secs
+    pub t: f32,
 }
