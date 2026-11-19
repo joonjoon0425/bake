@@ -1,7 +1,8 @@
 use crate::core::data::dict::Dict;
 
 /// transition struct
-pub struct Transition<Obs, Constraint, Action, Reward> {
+#[derive(Debug, Clone)]
+pub struct Transition<Obs: Clone, Constraint: Clone, Action: Clone, Reward: Clone> {
     /// observation (time step `t`)
     pub obs: Obs,
     /// constraint of actions on observation (time step `t`)

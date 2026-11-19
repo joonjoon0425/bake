@@ -3,12 +3,12 @@ use crate::core::data::Transition;
 
 /// Episode buffer
 /// - collects trajectories
-pub struct EpisodeBuffer<Obs, Constraint, Action, Reward> {
+pub struct EpisodeBuffer<Obs: Clone, Constraint: Clone, Action: Clone, Reward: Clone> {
     episode: Vec<Transition<Obs, Constraint, Action, Reward>>,
     finished: bool,
 }
 
-impl<Obs, Constraint, Action, Reward> EpisodeBuffer<Obs, Constraint, Action, Reward> {
+impl<Obs: Clone, Constraint: Clone, Action: Clone, Reward: Clone> EpisodeBuffer<Obs, Constraint, Action, Reward> {
     /// create a new empty `EpisodeBuffer`
     pub fn new() -> Self {
         Self {

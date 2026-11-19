@@ -7,7 +7,7 @@ pub mod qtable;
 /// prelude module
 pub mod prelude {
     pub use crate::tabular::algorithms::{
-        q_learning::*, sarsa::*, monte_carlo::*,
+        q_learning::*, sarsa::*, monte_carlo::*, n_step_sarsa::*,
     };
     pub use crate::tabular::qtable::QTable;
     pub use crate::tabular::buffer::*;
