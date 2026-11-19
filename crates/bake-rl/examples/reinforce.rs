@@ -28,7 +28,7 @@ pub fn main() {
     let n_envs = 2;
     let env = Vec::from_fn(n_envs, |i| CartPoleConfig::new(i as u64).init());
     let env = SynchronizedBatchedEnvironment::new(env, &device);
-    let env = BatchedRecordEpisodeStatistics::new(env);
+    let env = BatchedRecordEpisodeStatistics::new(env, 100);
 
     let mut policy = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr = 1e-3;
@@ -42,7 +42,7 @@ pub fn main() {
 
     for count in 0..total_steps {
         let action = policy.action(tape.obs.clone(), tape.constraint.clone());
-        let (t, info) = tape.step(action);
+        let (t, _) = tape.step(action);
 
         buffer.push(t);
         
@@ -53,12 +53,8 @@ pub fn main() {
             policy = p.update(loss, lr, &mut opt);
         }
         
-        if count % 1 == 0 {
-            let (_, stats) = info;
-            // just show naively
-            for stat in stats {
-                println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
-            }
+        if count % 5000 == 0 {
+            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean().into_scalar::<f32>(), tape.env().length_mean().into_scalar::<f32>(), tape.env().time_mean().into_scalar::<f32>());
         }
 
         state.c_e = c_e_sch.step() as f32;

@@ -10,7 +10,7 @@ pub fn main() {
     let seed = 12;
     let mut rng = SmallRng::seed_from_u64(seed);
     let env = GymnasiumEnvironmentConfig::taxi().seed(seed).init();
-    let env = RecordEpisodeStatistics::new(env);
+    let env = RecordEpisodeStatistics::new(env, 100);
     let mut qtable = QTable::new(env.obs_space().n(), env.action_space().n());
     let mut tape = Tape::new(env);
     let state = NStepSARSAState { gamma: 0.99, alpha: 0.15 };
@@ -23,7 +23,7 @@ pub fn main() {
     // pick action first
     let mut action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
     for count in 0..total_step {
-        let (mut t, ((), stats)) = tape.step(action);
+        let (mut t, _) = tape.step(action);
         action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
         t.dict.insert_str("next_action", action);
 
@@ -35,8 +35,8 @@ pub fn main() {
             buffer.pop();
         }
 
-        if let Some(stat) = stats {
-            println!("count:{}, reward: {}, step: {}", count, stat.r, stat.s);
+        if count % 1000 == 0 {
+            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean(), tape.env().length_mean(), tape.env().time_mean());
         }
 
         if tape.done() {

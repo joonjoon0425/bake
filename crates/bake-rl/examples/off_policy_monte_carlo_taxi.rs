@@ -10,7 +10,7 @@ pub fn main() {
     let seed = 12;
     let mut rng = SmallRng::seed_from_u64(seed);
     let env = GymnasiumEnvironmentConfig::taxi().seed(seed).init();
-    let env = RecordEpisodeStatistics::new(env);
+    let env = RecordEpisodeStatistics::new(env, 100);
     let mut qtable = QTable::new(env.obs_space().n(), env.action_space().n());
     let mut tape = Tape::new(env);
     let state = OffPolicyMonteCarloState { gamma: 0.99 };
@@ -24,7 +24,7 @@ pub fn main() {
     for count in 0..total_step {
         let action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
         let action_prob = qtable.prob(&mut exploration, tape.obs, tape.constraint, action);
-        let (mut t, ((), stats)) = tape.step(action);
+        let (mut t, _) = tape.step(action);
         t.dict.insert_str("action_prob", action_prob);
         buffer.push(t);
 
@@ -34,8 +34,8 @@ pub fn main() {
             tape.reset();
         }
 
-        if let Some(stat) = stats {
-            println!("count:{}, reward: {}, step: {}", count, stat.r, stat.s);
+        if count % 1000 == 0 {
+            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean(), tape.env().length_mean(), tape.env().time_mean());
         }
 
         *exploration.epsilon_mut() = eps_sch.step() as f32;

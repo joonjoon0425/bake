@@ -9,7 +9,7 @@ pub fn main() {
     let seed = 129;
     let mut rng = SmallRng::seed_from_u64(seed);    
     let env = GymnasiumEnvironmentConfig::taxi().seed(seed).init();
-    let env = RecordEpisodeStatistics::new(env);
+    let env = RecordEpisodeStatistics::new(env, 100);
     let state = QLearningState { gamma: 0.99, alpha: 0.4 };
     let mut q = QTable::new(env.obs_space().n(), env.action_space().n());
     let mut tape = Tape::new(env);
@@ -20,15 +20,16 @@ pub fn main() {
 
     for count in 0..total_steps {
         let action = q.action(&mut rng, &mut eg, tape.obs.clone(), tape.constraint.clone());
-        let (t, (_, stat)) = tape.step(action);
+        let (t, _) = tape.step(action);
 
         qlearning_update(&state, &mut q, t);
 
-        if tape.done() && let Some(stat) = stat {
-            if count % 50 == 0 {
-                println!("count: {count}, reward: {}, step: {}", stat.r, stat.s);
-            }
+        if tape.done() {
             tape.reset();
+        }
+
+        if count % 1000 == 0 {
+            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean(), tape.env().length_mean(), tape.env().time_mean());
         }
         
         *eg.epsilon_mut() = eps_sch.step() as f32;

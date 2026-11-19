@@ -22,16 +22,16 @@ pub fn main() {
 
     let env = SynchronizedBatchedEnvironment::new(env, &device);
     let env = BatchedObservationTransform::new(env, BatchedOneHotTransform::new());
-    let env = BatchedRecordEpisodeStatistics::new(env);
-    
-    let mut tape = BatchedTape::new(env, true);
+    let env = BatchedRecordEpisodeStatistics::new(env, 100);
 
     let state = DQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
-    let mut online = TestNet::new(vec![tape.obs_space().shape()[1], 64, 64, tape.action_space().n()], ActivationConfig::Relu, &device);
+    let mut online = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
     let mut target = online.clone();
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
-        
+    
+    let mut tape = BatchedTape::new(env, true);
+
     let mut exploration = BatchedEpsilonGreedy::new(1.0f32);
     let mut buffer = ReplayBuffer::with_prioritized_sampler(0.6, 0.4, Some(1.0), 100000, n_envs, &device);
 
@@ -48,7 +48,7 @@ pub fn main() {
         // for action mask check, line 70
         // let constraint = tape.constraint.clone();
         let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
-        let (batch, info) = tape.step(action.clone());
+        let (batch, _) = tape.step(action.clone());
 
         buffer.push(batch);
 
@@ -62,20 +62,8 @@ pub fn main() {
             target = online.clone();
         }
 
-        if count % 1 == 0 {
-            let (_, stats) = info;
-            // checking if the action mask works properly
-            // if constraint.clone().bool_not().any().into_scalar() {
-            //     let check = constraint.gather(1, action.unsqueeze_dim(1));
-            //     if check.bool_not().all().into_scalar() {
-            //         panic!("PANIC!: SHOULD NOT CHOOSE THIS ACTION");
-            //     }
-            // }
-
-            // just show naively
-            for stat in stats {
-                println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
-            }
+        if count % 5000 == 0 {
+            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean().into_scalar::<f32>(), tape.env().length_mean().into_scalar::<f32>(), tape.env().time_mean().into_scalar::<f32>());
         }
 
         *exploration.epsilon_mut() = eps_sch.step() as f32;

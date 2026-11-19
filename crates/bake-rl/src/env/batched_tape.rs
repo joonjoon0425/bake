@@ -89,12 +89,6 @@ impl<E: BatchedEnvironment> BatchedTape<E> {
     pub fn done(&self) -> Tensor<1, Bool> {
         self.done.clone()
     }
-    /// returns the observation space
-    pub fn obs_space(&self) -> &E::ObsSpace {
-        self.env.obs_space()
-    }
-    /// returns the action space
-    pub fn action_space(&self) -> &E::ActionSpace {
-        self.env.action_space()
-    }
+    /// return the reference of internal environment
+    pub fn env(&self) -> &E { &self.env }
 }

@@ -27,7 +27,7 @@ pub fn main() {
             loss_fn: LossFn::MseLoss,
         };
     let env = BatchedGymnasiumEnvironmentConfig::lunar_lander().seed(seed).init(16, &device);
-    let env = BatchedRecordEpisodeStatistics::new(env);
+    let env = BatchedRecordEpisodeStatistics::new(env, 100);
 
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
@@ -45,7 +45,7 @@ pub fn main() {
     for count in 0..total_steps {
         let dist = ac.dist(tape.obs.clone(), tape.constraint.clone());
         let action = dist.sample();
-        let (mut t, info) = tape.step(action.clone());
+        let (mut t, _) = tape.step(action.clone());
         t.insert(batched_key::log_prob, dist.log_probs(action)).unwrap();
 
         buffer.push(t);
@@ -63,12 +63,8 @@ pub fn main() {
             }
         }
 
-        if count % 1 == 0 {
-            let (_, stats) = info;
-            // just show naively
-            for stat in stats {
-                println!("count:{}, environment id: {}, reward: {}, step: {}", count, stat.id, stat.r, stat.s);
-            }
+        if count % 5000 == 0 {
+            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean().into_scalar::<f32>(), tape.env().length_mean().into_scalar::<f32>(), tape.env().time_mean().into_scalar::<f32>());
         }
 
         state.c_e = c_e_sch.step() as f32;

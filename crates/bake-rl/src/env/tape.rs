@@ -68,12 +68,6 @@ impl<E: Environment> Tape<E> {
     pub fn done(&self) -> bool {
         self.done
     }
-    /// returns the observation space
-    pub fn obs_space(&self) -> &E::ObsSpace {
-        self.env.obs_space()
-    }
-    /// returns the action space
-    pub fn action_space(&self) -> &E::ActionSpace {
-        self.env.action_space()
-    }
+    /// return the reference of internal environment
+    pub fn env(&self) -> &E { &self.env }
 }
