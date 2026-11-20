@@ -2,6 +2,7 @@ use bake_rl::tabular::prelude::*;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::core::scheduler::{LinearScheduler, Scheduler};
 use bake_rl::env::wrapper::RecordEpisodeStatistics;
+use bake_rl::logger::{LogCollector, StdoutSink};
 
 use rand::prelude::*;
 
@@ -9,8 +10,13 @@ pub fn main() {
     let total_step = 1000000;
     let seed = 12;
     let mut rng = SmallRng::seed_from_u64(seed);
+
+    let mut collector = LogCollector::new();
+    let mut stdout = StdoutSink::new("off-policy Monte Carlo - Taxi Log");
+
     let env = GymnasiumEnvironmentConfig::taxi().seed(seed).init();
     let env = RecordEpisodeStatistics::new(env, 100);
+    
     let mut qtable = QTable::new(env.obs_space().n(), env.action_space().n());
     let mut tape = Tape::new(env);
     let state = OffPolicyMonteCarloState { gamma: 0.99 };
@@ -22,6 +28,12 @@ pub fn main() {
     let mut buffer = EpisodeBuffer::new();
 
     for count in 0..total_step {
+        // log
+        collector.record(0, "count", count);
+        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+        collector.record(1, "ep/length_mean", tape.env().length_mean());
+        collector.record(1, "ep/time_mean", tape.env().time_mean());
+
         let action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
         let action_prob = qtable.prob(&mut exploration, tape.obs, tape.constraint, action);
         let (mut t, _) = tape.step(action);
@@ -35,7 +47,7 @@ pub fn main() {
         }
 
         if count % 1000 == 0 {
-            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean(), tape.env().length_mean(), tape.env().time_mean());
+            collector.dump_to(&mut stdout).expect("unexpected error");
         }
 
         *exploration.epsilon_mut() = eps_sch.step() as f32;

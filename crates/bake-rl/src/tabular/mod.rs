@@ -1,4 +1,4 @@
-//! # tabular: collection of tabular reinforcement learning algorithms
+//! # `tabular`: collection of tabular reinforcement learning algorithms
 
 pub mod algorithms;
 pub mod buffer;

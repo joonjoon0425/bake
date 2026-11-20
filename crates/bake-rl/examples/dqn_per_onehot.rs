@@ -4,6 +4,9 @@ use bake_rl::deep::prelude::*;
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::classic::masked_cliff_walking::MaskedCliffWalkingConfig;
+use bake_rl::logger::{LogCollector, StdoutSink};
+
+use std::time::Instant;
 
 use burn::nn::activation::ActivationConfig;
 use burn::prelude::*;
@@ -12,9 +15,14 @@ use burn::nn::activation::Activation;
 use burn::optim::*;
 
 pub fn main() {
+    let s = Instant::now();
+
     let seed = 140;
     let device = Device::default();
     device.seed(seed);
+
+    let mut collector = LogCollector::new();
+    let mut stdout = StdoutSink::new("DQN PER - MaskedCliffWalkingConfig Log");
 
     let n_envs = 4;
     
@@ -45,6 +53,12 @@ pub fn main() {
     let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
+        // log
+        collector.record(0, "count", count);
+        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+        collector.record(1, "ep/length_mean", tape.env().length_mean());
+        collector.record(1, "ep/time_mean", tape.env().time_mean());
+        collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
         // for action mask check, line 70
         // let constraint = tape.constraint.clone();
         let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
@@ -55,15 +69,19 @@ pub fn main() {
         if count >= warmup && count % update_freq == 0 && let Some(sample) = buffer.sample(batch_size) {
             let (net, loss) = dqn_loss(&state, online, &target, sample.sample, sample.info);
             buffer.update_priorities(sample.indices, loss.td_error.clone());
-            online = net.update(loss, lr, &mut opt);
+            online = net.update(loss.clone(), lr, &mut opt);
+            // log
+            collector.record(2, "loss", loss.loss);
+            collector.record(2, "q_mean", loss.q_mean);
+            collector.record(2, "td_error_abs_mean", loss.td_error.abs().mean());
         }
 
         if count % sync_freq == 0 {
             target = online.clone();
         }
-
+        
         if count % 5000 == 0 {
-            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean().into_scalar::<f32>(), tape.env().length_mean().into_scalar::<f32>(), tape.env().time_mean().into_scalar::<f32>());
+            collector.dump_to(&mut stdout).expect("unexpected error while logging to stdout");    
         }
 
         *exploration.epsilon_mut() = eps_sch.step() as f32;

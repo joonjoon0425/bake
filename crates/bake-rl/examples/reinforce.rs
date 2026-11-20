@@ -2,8 +2,9 @@ use bake_rl::env::wrapper::{BatchedRecordEpisodeStatistics, SynchronizedBatchedE
 use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
-
+use bake_rl::logger::{LogCollector, StdoutSink};
 use bake_rl::env::classic::cartpole::CartPoleConfig;
+
 use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
@@ -18,6 +19,9 @@ pub fn main() {
     let device = Device::default();
     device.seed(seed);
 
+    let mut collector = LogCollector::new();
+    let mut stdout = StdoutSink::new("REINFORCE - CartPole Log");
+
     let mut state =
         REINFORCEState {
             gamma: 0.99,
@@ -25,7 +29,7 @@ pub fn main() {
             baseline: REINFORCEBaseline::LeaveOneOut,
         };
 
-    let n_envs = 2;
+    let n_envs = 16;
     let env = Vec::from_fn(n_envs, |i| CartPoleConfig::new(i as u64).init());
     let env = SynchronizedBatchedEnvironment::new(env, &device);
     let env = BatchedRecordEpisodeStatistics::new(env, 100);
@@ -41,6 +45,13 @@ pub fn main() {
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
+        // log
+        collector.record(0, "count", count);
+        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+        collector.record(1, "ep/length_mean", tape.env().length_mean());
+        collector.record(1, "ep/time_mean", tape.env().time_mean());
+        collector.record(-1, "elapsed time", s.elapsed().as_secs_f64());
+
         let action = policy.action(tape.obs.clone(), tape.constraint.clone());
         let (t, _) = tape.step(action);
 
@@ -50,19 +61,17 @@ pub fn main() {
             tape.reset(None);
             let batch = buffer.pop();
             let (p, loss) = reinforce_loss(&state, policy, batch);
-            policy = p.update(loss, lr, &mut opt);
+            policy = p.update(loss.clone(), lr, &mut opt);
+            collector.record(2, "loss", loss.loss);
+            collector.record(2, "entropy", loss.entropy);
         }
         
         if count % 5000 == 0 {
-            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean().into_scalar::<f32>(), tape.env().length_mean().into_scalar::<f32>(), tape.env().time_mean().into_scalar::<f32>());
+            collector.dump_to(&mut stdout).expect("unexpected error");
         }
 
         state.c_e = c_e_sch.step() as f32;
     }
-
-    let d = s.elapsed();
-
-    println!("It took {}s", d.as_secs());
 
     // let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").init();
     // let env = SynchronizedVectorEnvironment::new(vec![env], &device);

@@ -1,5 +1,3 @@
-//! This code was written by Claude, since I don't have enough knowledge about PROC MACRO. Only the batchable.rs and lib.rs is written by claude in this proc-macro lib.
-
 use proc_macro::TokenStream;
 use syn::{DeriveInput, ItemImpl, ItemStruct, parse_macro_input};
 

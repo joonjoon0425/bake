@@ -4,6 +4,8 @@ use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
 
+use bake_rl::logger::{LogCollector, StdoutSink};
+
 use bake_rl::env::classic::cartpole::CartPoleConfig;
 use burn::prelude::*;
 use burn::nn::*;
@@ -16,8 +18,10 @@ pub fn main() {
     let s = Instant::now();
 
     let seed: u64 = 120;
-    let device = Device::default();
-    device.seed(seed);
+    let device = Device::default(); device.seed(seed);
+
+    let mut collector = LogCollector::new();
+    let mut stdout = StdoutSink::new("A2C - CartPole Log");
 
     let mut state =
         A2CState {
@@ -44,6 +48,13 @@ pub fn main() {
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
+        // log
+        collector.record(0, "count", count);
+        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+        collector.record(1, "ep/length_mean", tape.env().length_mean());
+        collector.record(1, "ep/time_mean", tape.env().time_mean());
+        collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
+
         let action = ac.action(tape.obs.clone(), tape.constraint.clone());
         let (t, _) = tape.step(action);
 
@@ -52,19 +63,21 @@ pub fn main() {
         if buffer.is_full() {
             let batch = buffer.pop();
             let (net, loss) = a2c_loss(&state, ac, batch);
-            ac = net.update(loss, lr_a, lr_c, &mut opt_a, &mut opt_c);
+            // update
+            ac = net.update(loss.clone(), lr_a, lr_c, &mut opt_a, &mut opt_c);
+            // log
+            collector.record(2, "loss", loss.policy_loss);
+            collector.record(2, "value_loss", loss.value_loss);
+            collector.record(2, "entropy", loss.entropy);
         }
 
+        // sink
         if count % 5000 == 0 {
-            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean().into_scalar::<f32>(), tape.env().length_mean().into_scalar::<f32>(), tape.env().time_mean().into_scalar::<f32>());
+            collector.dump_to(&mut stdout).expect("unexpected error while logging to stdout");
         }
 
         state.c_e = c_e_sch.step() as f32;
     }
-
-    let d = s.elapsed();
-
-    println!("It took {}s", d.as_secs());
 
     // let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").init();
     // let env = SynchronizedVectorEnvironment::new(vec![env], &device);

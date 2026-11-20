@@ -2,12 +2,17 @@ use bake_rl::core::scheduler::{LinearScheduler, Scheduler};
 use bake_rl::env::wrapper::RecordEpisodeStatistics;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::tabular::prelude::*;
+use bake_rl::logger::{LogCollector, StdoutSink};
 
 use rand::prelude::*;
 
 pub fn main() {
     let seed = 129;
-    let mut rng = SmallRng::seed_from_u64(seed);    
+    let mut rng = SmallRng::seed_from_u64(seed);
+
+    let mut collector = LogCollector::new();
+    let mut stdout = StdoutSink::new("Q-Learning - Taxi Log");
+
     let env = GymnasiumEnvironmentConfig::taxi().seed(seed).init();
     let env = RecordEpisodeStatistics::new(env, 100);
     let state = QLearningState { gamma: 0.99, alpha: 0.4 };
@@ -19,6 +24,12 @@ pub fn main() {
     let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.5);
 
     for count in 0..total_steps {
+        // log
+        collector.record(0, "count", count);
+        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+        collector.record(1, "ep/length_mean", tape.env().length_mean());
+        collector.record(1, "ep/time_mean", tape.env().time_mean());
+
         let action = q.action(&mut rng, &mut eg, tape.obs.clone(), tape.constraint.clone());
         let (t, _) = tape.step(action);
 
@@ -29,7 +40,7 @@ pub fn main() {
         }
 
         if count % 1000 == 0 {
-            println!("count: {count}, ep/reward_mean: {}, ep/length_mean: {}, ep/time_mean: {}", tape.env().reward_mean(), tape.env().length_mean(), tape.env().time_mean());
+            collector.dump_to(&mut stdout).expect("unexpected error");
         }
         
         *eg.epsilon_mut() = eps_sch.step() as f32;
