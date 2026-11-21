@@ -3,7 +3,7 @@ use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::env::gym::BatchedGymnasiumEnvironmentConfig;
 use bake_rl::deep::prelude::*;
-use bake_rl::logger::{LogCollector, StdoutSink};
+use bake_rl::logger::{LogCollector, StdoutSink, CsvSink};
 use burn::prelude::*;
 use burn::nn::*;
 use burn::nn::activation::{Activation, ActivationConfig};
@@ -19,7 +19,10 @@ pub fn main() {
     device.seed(seed);
 
     let mut collector = LogCollector::new();
-    let mut stdout = StdoutSink::new("PPO - LunarLander Log");
+    let stdout = StdoutSink::new("PPO - LunarLander Log");
+    let csv = CsvSink::new(std::path::Path::new("logs/ppo.csv"), &["ep/reward_mean", "ep/length_mean", "ep/time_mean", "loss", "value_loss", "entropy", "approx_kl", "clip_fraction", "elapsed time"]).unwrap();
+    
+    let mut sink = (stdout, csv);
 
     let mut state =
         PPOState {
@@ -78,7 +81,7 @@ pub fn main() {
             collector.record(1, "ep/length_mean", tape.env().length_mean());
             collector.record(1, "ep/time_mean", tape.env().time_mean());
             collector.record(-1, "elapsed time", s.elapsed().as_secs_f64());
-            collector.dump_to(count, &mut stdout).expect("unexpected error");
+            collector.dump_to(count, &mut sink).expect("unexpected error");
         }
 
         state.c_e = c_e_sch.step() as f32;

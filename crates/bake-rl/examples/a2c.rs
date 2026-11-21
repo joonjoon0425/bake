@@ -73,7 +73,7 @@ pub fn main() {
             collector.record(1, "ep/length_mean", tape.env().length_mean());
             collector.record(1, "ep/time_mean", tape.env().time_mean());
             collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
-            collector.dump_to(count, &mut sink).expect("unexpected error while logging to stdout");
+            collector.dump_to(count, &mut sink).expect("unexpected error");
         }
 
         state.c_e = c_e_sch.step() as f32;
