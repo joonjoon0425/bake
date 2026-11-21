@@ -1,6 +1,5 @@
 use bake_rl::env::wrapper::BatchedRecordEpisodeStatistics;
-use bake_rl::core::scheduler::LinearScheduler;
-use bake_rl::core::scheduler::Scheduler;
+use bake_rl::scheduler::{Scheduler, LinearScheduler};
 use bake_rl::env::gym::BatchedGymnasiumEnvironmentConfig;
 use bake_rl::deep::prelude::*;
 use bake_rl::logger::{LogCollector, StdoutSink, CsvSink};
@@ -47,7 +46,7 @@ pub fn main() {
     let mut tape = BatchedTape::new(env, true);
 
     let total_steps = 100000;
-    let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
+    let c_e_sch = LinearScheduler::new(state.c_e, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
         let dist = ac.dist(tape.obs.clone(), tape.constraint.clone());
@@ -84,7 +83,7 @@ pub fn main() {
             collector.dump_to(count, &mut sink).expect("unexpected error");
         }
 
-        state.c_e = c_e_sch.step() as f32;
+        state.c_e = c_e_sch.value(count) as f32;
     }
 
     let d = s.elapsed();

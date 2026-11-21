@@ -3,7 +3,7 @@
 
 use bake_rl::tabular::prelude::*;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
-use bake_rl::core::scheduler::{LinearScheduler, Scheduler};
+use bake_rl::scheduler::{Scheduler, LinearScheduler};
 use bake_rl::env::wrapper::RecordEpisodeStatistics;
 use bake_rl::logger::{LogCollector, StdoutSink};
 
@@ -24,7 +24,7 @@ pub fn main() {
     let state = SARSAState { gamma: 0.99, alpha: 0.4 };
     
     let mut exploration = EpsilonGreedy::new(1.0);
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_step, 0.6);
+    let eps_sch = LinearScheduler::new(1.0, 0.05, total_step, 0.6);
 
     // pick action first
     let mut action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
@@ -46,7 +46,7 @@ pub fn main() {
             tape.reset();
         }
 
-        *exploration.epsilon_mut() = eps_sch.step() as f32;
+        *exploration.epsilon_mut() = eps_sch.value(count) as f32;
     }
 
     let env = GymnasiumEnvironmentConfig::cliff_walking().kwarg("render_mode", "human").init();

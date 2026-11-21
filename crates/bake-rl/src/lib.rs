@@ -19,6 +19,7 @@ pub mod linear;
 pub mod tabular;
 
 pub mod logger;
+pub mod scheduler;
 
 /// re-exportation
 extern crate self as bake_rl;

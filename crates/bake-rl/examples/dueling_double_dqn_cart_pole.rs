@@ -1,6 +1,5 @@
 use bake_rl::env::wrapper::{BatchedRecordEpisodeStatistics, SynchronizedBatchedEnvironment};
-use bake_rl::core::scheduler::LinearScheduler;
-use bake_rl::core::scheduler::Scheduler;
+use bake_rl::scheduler::{Scheduler, LinearScheduler};
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::deep::prelude::*;
 use bake_rl::logger::{LogCollector, StdoutSink};
@@ -21,7 +20,7 @@ pub fn main() {
     device.seed(seed);
 
     let mut collector = LogCollector::new();
-    let mut stdout = StdoutSink::new("Dueling Double DQN - CartPole Log");
+    let mut stdout = StdoutSink::new("Dueling Double DQN PER - CartPole Log");
 
     let env = GymnasiumEnvironmentConfig::cart_pole().seed(seed).init();
     let env = SynchronizedBatchedEnvironment::new(vec![env], &device);
@@ -30,21 +29,22 @@ pub fn main() {
     let state = DoubleDQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
     let mut online = DuelingTestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
     let mut target = online.clone();
-    let lr = 1e-3;
+    let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();
 
     let mut tape = BatchedTape::new(env, true);
         
     let mut exploration = BatchedEpsilonGreedy::new(1.0f32);
-    let mut buffer = ReplayBuffer::with_uniform_sampler(100000, 1, &device);
+    let mut buffer = ReplayBuffer::with_prioritized_sampler(0.6, 0.4, Some(1.0), 50000, 1, &device);
 
-    let total_steps = 300000;
+    let total_steps = 500000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
     let batch_size = 128;
 
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 2.0 / 3.0);
+    let eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
         let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
@@ -71,10 +71,12 @@ pub fn main() {
             collector.record(1, "ep/length_mean", tape.env().length_mean());
             collector.record(1, "ep/time_mean", tape.env().time_mean());
             collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
+            collector.record(4, "eps", exploration.epsilon());
             collector.dump_to(count, &mut stdout).expect("unexpected error");    
         }
 
-        *exploration.epsilon_mut() = eps_sch.step() as f32;
+        *exploration.epsilon_mut() = eps_sch.value(count);
+        *buffer.beta_mut() = beta_sch.value(count);
     }
 
     // evaluation

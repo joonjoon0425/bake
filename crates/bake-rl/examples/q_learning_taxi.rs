@@ -1,4 +1,4 @@
-use bake_rl::core::scheduler::{LinearScheduler, Scheduler};
+use bake_rl::scheduler::{LinearScheduler, Scheduler};
 use bake_rl::env::wrapper::RecordEpisodeStatistics;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
 use bake_rl::tabular::prelude::*;
@@ -21,7 +21,7 @@ pub fn main() {
 
     let total_steps = 100000;
     let mut eg = EpsilonGreedy::new(1.0);
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.5);
+    let eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.5);
 
     for count in 0..total_steps {
         let action = q.action(&mut rng, &mut eg, tape.obs.clone(), tape.constraint.clone());
@@ -41,7 +41,7 @@ pub fn main() {
             collector.dump_to(count, &mut stdout).expect("unexpected error");
         }
         
-        *eg.epsilon_mut() = eps_sch.step() as f32;
+        *eg.epsilon_mut() = eps_sch.value(count) as f32;
     }
 
     let env = GymnasiumEnvironmentConfig::taxi().kwarg("render_mode", "human").init();

@@ -1,6 +1,6 @@
 use bake_rl::tabular::prelude::*;
 use bake_rl::env::gym::GymnasiumEnvironmentConfig;
-use bake_rl::core::scheduler::{LinearScheduler, Scheduler};
+use bake_rl::scheduler::{Scheduler, LinearScheduler};
 use bake_rl::env::wrapper::RecordEpisodeStatistics;
 use bake_rl::logger::{LogCollector, StdoutSink};
 
@@ -23,7 +23,7 @@ pub fn main() {
     let mut stat = OffPolicyMonteCarloStat::new(&qtable);
 
     let mut exploration = EpsilonGreedy::new(1.0);
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_step, 0.5);
+    let eps_sch = LinearScheduler::new(1.0, 0.05, total_step, 0.5);
 
     let mut buffer = EpisodeBuffer::new();
 
@@ -48,7 +48,7 @@ pub fn main() {
             collector.dump_to(count, &mut stdout).expect("unexpected error");
         }
 
-        *exploration.epsilon_mut() = eps_sch.step() as f32;
+        *exploration.epsilon_mut() = eps_sch.value(count) as f32;
     }
 
     let env = GymnasiumEnvironmentConfig::taxi().kwarg("render_mode", "human").init();

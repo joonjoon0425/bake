@@ -1,8 +1,7 @@
 use bake_rl::env::space_transform::one_hot::BatchedOneHotTransform;
 use bake_rl::env::wrapper::{BatchedObservationTransform, BatchedRecordEpisodeStatistics, SynchronizedBatchedEnvironment};
 use bake_rl::deep::prelude::*;
-use bake_rl::core::scheduler::LinearScheduler;
-use bake_rl::core::scheduler::Scheduler;
+use bake_rl::scheduler::{Scheduler, LinearScheduler};
 use bake_rl::env::classic::masked_cliff_walking::MaskedCliffWalkingConfig;
 use bake_rl::logger::{LogCollector, StdoutSink};
 
@@ -49,8 +48,8 @@ pub fn main() {
     let sync_freq = 500;
     let batch_size = 128;
 
-    let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
-    let mut beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
+    let eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 0.25);
+    let beta_sch = LinearScheduler::new(0.4, 1.0, total_steps, 1.0);
 
     for count in 0..total_steps {
         // for action mask check, line 70
@@ -83,8 +82,8 @@ pub fn main() {
             collector.dump_to(count, &mut stdout).expect("unexpected error while logging to stdout");    
         }
 
-        *exploration.epsilon_mut() = eps_sch.step() as f32;
-        *buffer.beta_mut() = beta_sch.step() as f32;
+        *exploration.epsilon_mut() = eps_sch.value(count);
+        *buffer.beta_mut() = beta_sch.value(count);
     }
 
     // // evaluation
