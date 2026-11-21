@@ -412,11 +412,14 @@ version = "0.4.0"
 dependencies = [
  "bake-rl-macros",
  "burn",
+ "chrono",
  "ndarray",
  "numpy",
  "pyo3",
  "pyo3-build-config",
  "rand 0.10.4",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

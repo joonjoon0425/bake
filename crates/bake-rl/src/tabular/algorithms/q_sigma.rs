@@ -1,6 +1,5 @@
 //! Q(sigma)
-use crate::core::{constraint::DiscreteConstraint, data::Transition};
-use crate::tabular::qtable::QTable;
+//! 
 
 /// state struct for Q(sigma)
 #[derive(Debug, Clone)]

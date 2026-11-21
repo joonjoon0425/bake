@@ -4,7 +4,7 @@ use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
 
-use bake_rl::logger::{LogCollector, StdoutSink, CsvSink};
+use bake_rl::logger::{LogCollector, StdoutSink, CsvSink, JsonLineSink};
 
 use bake_rl::env::classic::cartpole::CartPoleConfig;
 use burn::prelude::*;
@@ -19,11 +19,17 @@ pub fn main() {
 
     let seed: u64 = 120;
     let device = Device::default(); device.seed(seed);
+    let today = chrono::offset::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+    let log_dir = format!("logs/{}", today);
+    std::fs::DirBuilder::new().create(&log_dir).unwrap();
+    
+    let log_dir = std::path::Path::new(&log_dir);
 
     let mut collector = LogCollector::new();
     let stdout = StdoutSink::new("A2C - CartPole Log");
-    let csv = CsvSink::new(std::path::Path::new("logs/a2c.csv"), &["ep/reward_mean", "ep/length_mean", "ep/time_mean", "loss", "value_loss", "entropy", "elapsed time"]).unwrap();
-    let mut sink = (stdout, csv);
+    let json = JsonLineSink::new(&log_dir.join("a2c.jsonl")).unwrap();
+    let csv = CsvSink::new(std::path::Path::new(&log_dir.join("a2c.csv")), &["ep/reward_mean", "ep/length_mean", "ep/time_mean", "loss", "value_loss", "entropy", "elapsed time"]).unwrap();
+    let mut sink = (stdout, csv, json);
 
     let mut state =
         A2CState {

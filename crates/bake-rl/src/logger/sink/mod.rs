@@ -14,4 +14,7 @@ pub use stdout::StdoutSink;
 mod csv;
 pub use csv::CsvSink;
 
+mod json_line;
+pub use json_line::JsonLineSink;
+
 mod tuple;
