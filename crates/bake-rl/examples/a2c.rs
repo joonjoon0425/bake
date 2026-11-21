@@ -4,7 +4,7 @@ use bake_rl::core::scheduler::LinearScheduler;
 use bake_rl::core::scheduler::Scheduler;
 use bake_rl::deep::prelude::*;
 
-use bake_rl::logger::{LogCollector, StdoutSink};
+use bake_rl::logger::{LogCollector, StdoutSink, CsvSink};
 
 use bake_rl::env::classic::cartpole::CartPoleConfig;
 use burn::prelude::*;
@@ -21,7 +21,9 @@ pub fn main() {
     let device = Device::default(); device.seed(seed);
 
     let mut collector = LogCollector::new();
-    let mut stdout = StdoutSink::new("A2C - CartPole Log");
+    let stdout = StdoutSink::new("A2C - CartPole Log");
+    let csv = CsvSink::new(std::path::Path::new("logs/a2c.csv"), &["ep/reward_mean", "ep/length_mean", "ep/time_mean", "loss", "value_loss", "entropy", "elapsed time"]).unwrap();
+    let mut sink = (stdout, csv);
 
     let mut state =
         A2CState {
@@ -48,13 +50,6 @@ pub fn main() {
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
-        // log
-        collector.record(0, "count", count);
-        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
-        collector.record(1, "ep/length_mean", tape.env().length_mean());
-        collector.record(1, "ep/time_mean", tape.env().time_mean());
-        collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
-
         let action = ac.action(tape.obs.clone(), tape.constraint.clone());
         let (t, _) = tape.step(action);
 
@@ -73,7 +68,12 @@ pub fn main() {
 
         // sink
         if count % 5000 == 0 {
-            collector.dump_to(&mut stdout).expect("unexpected error while logging to stdout");
+            // log
+            collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+            collector.record(1, "ep/length_mean", tape.env().length_mean());
+            collector.record(1, "ep/time_mean", tape.env().time_mean());
+            collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
+            collector.dump_to(count, &mut sink).expect("unexpected error while logging to stdout");
         }
 
         state.c_e = c_e_sch.step() as f32;

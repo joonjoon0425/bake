@@ -28,12 +28,6 @@ pub fn main() {
     let mut buffer = EpisodeBuffer::new();
 
     for count in 0..total_step {
-        // log
-        collector.record(0, "count", count);
-        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
-        collector.record(1, "ep/length_mean", tape.env().length_mean());
-        collector.record(1, "ep/time_mean", tape.env().time_mean());
-
         let action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
         let action_prob = qtable.prob(&mut exploration, tape.obs, tape.constraint, action);
         let (mut t, _) = tape.step(action);
@@ -47,7 +41,11 @@ pub fn main() {
         }
 
         if count % 1000 == 0 {
-            collector.dump_to(&mut stdout).expect("unexpected error");
+            // log
+            collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+            collector.record(1, "ep/length_mean", tape.env().length_mean());
+            collector.record(1, "ep/time_mean", tape.env().time_mean());
+            collector.dump_to(count, &mut stdout).expect("unexpected error");
         }
 
         *exploration.epsilon_mut() = eps_sch.step() as f32;

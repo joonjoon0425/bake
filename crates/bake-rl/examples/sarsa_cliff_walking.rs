@@ -29,19 +29,17 @@ pub fn main() {
     // pick action first
     let mut action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
     for count in 0..total_step {
-        // log
-        collector.record(0, "count", count);
-        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
-        collector.record(1, "ep/length_mean", tape.env().length_mean());
-        collector.record(1, "ep/time_mean", tape.env().time_mean());
-
         let (mut t, _) = tape.step(action);
         action = qtable.action(&mut rng, &mut exploration, tape.obs, tape.constraint);
         t.dict.insert_str("next_action", action);
         sarsa_update(&state, &mut qtable, t);
 
         if count % 1000 == 0 {
-            collector.dump_to(&mut stdout).expect("unexpected error");
+            // log
+            collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+            collector.record(1, "ep/length_mean", tape.env().length_mean());
+            collector.record(1, "ep/time_mean", tape.env().time_mean());
+            collector.dump_to(count, &mut stdout).expect("unexpected error");
         }
 
         if tape.done() {

@@ -47,13 +47,6 @@ pub fn main() {
     let mut eps_sch = LinearScheduler::new(1.0, 0.05, total_steps, 2.0 / 3.0);
 
     for count in 0..total_steps {
-        // log
-        collector.record(0, "count", count);
-        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
-        collector.record(1, "ep/length_mean", tape.env().length_mean());
-        collector.record(1, "ep/time_mean", tape.env().time_mean());
-        collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
-
         let action = online.action(&mut exploration, tape.obs.clone(), tape.constraint.clone());
         let (batch, _) = tape.step(action);
 
@@ -73,7 +66,12 @@ pub fn main() {
         }
 
         if count % 5000 == 0 {
-            collector.dump_to(&mut stdout).expect("unexpected error");    
+            // log
+            collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+            collector.record(1, "ep/length_mean", tape.env().length_mean());
+            collector.record(1, "ep/time_mean", tape.env().time_mean());
+            collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
+            collector.dump_to(count, &mut stdout).expect("unexpected error");    
         }
 
         *exploration.epsilon_mut() = eps_sch.step() as f32;

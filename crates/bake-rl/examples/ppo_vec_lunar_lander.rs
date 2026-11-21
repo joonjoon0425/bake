@@ -47,13 +47,6 @@ pub fn main() {
     let mut c_e_sch = LinearScheduler::new(state.c_e as f64, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
-        // log
-        collector.record(0, "count", count);
-        collector.record(1, "ep/reward_mean", tape.env().reward_mean());
-        collector.record(1, "ep/length_mean", tape.env().length_mean());
-        collector.record(1, "ep/time_mean", tape.env().time_mean());
-        collector.record(-1, "elapsed time", s.elapsed().as_secs_f64());
-
         let dist = ac.dist(tape.obs.clone(), tape.constraint.clone());
         let action = dist.sample();
         let (mut t, _) = tape.step(action.clone());
@@ -66,21 +59,26 @@ pub fn main() {
             let (adv, ret) = state.advantage.normalized_advantage(&ac, batch.clone(), state.gamma);
             batch.insert(batched_key::adv, adv).unwrap(); batch.insert(batched_key::ret, ret).unwrap();
             let batch = batch.flatten();
-            for epoch in 0..4 {
+            for _ in 0..4 {
                 for minibatch in sampler.iter(128, &batch, &device) {
                     let (net, loss) = ppo_loss(&state, ac, minibatch.sample);
                     ac = net.update(loss.clone(), lr_a, lr_c, &mut opt_a, &mut opt_c);
-                    collector.record(2 + epoch, format!("epoch {}/loss", epoch), loss.loss);
-                    collector.record(2 + epoch, format!("epoch {}/value_loss", epoch), loss.value_loss);
-                    collector.record(2 + epoch, format!("epoch {}/entropy", epoch), loss.entropy);
-                    collector.record(2 + epoch, format!("epoch {}/approx_kl", epoch), loss.approx_kl);
-                    collector.record(2 + epoch, format!("epoch {}/clip_fraction", epoch), loss.clip_fraction);
+                    collector.record_mean(2, "loss", loss.loss);
+                    collector.record_mean(2, "value_loss", loss.value_loss);
+                    collector.record_mean(2, "entropy", loss.entropy);
+                    collector.record_mean(2, "approx_kl", loss.approx_kl);
+                    collector.record_mean(2, "clip_fraction", loss.clip_fraction);
                 }
             }
         }
 
         if count % 5000 == 0 {
-            collector.dump_to(&mut stdout).expect("unexpected error");
+            // log
+            collector.record(1, "ep/reward_mean", tape.env().reward_mean());
+            collector.record(1, "ep/length_mean", tape.env().length_mean());
+            collector.record(1, "ep/time_mean", tape.env().time_mean());
+            collector.record(-1, "elapsed time", s.elapsed().as_secs_f64());
+            collector.dump_to(count, &mut stdout).expect("unexpected error");
         }
 
         state.c_e = c_e_sch.step() as f32;

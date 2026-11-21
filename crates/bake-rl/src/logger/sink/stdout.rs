@@ -16,13 +16,13 @@ impl StdoutSink {
 }
 
 impl LogSink for StdoutSink {
-    fn write(&mut self, key: String, value: f64) -> Result<(), String> {
+    fn write(&mut self, key: String, value: f64) -> std::io::Result<()> {
         let val = if value.is_finite() && value.fract() == 0.0 { format!("{:>40}: {:.0}", key, value) } else { format!("{:>40}: {:.8}", key, value) };
         self.buf += &format!("{}\n", val);
         Ok(())
     }
 
-    fn flush(&mut self) -> Result<(), String> {
+    fn flush(&mut self) -> std::io::Result<()> {
         println!("{}", self.buf);
         println!("{}", "#".repeat(80));
         self.buf = self.heading.clone();
