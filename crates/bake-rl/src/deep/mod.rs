@@ -28,7 +28,8 @@ pub mod prelude {
         episode::EpisodeBuffer,
     };
     pub use crate::deep::distribution::{Distribution, Categorical};
-    
+    pub use crate::deep::network::sequential::wrapper::*;
+    pub use crate::seq;
     
     pub use crate::core::constraint::BatchedDiscreteConstraint;    
     pub use crate::core::env::{Environment, BatchedEnvironment, EnvironmentConfig, BatchedEnvironmentConfig};
@@ -36,6 +37,6 @@ pub mod prelude {
 
     pub use crate::env::BatchedTape;
     pub use crate::exploration::{BatchedDiscreteActionExploration, BatchedEpsilonGreedy, BatchedBoltzmann, BatchedGreedy};
-    
+
     pub use bake_rl_macros::{actor_critic, policy, qnet};
 }

@@ -1,5 +1,4 @@
 use bake_rl::env::wrapper::{BatchedRecordEpisodeStatistics, SynchronizedBatchedEnvironment};
-use bake_rl::scheduler::{Scheduler, LinearScheduler};
 use bake_rl::deep::prelude::*;
 use bake_rl::logger::{LogCollector, StdoutSink};
 use bake_rl::env::classic::cartpole::CartPoleConfig;
@@ -21,10 +20,10 @@ pub fn main() {
     let mut collector = LogCollector::new();
     let mut stdout = StdoutSink::new("REINFORCE - CartPole Log");
 
-    let mut state =
+    let state =
         REINFORCEState {
             gamma: 0.99,
-            c_e: 0.02,
+            c_e: 0.0,
             baseline: REINFORCEBaseline::LeaveOneOut,
         };
 
@@ -33,15 +32,15 @@ pub fn main() {
     let env = SynchronizedBatchedEnvironment::new(env, &device);
     let env = BatchedRecordEpisodeStatistics::new(env, 100);
 
-    let mut policy = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
-    let lr = 1e-3;
+    let mut policy = TestNet::new(vec![env.obs_space().shape()[1], 84, 64, env.action_space().n()], ActivationConfig::Relu, &device);
+    let lr = 2.5e-4;
     let mut opt = AdamConfig::new().init();
     
     let mut buffer = EpisodeBuffer::new(n_envs, &device);
     let mut tape = BatchedTape::new(env, true);
 
-    let total_steps = 200000;
-    let c_e_sch = LinearScheduler::new(state.c_e, 0.002, total_steps, 1.0);
+    let total_steps = 500000;
+    // let c_e_sch = LinearScheduler::new(state.c_e, 0.002, total_steps, 1.0);
 
     for count in 0..total_steps {
         let action = policy.action(tape.obs.clone(), tape.constraint.clone());
@@ -63,11 +62,11 @@ pub fn main() {
             collector.record(1, "ep/reward_mean", tape.env().reward_mean());
             collector.record(1, "ep/length_mean", tape.env().length_mean());
             collector.record(1, "ep/time_mean", tape.env().time_mean());
-            collector.record(-1, "elapsed time", s.elapsed().as_secs_f64());
+            collector.record(5, "elapsed time", s.elapsed().as_secs_f64());
             collector.dump_to(count, &mut stdout).expect("unexpected error");
         }
 
-        state.c_e = c_e_sch.value(count) as f32;
+        // state.c_e = c_e_sch.value(count) as f32;
     }
 
     // let env = GymnasiumEnvironmentConfig::cart_pole().kwarg("render_mode", "human").init();

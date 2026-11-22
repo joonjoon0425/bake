@@ -401,14 +401,14 @@ dependencies = [
 
 [[package]]
 name = "bake"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bake-rl",
 ]
 
 [[package]]
 name = "bake-rl"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bake-rl-macros",
  "burn",
@@ -424,7 +424,7 @@ dependencies = [
 
 [[package]]
 name = "bake-rl-macros"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "proc-macro2",
  "quote",

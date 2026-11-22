@@ -39,7 +39,7 @@ impl NoisyLinear {
     }
 
     /// compute Wx + b
-    pub fn forward(&self, input: Tensor<2>) -> Tensor<2> {
+    pub fn forward<const D: usize>(&self, input: Tensor<D>) -> Tensor<D> {
         linear(
             input,
             self.weight_mean.val() + self.weight_std.val() * self.weight_noise.clone(),
