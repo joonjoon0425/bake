@@ -37,7 +37,7 @@ pub fn main() {
 
     let mut ac = TestNet::new(vec![env.obs_space().shape()[1], 128, env.action_space().n()], ActivationConfig::Relu, &device);
     let lr_a = 1e-3;
-    let lr_c = 2.5e-3;
+    let lr_c = 1e-2;
     let mut opt_a = AdamConfig::new().init();
     let mut opt_c = AdamConfig::new().init();
 

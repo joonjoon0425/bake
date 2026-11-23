@@ -28,8 +28,6 @@ pub mod prelude {
         episode::EpisodeBuffer,
     };
     pub use crate::deep::distribution::{Distribution, Categorical};
-    pub use crate::deep::network::sequential::wrapper::*;
-    pub use crate::seq;
     
     pub use crate::core::constraint::BatchedDiscreteConstraint;    
     pub use crate::core::env::{Environment, BatchedEnvironment, EnvironmentConfig, BatchedEnvironmentConfig};

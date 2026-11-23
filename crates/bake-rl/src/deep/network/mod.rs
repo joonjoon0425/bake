@@ -20,4 +20,4 @@ pub fn update<N: Network>(net: N, loss: Tensor<1>, lr: f64, opt: &mut ModuleOpti
 }
 
 pub mod layer;
-pub mod sequential;
+// pub mod sequential; deleted module

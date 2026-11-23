@@ -1,4 +1,5 @@
 use proc_macro::TokenStream;
+use quote::quote;
 use syn::{DeriveInput, ItemImpl, ItemStruct, parse_macro_input};
 
 mod batch_ops;
@@ -133,4 +134,11 @@ pub fn actor_critic(args: TokenStream, input: TokenStream) -> TokenStream {
     actor_critic::expand(&opts, &input)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
+}
+
+/// This macro implements sequential layer containter
+/// - implements `forward`
+#[proc_macro_attribute]
+pub fn seq(args: TokenStream, input: TokenStream) -> TokenStream {
+    TokenStream::new()
 }

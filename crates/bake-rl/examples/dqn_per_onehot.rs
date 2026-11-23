@@ -9,6 +9,7 @@ use std::time::Instant;
 
 use burn::prelude::*;
 use burn::nn::*;
+use burn::nn::activation::{Activation, ActivationConfig};
 use burn::optim::*;
 
 pub fn main() {
@@ -30,14 +31,7 @@ pub fn main() {
     let env = BatchedRecordEpisodeStatistics::new(env, 100);
 
     let state = DQNState { gamma: 0.99, loss_fn: LossFn::MseLoss };
-    let online = seq!(
-        LinearConfig::new(env.obs_space().shape()[1], 64).init(&device),
-        Relu,
-        LinearConfig::new(64, 64).init(&device),
-        Relu,
-        LinearConfig::new(64, env.action_space().n()).init(&device)
-    );
-    let mut online = QNetWrapper::new(online);
+    let mut online = TestNet::new(vec![env.obs_space().shape()[1], 64, 64, env.action_space().n()], ActivationConfig::Relu, &device);
     let mut target = online.clone();
     let lr = 1e-3;
     let mut opt = AdamConfig::new().init();
@@ -47,7 +41,7 @@ pub fn main() {
     let mut exploration = BatchedEpsilonGreedy::new(1.0f32);
     let mut buffer = ReplayBuffer::with_prioritized_sampler(0.6, 0.4, Some(1.0), 100000, n_envs, &device);
 
-    let total_steps = 100000;
+    let total_steps = 200000;
     let warmup = 10000;
     let update_freq = 10;
     let sync_freq = 500;
@@ -108,4 +102,36 @@ pub fn main() {
     //         }
     //     }
     // }
+}
+
+
+#[derive(Module, Debug)]
+pub struct TestNet {
+    linear: Vec<Linear>,
+    activation: Activation
+}
+
+#[qnet]
+impl TestNet {
+    pub fn new(dims: Vec<usize>, activation: ActivationConfig, device: &Device) -> Self {
+        let n = dims.len();
+        let mut lv = Vec::with_capacity(n);
+        for i in 0..(n - 1) {
+            lv.push(LinearConfig::new(dims[i], dims[i + 1]).init(device));
+        }
+        Self {
+            linear: lv,
+            activation: activation.init(device),
+        }
+    }
+
+    pub fn forward(&self, mut obs: Tensor<2>) -> Tensor<2> {
+        let n = self.linear.len();
+        for i in 0..(n - 1) {
+            obs = self.activation.forward(self.linear[i].forward(obs));
+        }
+        obs = self.linear[n - 1].forward(obs);
+        obs
+        // self.linear[n - 1].forward(obs)
+    }
 }
