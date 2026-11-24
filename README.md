@@ -1,7 +1,9 @@
-# BAKE
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
+<div align="center">
 
-Bake is a reinforcement learning framework written from scratch in Rust, using [Burn](https://burn.dev/). Created to study reinforcement learning algorithms and their implementation details.
+# BAKE <br> [![License](https://img.shields.io/badge/License-MIT-f15a24?style=flat-square)](#license)
+</div>
+
+**Bake** is a reinforcement learning framework written from scratch in Rust, using [burn](https://burn.dev/). Created to study reinforcement learning algorithms and their implementation details.
 
 ## Training Sanity Checks
 Following experiments verifies that the implemented algorithms learn reliably.
