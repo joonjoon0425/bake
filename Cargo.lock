@@ -400,13 +400,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bake"
-version = "0.5.0"
-dependencies = [
- "bake-rl",
-]
-
-[[package]]
 name = "bake-rl"
 version = "0.5.0"
 dependencies = [
